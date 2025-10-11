@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Download, Plus, Edit2, Trash2, Home, Search } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
+import '../styles/Common.css';
 
 const Clientes = ({ 
   setCurrentView,
@@ -26,7 +27,6 @@ const Clientes = ({
     tipoVehiculo: ''
   });
 
-  // Datos de Chile
   const regiones = [
     'Arica y Parinacota',
     'Tarapacá',
@@ -82,8 +82,7 @@ const Clientes = ({
     'Temuco': ['Temuco'],
     'Antofagasta': ['Antofagasta'],
     'La Serena': ['La Serena'],
-    'Coquimbo': ['Coquimbo'],
-    // Agregar más según necesidad
+    'Coquimbo': ['Coquimbo']
   };
 
   const tiposVehiculos = [
@@ -131,7 +130,6 @@ const Clientes = ({
     }
   };
 
-  // Filtrar clientes por búsqueda
   const clientesFiltrados = clientes.filter(cliente =>
     cliente.nombreCliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cliente.empresa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -144,28 +142,26 @@ const Clientes = ({
   const comunasDisponibles = formData.ciudad ? comunasPorCiudad[formData.ciudad] || [formData.ciudad] : [];
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-3xl font-bold text-gray-800">Gestión de Clientes</h2>
-            <button onClick={() => setCurrentView('home')} className="flex items-center gap-2 px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 active:bg-gray-400">
+    <div className="page-container">
+      <div className="page-content">
+        <div className="page-card">
+          <div className="page-header">
+            <h2 className="page-title">Gestión de Clientes</h2>
+            <button onClick={() => setCurrentView('home')} className="btn btn-secondary">
               <Home size={20} /> Inicio
             </button>
           </div>
 
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                <input
-                  type="text"
-                  placeholder="Buscar por nombre, empresa, ID, teléfono o ciudad..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
+          <div className="toolbar">
+            <div className="search-container">
+              <Search className="search-icon" size={20} />
+              <input
+                type="text"
+                placeholder="Buscar por nombre, empresa, ID, teléfono o ciudad..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input"
+              />
             </div>
             <button
               onClick={() => {
@@ -177,35 +173,35 @@ const Clientes = ({
                   region: '', ciudad: '', comuna: '', direccion: '', tipoVehiculo: ''
                 });
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 active:bg-purple-800"
+              className="btn btn-purple"
             >
               <Plus size={20} /> Agregar Cliente
             </button>
             <button
               onClick={() => exportToCSV(clientes, `clientes_${new Date().toISOString().split('T')[0]}`)}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 active:bg-green-800"
+              className="btn btn-success"
             >
               <Download size={20} /> Exportar
             </button>
           </div>
 
           {showForm && (
-            <div className="bg-purple-50 p-6 rounded-lg mb-6 border-2 border-purple-200">
-              <h3 className="text-xl font-bold mb-4 text-gray-800">
+            <div className="form-container purple">
+              <h3 className="form-title">
                 {editingItem ? 'Editar Cliente' : 'Nuevo Cliente'}
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="form-grid three-cols">
                 <input
                   type="text"
                   placeholder="Nombre Cliente *"
                   value={formData.nombreCliente}
                   onChange={(e) => setFormData({...formData, nombreCliente: e.target.value})}
-                  className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                  className="form-input"
                 />
                 <select
                   value={formData.empresa}
                   onChange={(e) => setFormData({...formData, empresa: e.target.value})}
-                  className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                  className="form-select"
                 >
                   {empresas.map(emp => <option key={emp} value={emp}>{emp}</option>)}
                 </select>
@@ -214,33 +210,33 @@ const Clientes = ({
                   placeholder="Nombre Contacto 1"
                   value={formData.nombreContacto1}
                   onChange={(e) => setFormData({...formData, nombreContacto1: e.target.value})}
-                  className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                  className="form-input"
                 />
                 <input
                   type="tel"
                   placeholder="Teléfono 1"
                   value={formData.telefono1}
                   onChange={(e) => setFormData({...formData, telefono1: e.target.value})}
-                  className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                  className="form-input"
                 />
                 <input
                   type="text"
                   placeholder="Nombre Contacto 2"
                   value={formData.nombreContacto2}
                   onChange={(e) => setFormData({...formData, nombreContacto2: e.target.value})}
-                  className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                  className="form-input"
                 />
                 <input
                   type="tel"
                   placeholder="Teléfono 2"
                   value={formData.telefono2}
                   onChange={(e) => setFormData({...formData, telefono2: e.target.value})}
-                  className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                  className="form-input"
                 />
                 <select
                   value={formData.region}
                   onChange={(e) => setFormData({...formData, region: e.target.value, ciudad: '', comuna: ''})}
-                  className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                  className="form-select"
                 >
                   <option value="">Seleccionar Región</option>
                   {regiones.map(reg => <option key={reg} value={reg}>{reg}</option>)}
@@ -248,7 +244,7 @@ const Clientes = ({
                 <select
                   value={formData.ciudad}
                   onChange={(e) => setFormData({...formData, ciudad: e.target.value, comuna: ''})}
-                  className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                  className="form-select"
                   disabled={!formData.region}
                 >
                   <option value="">Seleccionar Ciudad</option>
@@ -257,7 +253,7 @@ const Clientes = ({
                 <select
                   value={formData.comuna}
                   onChange={(e) => setFormData({...formData, comuna: e.target.value})}
-                  className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                  className="form-select"
                   disabled={!formData.ciudad}
                 >
                   <option value="">Seleccionar Comuna</option>
@@ -268,21 +264,21 @@ const Clientes = ({
                   placeholder="Dirección"
                   value={formData.direccion}
                   onChange={(e) => setFormData({...formData, direccion: e.target.value})}
-                  className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 md:col-span-2"
+                  className="form-input col-span-2"
                 />
                 <select
                   value={formData.tipoVehiculo}
                   onChange={(e) => setFormData({...formData, tipoVehiculo: e.target.value})}
-                  className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                  className="form-select"
                 >
                   <option value="">Tipo de Vehículo</option>
                   {tiposVehiculos.map(tipo => <option key={tipo} value={tipo}>{tipo}</option>)}
                 </select>
               </div>
-              <div className="flex gap-4 mt-4">
+              <div className="form-actions">
                 <button 
                   onClick={handleSubmit}
-                  className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 active:bg-purple-800 font-medium"
+                  className="btn btn-purple"
                 >
                   {editingItem ? 'Actualizar' : 'Guardar'}
                 </button>
@@ -291,7 +287,7 @@ const Clientes = ({
                     setShowForm(false);
                     setEditingItem(null);
                   }}
-                  className="px-6 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 active:bg-gray-500 font-medium"
+                  className="btn btn-secondary"
                 >
                   Cancelar
                 </button>
@@ -299,63 +295,63 @@ const Clientes = ({
             </div>
           )}
 
-          <div className="mb-4 text-sm text-gray-600">
+          <div style={{ marginBottom: '1rem', fontSize: '0.875rem', color: '#6b7280' }}>
             Mostrando {clientesFiltrados.length} de {clientes.length} clientes
           </div>
 
-          <div className="overflow-x-auto shadow-md rounded-lg">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-purple-700 text-white">
-                  <th className="p-3 border border-purple-600 text-left">ID</th>
-                  <th className="p-3 border border-purple-600 text-left">Cliente</th>
-                  <th className="p-3 border border-purple-600 text-left">Empresa</th>
-                  <th className="p-3 border border-purple-600 text-left">Contacto 1</th>
-                  <th className="p-3 border border-purple-600 text-left">Teléfono 1</th>
-                  <th className="p-3 border border-purple-600 text-left">Contacto 2</th>
-                  <th className="p-3 border border-purple-600 text-left">Teléfono 2</th>
-                  <th className="p-3 border border-purple-600 text-left">Región</th>
-                  <th className="p-3 border border-purple-600 text-left">Ciudad</th>
-                  <th className="p-3 border border-purple-600 text-left">Comuna</th>
-                  <th className="p-3 border border-purple-600 text-left">Dirección</th>
-                  <th className="p-3 border border-purple-600 text-left">Tipo Vehículo</th>
-                  <th className="p-3 border border-purple-600 text-center">Acciones</th>
+          <div className="table-container">
+            <table className="data-table">
+              <thead className="purple">
+                <tr>
+                  <th>ID</th>
+                  <th>Cliente</th>
+                  <th>Empresa</th>
+                  <th>Contacto 1</th>
+                  <th>Teléfono 1</th>
+                  <th>Contacto 2</th>
+                  <th>Teléfono 2</th>
+                  <th>Región</th>
+                  <th>Ciudad</th>
+                  <th>Comuna</th>
+                  <th>Dirección</th>
+                  <th>Tipo Vehículo</th>
+                  <th className="center">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {clientesFiltrados.length === 0 ? (
                   <tr>
-                    <td colSpan="13" className="p-8 text-center text-gray-500">
+                    <td colSpan="13" className="empty-state">
                       {searchTerm ? 'No se encontraron clientes con ese criterio de búsqueda' : 'No hay clientes registrados'}
                     </td>
                   </tr>
                 ) : (
                   clientesFiltrados.map(cliente => (
-                    <tr key={cliente.id} className="hover:bg-gray-100 transition-colors">
-                      <td className="p-3 border border-gray-300">{cliente.id}</td>
-                      <td className="p-3 border border-gray-300 font-medium">{cliente.nombreCliente}</td>
-                      <td className="p-3 border border-gray-300">{cliente.empresa}</td>
-                      <td className="p-3 border border-gray-300">{cliente.nombreContacto1 || '-'}</td>
-                      <td className="p-3 border border-gray-300">{cliente.telefono1 || '-'}</td>
-                      <td className="p-3 border border-gray-300">{cliente.nombreContacto2 || '-'}</td>
-                      <td className="p-3 border border-gray-300">{cliente.telefono2 || '-'}</td>
-                      <td className="p-3 border border-gray-300">{cliente.region || '-'}</td>
-                      <td className="p-3 border border-gray-300">{cliente.ciudad || '-'}</td>
-                      <td className="p-3 border border-gray-300">{cliente.comuna || '-'}</td>
-                      <td className="p-3 border border-gray-300">{cliente.direccion || '-'}</td>
-                      <td className="p-3 border border-gray-300">{cliente.tipoVehiculo || '-'}</td>
-                      <td className="p-3 border border-gray-300">
-                        <div className="flex gap-2 justify-center">
+                    <tr key={cliente.id}>
+                      <td>{cliente.id}</td>
+                      <td className="text-bold">{cliente.nombreCliente}</td>
+                      <td>{cliente.empresa}</td>
+                      <td>{cliente.nombreContacto1 || '-'}</td>
+                      <td>{cliente.telefono1 || '-'}</td>
+                      <td>{cliente.nombreContacto2 || '-'}</td>
+                      <td>{cliente.telefono2 || '-'}</td>
+                      <td>{cliente.region || '-'}</td>
+                      <td>{cliente.ciudad || '-'}</td>
+                      <td>{cliente.comuna || '-'}</td>
+                      <td>{cliente.direccion || '-'}</td>
+                      <td>{cliente.tipoVehiculo || '-'}</td>
+                      <td className="center">
+                        <div className="table-actions">
                           <button 
                             onClick={() => handleEdit(cliente)} 
-                            className="text-blue-600 hover:text-blue-800 active:text-blue-900 p-1"
+                            className="action-btn edit"
                             title="Editar"
                           >
                             <Edit2 size={18} />
                           </button>
                           <button 
                             onClick={() => handleDelete(cliente.id)} 
-                            className="text-red-600 hover:text-red-800 active:text-red-900 p-1"
+                            className="action-btn delete"
                             title="Eliminar"
                           >
                             <Trash2 size={18} />

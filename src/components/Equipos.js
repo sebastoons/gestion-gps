@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Download, Plus, Edit2, Trash2, Home } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
+import '../styles/Common.css';
 
 const Equipos = ({ 
   setCurrentView,
@@ -21,7 +22,7 @@ const Equipos = ({
     imei: '',
     asignado: false,
     nombreCliente: '',
-    estado: 'disponible' // disponible, asignado, perdido
+    estado: 'disponible'
   });
 
   const [formDataRetirado, setFormDataRetirado] = useState({
@@ -118,34 +119,34 @@ const Equipos = ({
 
   const getEstadoColor = (estado) => {
     switch(estado) {
-      case 'disponible': return 'bg-green-500';
-      case 'asignado': return 'bg-orange-500';
-      case 'perdido': return 'bg-red-500';
-      default: return 'bg-gray-500';
+      case 'disponible': return 'green';
+      case 'asignado': return 'orange';
+      case 'perdido': return 'red';
+      default: return 'gray';
     }
   };
 
   const currentData = getEquiposByView();
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-3xl font-bold text-gray-800">Equipos GPS</h2>
-            <button onClick={() => setCurrentView('home')} className="flex items-center gap-2 px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 active:bg-gray-400">
+    <div className="page-container">
+      <div className="page-content">
+        <div className="page-card">
+          <div className="page-header">
+            <h2 className="page-title">Equipos GPS</h2>
+            <button onClick={() => setCurrentView('home')} className="btn btn-secondary">
               <Home size={20} /> Inicio
             </button>
           </div>
 
-          <div className="flex gap-4 mb-6 overflow-x-auto">
+          <div className="tab-container">
             <button
               onClick={() => {
                 setEquipoView('nuevos');
                 setShowForm(false);
                 setEditingItem(null);
               }}
-              className={`px-6 py-3 rounded-lg font-medium transition-all ${equipoView === 'nuevos' ? 'bg-green-600 text-white shadow-lg' : 'bg-gray-200 hover:bg-gray-300'}`}
+              className={`tab-button ${equipoView === 'nuevos' ? 'active green' : ''}`}
             >
               Equipos Nuevos ({equiposNuevos.length})
             </button>
@@ -155,7 +156,7 @@ const Equipos = ({
                 setShowForm(false);
                 setEditingItem(null);
               }}
-              className={`px-6 py-3 rounded-lg font-medium transition-all ${equipoView === 'retirados' ? 'bg-blue-600 text-white shadow-lg' : 'bg-gray-200 hover:bg-gray-300'}`}
+              className={`tab-button ${equipoView === 'retirados' ? 'active blue' : ''}`}
             >
               Equipos Retirados ({equiposRetirados.length})
             </button>
@@ -165,13 +166,13 @@ const Equipos = ({
                 setShowForm(false);
                 setEditingItem(null);
               }}
-              className={`px-6 py-3 rounded-lg font-medium transition-all ${equipoView === 'malos' ? 'bg-red-600 text-white shadow-lg' : 'bg-gray-200 hover:bg-gray-300'}`}
+              className={`tab-button ${equipoView === 'malos' ? 'active red' : ''}`}
             >
               Equipos Malos ({equiposMalos.length})
             </button>
           </div>
 
-          <div className="flex gap-4 mb-6">
+          <div className="toolbar">
             <button
               onClick={() => {
                 setShowForm(true);
@@ -180,13 +181,13 @@ const Equipos = ({
                 if (equipoView === 'retirados') setFormDataRetirado({ id: '', fecha: '', cliente: '', imei: '' });
                 if (equipoView === 'malos') setFormDataMalo({ id: '', imei: '', asignado: false, nombreCliente: '' });
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800"
+              className="btn btn-primary"
             >
               <Plus size={20} /> Agregar Equipo
             </button>
             <button
               onClick={() => exportToCSV(currentData, `equipos_${equipoView}_${new Date().toISOString().split('T')[0]}`)}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 active:bg-green-800"
+              className="btn btn-success"
             >
               <Download size={20} /> Exportar
             </button>
@@ -194,16 +195,16 @@ const Equipos = ({
 
           {/* FORMULARIO EQUIPOS NUEVOS */}
           {showForm && equipoView === 'nuevos' && (
-            <div className="bg-green-50 p-6 rounded-lg mb-6 border-2 border-green-200">
-              <h3 className="text-xl font-bold mb-4 text-gray-800">
+            <div className="form-container">
+              <h3 className="form-title">
                 {editingItem ? 'Editar Equipo Nuevo' : 'Nuevo Equipo GPS'}
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="form-grid">
                 <input
                   type="date"
                   value={formDataEquipo.fechaRecepcion}
                   onChange={(e) => setFormDataEquipo({...formDataEquipo, fechaRecepcion: e.target.value})}
-                  className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+                  className="form-input"
                   placeholder="Fecha Recepción"
                 />
                 <input
@@ -211,12 +212,12 @@ const Equipos = ({
                   placeholder="IMEI *"
                   value={formDataEquipo.imei}
                   onChange={(e) => setFormDataEquipo({...formDataEquipo, imei: e.target.value})}
-                  className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+                  className="form-input"
                 />
                 <select
                   value={formDataEquipo.estado}
                   onChange={(e) => setFormDataEquipo({...formDataEquipo, estado: e.target.value, asignado: e.target.value === 'asignado'})}
-                  className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+                  className="form-select"
                 >
                   <option value="disponible">Disponible (Verde)</option>
                   <option value="asignado">Asignado (Naranja)</option>
@@ -228,15 +229,15 @@ const Equipos = ({
                     placeholder="Nombre del Cliente"
                     value={formDataEquipo.nombreCliente}
                     onChange={(e) => setFormDataEquipo({...formDataEquipo, nombreCliente: e.target.value})}
-                    className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+                    className="form-input"
                   />
                 )}
               </div>
-              <div className="flex gap-4 mt-4">
-                <button onClick={handleSubmitNuevo} className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
+              <div className="form-actions">
+                <button onClick={handleSubmitNuevo} className="btn btn-success">
                   {editingItem ? 'Actualizar' : 'Guardar'}
                 </button>
-                <button onClick={() => { setShowForm(false); setEditingItem(null); }} className="px-6 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 font-medium">
+                <button onClick={() => { setShowForm(false); setEditingItem(null); }} className="btn btn-secondary">
                   Cancelar
                 </button>
               </div>
@@ -245,37 +246,37 @@ const Equipos = ({
 
           {/* FORMULARIO EQUIPOS RETIRADOS */}
           {showForm && equipoView === 'retirados' && (
-            <div className="bg-blue-50 p-6 rounded-lg mb-6 border-2 border-blue-200">
-              <h3 className="text-xl font-bold mb-4 text-gray-800">
+            <div className="form-container blue">
+              <h3 className="form-title">
                 {editingItem ? 'Editar Equipo Retirado' : 'Registrar Equipo Retirado'}
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="form-grid three-cols">
                 <input
                   type="date"
                   value={formDataRetirado.fecha}
                   onChange={(e) => setFormDataRetirado({...formDataRetirado, fecha: e.target.value})}
-                  className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                  className="form-input"
                 />
                 <input
                   type="text"
                   placeholder="Cliente *"
                   value={formDataRetirado.cliente}
                   onChange={(e) => setFormDataRetirado({...formDataRetirado, cliente: e.target.value})}
-                  className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                  className="form-input"
                 />
                 <input
                   type="text"
                   placeholder="IMEI *"
                   value={formDataRetirado.imei}
                   onChange={(e) => setFormDataRetirado({...formDataRetirado, imei: e.target.value})}
-                  className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                  className="form-input"
                 />
               </div>
-              <div className="flex gap-4 mt-4">
-                <button onClick={handleSubmitRetirado} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+              <div className="form-actions">
+                <button onClick={handleSubmitRetirado} className="btn btn-primary">
                   {editingItem ? 'Actualizar' : 'Guardar'}
                 </button>
-                <button onClick={() => { setShowForm(false); setEditingItem(null); }} className="px-6 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 font-medium">
+                <button onClick={() => { setShowForm(false); setEditingItem(null); }} className="btn btn-secondary">
                   Cancelar
                 </button>
               </div>
@@ -284,25 +285,25 @@ const Equipos = ({
 
           {/* FORMULARIO EQUIPOS MALOS */}
           {showForm && equipoView === 'malos' && (
-            <div className="bg-red-50 p-6 rounded-lg mb-6 border-2 border-red-200">
-              <h3 className="text-xl font-bold mb-4 text-gray-800">
+            <div className="form-container red">
+              <h3 className="form-title">
                 {editingItem ? 'Editar Equipo Malo' : 'Registrar Equipo Malo'}
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="form-grid">
                 <input
                   type="text"
                   placeholder="IMEI *"
                   value={formDataMalo.imei}
                   onChange={(e) => setFormDataMalo({...formDataMalo, imei: e.target.value})}
-                  className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500"
+                  className="form-input"
                 />
-                <div className="flex items-center gap-4">
-                  <label className="flex items-center gap-2">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <input
                       type="checkbox"
                       checked={formDataMalo.asignado}
                       onChange={(e) => setFormDataMalo({...formDataMalo, asignado: e.target.checked})}
-                      className="w-4 h-4"
+                      style={{ width: '1rem', height: '1rem' }}
                     />
                     <span>¿Estaba asignado a un cliente?</span>
                   </label>
@@ -313,15 +314,15 @@ const Equipos = ({
                     placeholder="Nombre del Cliente"
                     value={formDataMalo.nombreCliente}
                     onChange={(e) => setFormDataMalo({...formDataMalo, nombreCliente: e.target.value})}
-                    className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500"
+                    className="form-input"
                   />
                 )}
               </div>
-              <div className="flex gap-4 mt-4">
-                <button onClick={handleSubmitMalo} className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium">
+              <div className="form-actions">
+                <button onClick={handleSubmitMalo} className="btn btn-danger">
                   {editingItem ? 'Actualizar' : 'Guardar'}
                 </button>
-                <button onClick={() => { setShowForm(false); setEditingItem(null); }} className="px-6 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 font-medium">
+                <button onClick={() => { setShowForm(false); setEditingItem(null); }} className="btn btn-secondary">
                   Cancelar
                 </button>
               </div>
@@ -330,44 +331,44 @@ const Equipos = ({
 
           {/* TABLA EQUIPOS NUEVOS */}
           {equipoView === 'nuevos' && (
-            <div className="overflow-x-auto shadow-md rounded-lg">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-green-700 text-white">
-                    <th className="p-3 border border-green-600 text-left">ID</th>
-                    <th className="p-3 border border-green-600 text-left">Fecha Recepción</th>
-                    <th className="p-3 border border-green-600 text-left">IMEI</th>
-                    <th className="p-3 border border-green-600 text-center">Estado</th>
-                    <th className="p-3 border border-green-600 text-left">Cliente Asignado</th>
-                    <th className="p-3 border border-green-600 text-center">Acciones</th>
+            <div className="table-container">
+              <table className="data-table">
+                <thead className="green">
+                  <tr>
+                    <th>ID</th>
+                    <th>Fecha Recepción</th>
+                    <th>IMEI</th>
+                    <th className="center">Estado</th>
+                    <th>Cliente Asignado</th>
+                    <th className="center">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {equiposNuevos.length === 0 ? (
                     <tr>
-                      <td colSpan="6" className="p-8 text-center text-gray-500">
+                      <td colSpan="6" className="empty-state">
                         No hay equipos nuevos registrados
                       </td>
                     </tr>
                   ) : (
                     equiposNuevos.map(equipo => (
-                      <tr key={equipo.id} className="hover:bg-gray-100">
-                        <td className="p-3 border">{equipo.id}</td>
-                        <td className="p-3 border">{equipo.fechaRecepcion}</td>
-                        <td className="p-3 border font-mono">{equipo.imei}</td>
-                        <td className="p-3 border">
-                          <div className="flex items-center justify-center gap-2">
-                            <div className={`w-4 h-4 rounded-full ${getEstadoColor(equipo.estado)}`}></div>
-                            <span className="text-sm capitalize">{equipo.estado}</span>
+                      <tr key={equipo.id}>
+                        <td>{equipo.id}</td>
+                        <td>{equipo.fechaRecepcion}</td>
+                        <td className="text-mono">{equipo.imei}</td>
+                        <td className="center">
+                          <div className="status-badge">
+                            <div className={`status-dot ${getEstadoColor(equipo.estado)}`}></div>
+                            <span style={{ textTransform: 'capitalize' }}>{equipo.estado}</span>
                           </div>
                         </td>
-                        <td className="p-3 border">{equipo.nombreCliente || '-'}</td>
-                        <td className="p-3 border">
-                          <div className="flex gap-2 justify-center">
-                            <button onClick={() => handleEdit(equipo)} className="text-blue-600 hover:text-blue-800 p-1" title="Editar">
+                        <td>{equipo.nombreCliente || '-'}</td>
+                        <td className="center">
+                          <div className="table-actions">
+                            <button onClick={() => handleEdit(equipo)} className="action-btn edit" title="Editar">
                               <Edit2 size={18} />
                             </button>
-                            <button onClick={() => handleDelete(equipo.id)} className="text-red-600 hover:text-red-800 p-1" title="Eliminar">
+                            <button onClick={() => handleDelete(equipo.id)} className="action-btn delete" title="Eliminar">
                               <Trash2 size={18} />
                             </button>
                           </div>
@@ -382,37 +383,37 @@ const Equipos = ({
 
           {/* TABLA EQUIPOS RETIRADOS */}
           {equipoView === 'retirados' && (
-            <div className="overflow-x-auto shadow-md rounded-lg">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-blue-700 text-white">
-                    <th className="p-3 border border-blue-600 text-left">ID</th>
-                    <th className="p-3 border border-blue-600 text-left">Fecha</th>
-                    <th className="p-3 border border-blue-600 text-left">Cliente</th>
-                    <th className="p-3 border border-blue-600 text-left">IMEI</th>
-                    <th className="p-3 border border-blue-600 text-center">Acciones</th>
+            <div className="table-container">
+              <table className="data-table">
+                <thead className="blue">
+                  <tr>
+                    <th>ID</th>
+                    <th>Fecha</th>
+                    <th>Cliente</th>
+                    <th>IMEI</th>
+                    <th className="center">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {equiposRetirados.length === 0 ? (
                     <tr>
-                      <td colSpan="5" className="p-8 text-center text-gray-500">
+                      <td colSpan="5" className="empty-state">
                         No hay equipos retirados registrados
                       </td>
                     </tr>
                   ) : (
                     equiposRetirados.map(equipo => (
-                      <tr key={equipo.id} className="hover:bg-gray-100">
-                        <td className="p-3 border">{equipo.id}</td>
-                        <td className="p-3 border">{equipo.fecha}</td>
-                        <td className="p-3 border">{equipo.cliente}</td>
-                        <td className="p-3 border font-mono">{equipo.imei}</td>
-                        <td className="p-3 border">
-                          <div className="flex gap-2 justify-center">
-                            <button onClick={() => handleEdit(equipo)} className="text-blue-600 hover:text-blue-800 p-1" title="Editar">
+                      <tr key={equipo.id}>
+                        <td>{equipo.id}</td>
+                        <td>{equipo.fecha}</td>
+                        <td>{equipo.cliente}</td>
+                        <td className="text-mono">{equipo.imei}</td>
+                        <td className="center">
+                          <div className="table-actions">
+                            <button onClick={() => handleEdit(equipo)} className="action-btn edit" title="Editar">
                               <Edit2 size={18} />
                             </button>
-                            <button onClick={() => handleDelete(equipo.id)} className="text-red-600 hover:text-red-800 p-1" title="Eliminar">
+                            <button onClick={() => handleDelete(equipo.id)} className="action-btn delete" title="Eliminar">
                               <Trash2 size={18} />
                             </button>
                           </div>
@@ -427,42 +428,42 @@ const Equipos = ({
 
           {/* TABLA EQUIPOS MALOS */}
           {equipoView === 'malos' && (
-            <div className="overflow-x-auto shadow-md rounded-lg">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-red-700 text-white">
-                    <th className="p-3 border border-red-600 text-left">ID</th>
-                    <th className="p-3 border border-red-600 text-left">IMEI</th>
-                    <th className="p-3 border border-red-600 text-center">Estado Asignación</th>
-                    <th className="p-3 border border-red-600 text-left">Cliente (si aplica)</th>
-                    <th className="p-3 border border-red-600 text-center">Acciones</th>
+            <div className="table-container">
+              <table className="data-table">
+                <thead className="red">
+                  <tr>
+                    <th>ID</th>
+                    <th>IMEI</th>
+                    <th className="center">Estado Asignación</th>
+                    <th>Cliente (si aplica)</th>
+                    <th className="center">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {equiposMalos.length === 0 ? (
                     <tr>
-                      <td colSpan="5" className="p-8 text-center text-gray-500">
+                      <td colSpan="5" className="empty-state">
                         No hay equipos malos registrados
                       </td>
                     </tr>
                   ) : (
                     equiposMalos.map(equipo => (
-                      <tr key={equipo.id} className="hover:bg-gray-100">
-                        <td className="p-3 border">{equipo.id}</td>
-                        <td className="p-3 border font-mono">{equipo.imei}</td>
-                        <td className="p-3 border">
-                          <div className="flex items-center justify-center gap-2">
-                            <div className={`w-4 h-4 rounded-full ${equipo.asignado ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                            <span className="text-sm">{equipo.asignado ? 'Estaba asignado' : 'No asignado'}</span>
+                      <tr key={equipo.id}>
+                        <td>{equipo.id}</td>
+                        <td className="text-mono">{equipo.imei}</td>
+                        <td className="center">
+                          <div className="status-badge">
+                            <div className={`status-dot ${equipo.asignado ? 'red' : 'green'}`}></div>
+                            <span>{equipo.asignado ? 'Estaba asignado' : 'No asignado'}</span>
                           </div>
                         </td>
-                        <td className="p-3 border">{equipo.nombreCliente || '-'}</td>
-                        <td className="p-3 border">
-                          <div className="flex gap-2 justify-center">
-                            <button onClick={() => handleEdit(equipo)} className="text-blue-600 hover:text-blue-800 p-1" title="Editar">
+                        <td>{equipo.nombreCliente || '-'}</td>
+                        <td className="center">
+                          <div className="table-actions">
+                            <button onClick={() => handleEdit(equipo)} className="action-btn edit" title="Editar">
                               <Edit2 size={18} />
                             </button>
-                            <button onClick={() => handleDelete(equipo.id)} className="text-red-600 hover:text-red-800 p-1" title="Eliminar">
+                            <button onClick={() => handleDelete(equipo.id)} className="action-btn delete" title="Eliminar">
                               <Trash2 size={18} />
                             </button>
                           </div>

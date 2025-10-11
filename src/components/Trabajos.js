@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Download, Plus, Edit2, Trash2, Home } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
+import '../styles/Common.css';
 
 const Trabajos = ({ 
   setCurrentView, 
@@ -85,33 +86,33 @@ const Trabajos = ({
   const totales = calcularTotales();
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-3xl font-bold text-gray-800">Trabajos del Mes</h2>
-            <button onClick={() => setCurrentView('home')} className="flex items-center gap-2 px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 active:bg-gray-400">
+    <div className="page-container">
+      <div className="page-content">
+        <div className="page-card">
+          <div className="page-header">
+            <h2 className="page-title">Trabajos del Mes</h2>
+            <button onClick={() => setCurrentView('home')} className="btn btn-secondary">
               <Home size={20} /> Inicio
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="filter-container">
             <div>
-              <label className="block text-sm font-medium mb-2 text-gray-700">Empresa</label>
+              <label className="filter-label">Empresa</label>
               <select
                 value={empresaSeleccionada}
                 onChange={(e) => setEmpresaSeleccionada(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="form-select"
               >
                 {empresas.map(emp => <option key={emp} value={emp}>{emp}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2 text-gray-700">Mes</label>
+              <label className="filter-label">Mes</label>
               <select
                 value={mesSeleccionado}
                 onChange={(e) => setMesSeleccionado(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="form-select"
               >
                 <option>Agosto 2025</option>
                 <option>Septiembre 2025</option>
@@ -120,7 +121,7 @@ const Trabajos = ({
             </div>
           </div>
 
-          <div className="flex gap-4 mb-6">
+          <div className="toolbar">
             <button
               onClick={() => {
                 setShowForm(true);
@@ -131,41 +132,41 @@ const Trabajos = ({
                   valorUF: '', valorPesos: '', empresa: empresaSeleccionada, mes: mesSeleccionado
                 });
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800"
+              className="btn btn-primary"
             >
               <Plus size={20} /> Agregar Trabajo
             </button>
             <button
               onClick={() => exportToCSV(trabajosFiltrados, `trabajos_${empresaSeleccionada}_${mesSeleccionado}`)}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 active:bg-green-800"
+              className="btn btn-success"
             >
               <Download size={20} /> Exportar
             </button>
           </div>
 
           {showForm && (
-            <div className="bg-gray-50 p-6 rounded-lg mb-6 border-2 border-blue-200">
-              <h3 className="text-xl font-bold mb-4 text-gray-800">
+            <div className="form-container blue">
+              <h3 className="form-title">
                 {editingItem ? 'Editar Trabajo' : 'Nuevo Trabajo'}
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="form-grid three-cols">
                 <input
                   type="text"
                   placeholder="Nombre Cliente *"
                   value={formData.nombreCliente}
                   onChange={(e) => setFormData({...formData, nombreCliente: e.target.value})}
-                  className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="form-input"
                 />
                 <input
                   type="date"
                   value={formData.fecha}
                   onChange={(e) => setFormData({...formData, fecha: e.target.value})}
-                  className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="form-input"
                 />
                 <select
                   value={formData.servicio}
                   onChange={(e) => setFormData({...formData, servicio: e.target.value})}
-                  className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="form-select"
                 >
                   <option>Instalación</option>
                   <option>Retiro</option>
@@ -177,35 +178,35 @@ const Trabajos = ({
                   placeholder="PPU IN"
                   value={formData.ppuIn}
                   onChange={(e) => setFormData({...formData, ppuIn: e.target.value})}
-                  className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="form-input"
                 />
                 <input
                   type="text"
                   placeholder="PPU OUT"
                   value={formData.ppuOut}
                   onChange={(e) => setFormData({...formData, ppuOut: e.target.value})}
-                  className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="form-input"
                 />
                 <input
                   type="text"
                   placeholder="IMEI IN"
                   value={formData.imeiIn}
                   onChange={(e) => setFormData({...formData, imeiIn: e.target.value})}
-                  className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="form-input"
                 />
                 <input
                   type="text"
                   placeholder="IMEI OUT"
                   value={formData.imeiOut}
                   onChange={(e) => setFormData({...formData, imeiOut: e.target.value})}
-                  className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="form-input"
                 />
                 <input
                   type="number"
                   placeholder="KM"
                   value={formData.km}
                   onChange={(e) => setFormData({...formData, km: e.target.value})}
-                  className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="form-input"
                 />
                 <input
                   type="number"
@@ -213,21 +214,18 @@ const Trabajos = ({
                   placeholder="Valor UF"
                   value={formData.valorUF}
                   onChange={(e) => setFormData({...formData, valorUF: e.target.value})}
-                  className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="form-input"
                 />
                 <input
                   type="number"
                   placeholder="Valor Pesos"
                   value={formData.valorPesos}
                   onChange={(e) => setFormData({...formData, valorPesos: e.target.value})}
-                  className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="form-input"
                 />
               </div>
-              <div className="flex gap-4 mt-4">
-                <button 
-                  onClick={handleSubmit}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 font-medium"
-                >
+              <div className="form-actions">
+                <button onClick={handleSubmit} className="btn btn-primary">
                   {editingItem ? 'Actualizar' : 'Guardar'}
                 </button>
                 <button
@@ -235,7 +233,7 @@ const Trabajos = ({
                     setShowForm(false);
                     setEditingItem(null);
                   }}
-                  className="px-6 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 active:bg-gray-500 font-medium"
+                  className="btn btn-secondary"
                 >
                   Cancelar
                 </button>
@@ -243,59 +241,51 @@ const Trabajos = ({
             </div>
           )}
 
-          <div className="overflow-x-auto shadow-md rounded-lg">
-            <table className="w-full border-collapse">
+          <div className="table-container">
+            <table className="data-table">
               <thead>
-                <tr className="bg-gray-800 text-white">
-                  <th className="p-3 border border-gray-600 text-left">ID</th>
-                  <th className="p-3 border border-gray-600 text-left">Cliente</th>
-                  <th className="p-3 border border-gray-600 text-left">Fecha</th>
-                  <th className="p-3 border border-gray-600 text-left">Servicio</th>
-                  <th className="p-3 border border-gray-600 text-left">PPU IN</th>
-                  <th className="p-3 border border-gray-600 text-left">PPU OUT</th>
-                  <th className="p-3 border border-gray-600 text-left">IMEI IN</th>
-                  <th className="p-3 border border-gray-600 text-left">IMEI OUT</th>
-                  <th className="p-3 border border-gray-600 text-right">KM</th>
-                  <th className="p-3 border border-gray-600 text-right">UF</th>
-                  <th className="p-3 border border-gray-600 text-right">Valor $</th>
-                  <th className="p-3 border border-gray-600 text-center">Acciones</th>
+                <tr>
+                  <th>ID</th>
+                  <th>Cliente</th>
+                  <th>Fecha</th>
+                  <th>Servicio</th>
+                  <th>PPU IN</th>
+                  <th>PPU OUT</th>
+                  <th>IMEI IN</th>
+                  <th>IMEI OUT</th>
+                  <th className="right">KM</th>
+                  <th className="right">UF</th>
+                  <th className="right">Valor $</th>
+                  <th className="center">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {trabajosFiltrados.length === 0 ? (
                   <tr>
-                    <td colSpan="12" className="p-8 text-center text-gray-500">
+                    <td colSpan="12" className="empty-state">
                       No hay trabajos registrados para este mes
                     </td>
                   </tr>
                 ) : (
                   trabajosFiltrados.map(trabajo => (
-                    <tr key={trabajo.id} className="hover:bg-gray-100 transition-colors">
-                      <td className="p-3 border border-gray-300">{trabajo.id}</td>
-                      <td className="p-3 border border-gray-300">{trabajo.nombreCliente}</td>
-                      <td className="p-3 border border-gray-300">{trabajo.fecha}</td>
-                      <td className="p-3 border border-gray-300">{trabajo.servicio}</td>
-                      <td className="p-3 border border-gray-300">{trabajo.ppuIn}</td>
-                      <td className="p-3 border border-gray-300">{trabajo.ppuOut}</td>
-                      <td className="p-3 border border-gray-300">{trabajo.imeiIn}</td>
-                      <td className="p-3 border border-gray-300">{trabajo.imeiOut}</td>
-                      <td className="p-3 border border-gray-300 text-right">{trabajo.km}</td>
-                      <td className="p-3 border border-gray-300 text-right">{trabajo.valorUF}</td>
-                      <td className="p-3 border border-gray-300 text-right">${Number(trabajo.valorPesos).toLocaleString()}</td>
-                      <td className="p-3 border border-gray-300">
-                        <div className="flex gap-2 justify-center">
-                          <button 
-                            onClick={() => handleEdit(trabajo)} 
-                            className="text-blue-600 hover:text-blue-800 active:text-blue-900 p-1"
-                            title="Editar"
-                          >
+                    <tr key={trabajo.id}>
+                      <td>{trabajo.id}</td>
+                      <td className="text-bold">{trabajo.nombreCliente}</td>
+                      <td>{trabajo.fecha}</td>
+                      <td>{trabajo.servicio}</td>
+                      <td>{trabajo.ppuIn}</td>
+                      <td>{trabajo.ppuOut}</td>
+                      <td className="text-mono">{trabajo.imeiIn}</td>
+                      <td className="text-mono">{trabajo.imeiOut}</td>
+                      <td className="right">{trabajo.km}</td>
+                      <td className="right">{trabajo.valorUF}</td>
+                      <td className="right">${Number(trabajo.valorPesos).toLocaleString()}</td>
+                      <td className="center">
+                        <div className="table-actions">
+                          <button onClick={() => handleEdit(trabajo)} className="action-btn edit" title="Editar">
                             <Edit2 size={18} />
                           </button>
-                          <button 
-                            onClick={() => handleDelete(trabajo.id)} 
-                            className="text-red-600 hover:text-red-800 active:text-red-900 p-1"
-                            title="Eliminar"
-                          >
+                          <button onClick={() => handleDelete(trabajo.id)} className="action-btn delete" title="Eliminar">
                             <Trash2 size={18} />
                           </button>
                         </div>
@@ -308,38 +298,38 @@ const Trabajos = ({
           </div>
 
           {trabajosFiltrados.length > 0 && (
-            <div className="mt-6 bg-blue-50 p-6 rounded-lg border border-blue-200">
-              <h3 className="text-lg font-bold mb-4 text-gray-800">Resumen del Mes</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
-                <div className="bg-white p-3 rounded shadow">
-                  <span className="text-gray-600">Total UF:</span>
-                  <div className="text-xl font-bold text-blue-600">{totales.totalUF.toFixed(2)}</div>
+            <div className="summary-container">
+              <h3 className="summary-title">Resumen del Mes</h3>
+              <div className="summary-grid">
+                <div className="summary-card">
+                  <span className="summary-label">Total UF:</span>
+                  <div className="summary-value blue">{totales.totalUF.toFixed(2)}</div>
                 </div>
-                <div className="bg-white p-3 rounded shadow">
-                  <span className="text-gray-600">Total Pesos:</span>
-                  <div className="text-xl font-bold text-green-600">${totales.totalPesos.toLocaleString()}</div>
+                <div className="summary-card">
+                  <span className="summary-label">Total Pesos:</span>
+                  <div className="summary-value green">${totales.totalPesos.toLocaleString()}</div>
                 </div>
-                <div className="bg-white p-3 rounded shadow">
-                  <span className="text-gray-600">Total KM:</span>
-                  <div className="text-xl font-bold text-purple-600">{totales.totalKm}</div>
+                <div className="summary-card">
+                  <span className="summary-label">Total KM:</span>
+                  <div className="summary-value purple">{totales.totalKm}</div>
                 </div>
-                <div className="bg-white p-3 rounded shadow">
-                  <span className="text-gray-600">Valor KM:</span>
-                  <div className="text-xl font-bold text-orange-600">${totales.totalValorKm.toLocaleString()}</div>
+                <div className="summary-card">
+                  <span className="summary-label">Valor KM:</span>
+                  <div className="summary-value orange">${totales.totalValorKm.toLocaleString()}</div>
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                <div className="bg-white p-4 rounded shadow">
-                  <span className="text-gray-600 text-sm">Subtotal:</span>
-                  <div className="text-2xl font-bold">${totales.subtotal.toLocaleString()}</div>
+              <div className="summary-total">
+                <div className="summary-total-card">
+                  <span className="summary-total-label">Subtotal:</span>
+                  <div className="summary-total-value">${totales.subtotal.toLocaleString()}</div>
                 </div>
-                <div className="bg-white p-4 rounded shadow">
-                  <span className="text-gray-600 text-sm">IVA (19%):</span>
-                  <div className="text-2xl font-bold">${totales.iva.toLocaleString()}</div>
+                <div className="summary-total-card">
+                  <span className="summary-total-label">IVA (19%):</span>
+                  <div className="summary-total-value">${totales.iva.toLocaleString()}</div>
                 </div>
-                <div className="bg-blue-600 text-white p-4 rounded shadow">
-                  <span className="text-sm">TOTAL:</span>
-                  <div className="text-2xl font-bold">${totales.total.toLocaleString()}</div>
+                <div className="summary-total-card highlight">
+                  <span className="summary-total-label">TOTAL:</span>
+                  <div className="summary-total-value">${totales.total.toLocaleString()}</div>
                 </div>
               </div>
             </div>
