@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Download, Plus, Edit2, Trash2, Home } from 'lucide-react';
+import { Download, Plus, Edit2, Trash2, Home, Camera } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
+import BarcodeScanner from './BarcodeScanner';
+import '../styles/Scanner.css';
 
 const Equipos = ({ 
   setCurrentView,
@@ -14,6 +16,7 @@ const Equipos = ({
   const [equipoView, setEquipoView] = useState('nuevos');
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [showScanner, setShowScanner] = useState(false);
 
   const [formDataEquipo, setFormDataEquipo] = useState({
     id: '',
@@ -45,6 +48,18 @@ const Equipos = ({
       case 'malos': return equiposMalos;
       default: return [];
     }
+  };
+
+  // Función para manejar el resultado del escaneo
+  const handleScanSuccess = (scannedImei) => {
+    if (equipoView === 'nuevos') {
+      setFormDataEquipo({...formDataEquipo, imei: scannedImei});
+    } else if (equipoView === 'retirados') {
+      setFormDataRetirado({...formDataRetirado, imei: scannedImei});
+    } else if (equipoView === 'malos') {
+      setFormDataMalo({...formDataMalo, imei: scannedImei});
+    }
+    setShowScanner(false);
   };
 
   const handleSubmitNuevo = () => {
@@ -206,13 +221,25 @@ const Equipos = ({
                   className="form-input"
                   placeholder="Fecha Recepción"
                 />
-                <input
-                  type="text"
-                  placeholder="IMEI *"
-                  value={formDataEquipo.imei}
-                  onChange={(e) => setFormDataEquipo({...formDataEquipo, imei: e.target.value})}
-                  className="form-input"
-                />
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <input
+                    type="text"
+                    placeholder="IMEI *"
+                    value={formDataEquipo.imei}
+                    onChange={(e) => setFormDataEquipo({...formDataEquipo, imei: e.target.value})}
+                    className="form-input"
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowScanner(true)}
+                    className="btn btn-primary"
+                    style={{ padding: '0.5rem', minWidth: 'auto' }}
+                    title="Escanear código de barras"
+                  >
+                    <Camera size={20} />
+                  </button>
+                </div>
                 <select
                   value={formDataEquipo.estado}
                   onChange={(e) => setFormDataEquipo({...formDataEquipo, estado: e.target.value, asignado: e.target.value === 'asignado'})}
@@ -263,13 +290,25 @@ const Equipos = ({
                   onChange={(e) => setFormDataRetirado({...formDataRetirado, cliente: e.target.value})}
                   className="form-input"
                 />
-                <input
-                  type="text"
-                  placeholder="IMEI *"
-                  value={formDataRetirado.imei}
-                  onChange={(e) => setFormDataRetirado({...formDataRetirado, imei: e.target.value})}
-                  className="form-input"
-                />
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <input
+                    type="text"
+                    placeholder="IMEI *"
+                    value={formDataRetirado.imei}
+                    onChange={(e) => setFormDataRetirado({...formDataRetirado, imei: e.target.value})}
+                    className="form-input"
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowScanner(true)}
+                    className="btn btn-primary"
+                    style={{ padding: '0.5rem', minWidth: 'auto' }}
+                    title="Escanear código de barras"
+                  >
+                    <Camera size={20} />
+                  </button>
+                </div>
               </div>
               <div className="form-actions">
                 <button onClick={handleSubmitRetirado} className="btn btn-primary">
@@ -289,13 +328,25 @@ const Equipos = ({
                 {editingItem ? 'Editar Equipo Malo' : 'Registrar Equipo Malo'}
               </h3>
               <div className="form-grid">
-                <input
-                  type="text"
-                  placeholder="IMEI *"
-                  value={formDataMalo.imei}
-                  onChange={(e) => setFormDataMalo({...formDataMalo, imei: e.target.value})}
-                  className="form-input"
-                />
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <input
+                    type="text"
+                    placeholder="IMEI *"
+                    value={formDataMalo.imei}
+                    onChange={(e) => setFormDataMalo({...formDataMalo, imei: e.target.value})}
+                    className="form-input"
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowScanner(true)}
+                    className="btn btn-danger"
+                    style={{ padding: '0.5rem', minWidth: 'auto' }}
+                    title="Escanear código de barras"
+                  >
+                    <Camera size={20} />
+                  </button>
+                </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <input
@@ -476,6 +527,14 @@ const Equipos = ({
           )}
         </div>
       </div>
+
+      {/* COMPONENTE ESCÁNER */}
+      {showScanner && (
+        <BarcodeScanner
+          onScanSuccess={handleScanSuccess}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
     </div>
   );
 };
