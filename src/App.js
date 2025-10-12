@@ -3,6 +3,7 @@ import Home from './components/Home';
 import Trabajos from './components/Trabajos';
 import Equipos from './components/Equipos';
 import Clientes from './components/Clientes';
+import './styles/Common.css';
 
 const App = () => {
   const [currentView, setCurrentView] = useState('home');

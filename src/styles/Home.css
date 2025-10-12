@@ -15,23 +15,28 @@
 }
 
 .home-title {
-  font-size: 2.25rem;
+  font-size: 2em;
   font-weight: bold;
   color: #1f2937;
   margin-bottom: 0.5rem;
   text-align: center;
+  font-family: 'Russo One';
+  text-transform: uppercase;
 }
 
 .home-subtitle {
   color: #4b5563;
   text-align: center;
   margin-bottom: 2rem;
+  font-family: 'changa';
+  text-transform: uppercase;
+  font-size: 1em;
 }
 
 .home-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1.5rem;
+  gap: 1em;
 }
 
 @media (min-width: 768px) {
@@ -42,7 +47,7 @@
 
 .home-card {
   background-color: white;
-  padding: 2rem;
+  padding: 0px;
   border-radius: 0.75rem;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
@@ -61,9 +66,9 @@
 }
 
 .card-icon {
-  width: 4rem;
-  height: 4rem;
-  margin: 0 auto 1rem;
+  width: 3em;
+  height: 45px;
+  margin: 8px auto 1rem;
 }
 
 .card-icon.blue {
@@ -79,13 +84,18 @@
 }
 
 .card-title {
-  font-size: 1.25rem;
+  font-size: 1.5em;
   font-weight: bold;
   color: #1f2937;
-  margin-bottom: 0.5rem;
+  margin-bottom: 5px;
+  font-family: 'changa';
+  text-transform: uppercase;
 }
 
 .card-description {
   color: #4b5563;
-  font-size: 0.875rem;
+  font-size: 0.8em;
+  font-family: 'quantico';
+  text-transform: uppercase;
+  margin-bottom: 5px;
 }

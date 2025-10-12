@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Download, Plus, Edit2, Trash2, Home } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
-import '../styles/Common.css';
 
 const Trabajos = ({ 
   setCurrentView, 

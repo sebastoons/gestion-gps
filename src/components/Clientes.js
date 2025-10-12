@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Download, Plus, Edit2, Trash2, Home, Search } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
-import '../styles/Common.css';
 
 const Clientes = ({ 
   setCurrentView,
@@ -295,7 +294,7 @@ const Clientes = ({
             </div>
           )}
 
-          <div style={{ marginBottom: '1rem', fontSize: '0.875rem', color: '#6b7280' }}>
+          <div style={{ marginBottom: '1rem', fontSize: '0.6em', color: '#6b7280', fontFamily: 'Quantico', textTransform: 'uppercase' }}>
             Mostrando {clientesFiltrados.length} de {clientes.length} clientes
           </div>
 
