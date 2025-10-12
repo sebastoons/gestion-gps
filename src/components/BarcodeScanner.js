@@ -1,78 +1,124 @@
 import React, { useEffect, useRef } from 'react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { Html5Qrcode } from 'html5-qrcode';
 import { X } from 'lucide-react';
 
 const BarcodeScanner = ({ onScanSuccess, onClose }) => {
   const scannerRef = useRef(null);
-  const html5QrcodeScannerRef = useRef(null);
+  const html5QrcodeRef = useRef(null);
 
   useEffect(() => {
-    if (!scannerRef.current) return;
+    let html5QrCode = null;
+    let isScanning = false; // Flag para saber si el escáner está corriendo
 
-    // Configuración del escáner
-    const config = {
-      fps: 10, // Frames por segundo
-      qrbox: { width: 250, height: 150 }, // Área de escaneo
-      aspectRatio: 1.777778, // 16:9
-      formatsToSupport: [
-        // Formatos de códigos de barras
-        0, // CODE_128
-        1, // CODE_39
-        2, // CODE_93
-        3, // CODABAR
-        4, // EAN_13
-        5, // EAN_8
-        6, // ITF
-        7, // UPC_A
-        8, // UPC_E
-      ]
-    };
+    const startScanner = async () => {
+      try {
+        html5QrCode = new Html5Qrcode("barcode-scanner");
+        html5QrcodeRef.current = html5QrCode;
 
-    const html5QrcodeScanner = new Html5QrcodeScanner(
-      "barcode-scanner",
-      config,
-      false // verbose = false para no mostrar logs excesivos
-    );
+        // Configuración del escáner
+        const config = {
+          fps: 10,
+          qrbox: { width: 280, height: 180 },
+          aspectRatio: 1.777778,
+          formatsToSupport: [
+            0, 1, 2, 3, 4, 5, 6, 7, 8, // Todos los formatos de códigos de barras
+          ]
+        };
 
-    html5QrcodeScannerRef.current = html5QrcodeScanner;
+        // Función que se ejecuta al escanear exitosamente
+        const onScanSuccessHandler = (decodedText, decodedResult) => {
+          console.log(`Código escaneado: ${decodedText}`, decodedResult);
+          
+          const cleanedText = decodedText.trim();
+          
+          // Validar que sea un IMEI válido (15 dígitos)
+          if (/^\d{15}$/.test(cleanedText)) {
+            onScanSuccess(cleanedText);
+            if (isScanning) {
+              html5QrCode.stop().then(() => {
+                isScanning = false;
+                onClose();
+              }).catch(err => console.error("Error al detener:", err));
+            } else {
+              onClose();
+            }
+          } else {
+            // Si no es un IMEI válido, aún así lo pasamos con confirmación
+            if (window.confirm(`El código escaneado (${cleanedText}) no parece un IMEI válido de 15 dígitos. ¿Desea usarlo de todos modos?`)) {
+              onScanSuccess(cleanedText);
+              if (isScanning) {
+                html5QrCode.stop().then(() => {
+                  isScanning = false;
+                  onClose();
+                }).catch(err => console.error("Error al detener:", err));
+              } else {
+                onClose();
+              }
+            }
+          }
+        };
 
-    // Función que se ejecuta al escanear exitosamente
-    const onScanSuccessHandler = (decodedText, decodedResult) => {
-      console.log(`Código escaneado: ${decodedText}`, decodedResult);
-      
-      // Limpiar el texto escaneado (remover espacios extra)
-      const cleanedText = decodedText.trim();
-      
-      // Validar que sea un IMEI válido (15 dígitos)
-      if (/^\d{15}$/.test(cleanedText)) {
-        onScanSuccess(cleanedText);
-        html5QrcodeScanner.clear();
-        onClose();
-      } else {
-        // Si no es un IMEI válido, aún así lo pasamos
-        // pero mostramos una advertencia
-        if (window.confirm(`El código escaneado (${cleanedText}) no parece un IMEI válido de 15 dígitos. ¿Desea usarlo de todos modos?`)) {
-          onScanSuccess(cleanedText);
-          html5QrcodeScanner.clear();
-          onClose();
+        const onScanError = (errorMessage) => {
+          // Silenciar errores comunes de escaneo
+        };
+
+        // Intentar usar la cámara trasera directamente
+        try {
+          // Primero intentamos con facingMode environment (cámara trasera)
+          await html5QrCode.start(
+            { facingMode: "environment" }, // Esto fuerza la cámara trasera
+            config,
+            onScanSuccessHandler,
+            onScanError
+          );
+          isScanning = true; // Marcamos que el escáner está corriendo
+        } catch (err) {
+          console.log("No se pudo usar facingMode, intentando con lista de cámaras...");
+          
+          // Si falla, obtenemos la lista de cámaras y seleccionamos la trasera
+          const devices = await Html5Qrcode.getCameras();
+          if (devices && devices.length > 0) {
+            // Buscar cámara trasera por etiqueta
+            let backCamera = devices.find(device => 
+              device.label.toLowerCase().includes('back') || 
+              device.label.toLowerCase().includes('rear') ||
+              device.label.toLowerCase().includes('trasera')
+            );
+            
+            // Si no encuentra por etiqueta, usar la última (generalmente es la trasera en móviles)
+            if (!backCamera && devices.length > 0) {
+              backCamera = devices[devices.length - 1]; // Última cámara suele ser trasera
+            }
+            
+            const cameraId = backCamera ? backCamera.id : devices[0].id;
+            
+            await html5QrCode.start(
+              cameraId,
+              config,
+              onScanSuccessHandler,
+              onScanError
+            );
+            isScanning = true; // Marcamos que el escáner está corriendo
+          } else {
+            throw new Error("No se encontraron cámaras disponibles");
+          }
         }
+      } catch (err) {
+        console.error("Error al iniciar el escáner:", err);
+        alert("Error al acceder a la cámara. Por favor, verifica los permisos de cámara en tu dispositivo.");
+        onClose();
       }
     };
 
-    // Función de error (opcional)
-    const onScanError = (errorMessage) => {
-      // Silenciar errores comunes de escaneo
-      // console.warn(`Error de escaneo: ${errorMessage}`);
-    };
-
-    // Iniciar el escáner
-    html5QrcodeScanner.render(onScanSuccessHandler, onScanError);
+    startScanner();
 
     // Cleanup al desmontar
     return () => {
-      if (html5QrcodeScannerRef.current) {
-        html5QrcodeScannerRef.current.clear().catch(err => {
-          console.error("Error al limpiar el escáner:", err);
+      if (html5QrcodeRef.current && isScanning) {
+        // Solo intentamos detener si el escáner realmente está corriendo
+        html5QrcodeRef.current.stop().catch(err => {
+          // Silenciamos este error porque es normal que ocurra si el escáner no inició
+          console.log("El escáner ya estaba detenido");
         });
       }
     };
