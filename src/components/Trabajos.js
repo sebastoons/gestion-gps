@@ -14,13 +14,13 @@ const Trabajos = ({
 }) => {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  const [valorUFMes, setValorUFMes] = useState(38500); // Valor UF del último día del mes (editable)
+  const [valorUFMes, setValorUFMes] = useState(38500);
   const [formData, setFormData] = useState({
     id: '',
     nombreCliente: '',
     fecha: '',
     servicio: 'Instalación',
-    accesorios: [], // Array para múltiples accesorios
+    accesorios: [],
     ppuIn: '',
     ppuOut: '',
     imeiIn: '',
@@ -34,7 +34,6 @@ const Trabajos = ({
 
   // Calcular valor UF automáticamente cuando cambian servicio o accesorios
   useEffect(() => {
-    // Costos de servicios en UF
     const costosServicios = {
       'Instalación': 0.8,
       'Desinstalación': 0.5,
@@ -43,7 +42,6 @@ const Trabajos = ({
       'Visita Fallida': 0.5
     };
 
-    // Costos de accesorios en UF
     const accesoriosDisponibles = {
       'ON BATT': 0.6,
       'edata': 0.6,
@@ -62,7 +60,6 @@ const Trabajos = ({
     const totalUF = costoServicio + costoAccesorios;
     const totalPesos = Math.round(totalUF * valorUFMes);
 
-    // Formatear UF sin ceros innecesarios
     const valorUFFormateado = totalUF % 1 === 0 ? totalUF.toString() : parseFloat(totalUF.toFixed(2)).toString();
 
     setFormData(prev => ({
@@ -72,7 +69,6 @@ const Trabajos = ({
     }));
   }, [formData.servicio, formData.accesorios, valorUFMes]);
 
-  // Accesorios disponibles para el select (fuera del useEffect)
   const accesoriosDisponibles = {
     'ON BATT': 0.6,
     'edata': 0.6,
@@ -92,26 +88,15 @@ const Trabajos = ({
     const totalUF = trabajosFiltrados.reduce((sum, t) => sum + (parseFloat(t.valorUF) || 0), 0);
     const totalPesos = trabajosFiltrados.reduce((sum, t) => sum + (parseFloat(t.valorPesos) || 0), 0);
     const totalKm = trabajosFiltrados.reduce((sum, t) => sum + (parseFloat(t.km) || 0), 0);
-    // Location World = 150, todas las demás empresas = 250
     const valorKm = empresaSeleccionada === 'Location World' ? 150 : 250;
     const totalValorKm = totalKm * valorKm;
     const subtotal = totalPesos + totalValorKm;
     const iva = subtotal * 0.19;
     const total = subtotal + iva;
 
-    // Formatear totalUF sin ceros innecesarios
     const totalUFFormateado = totalUF % 1 === 0 ? totalUF : parseFloat(totalUF.toFixed(2));
 
     return { totalUF: totalUFFormateado, totalPesos, totalKm, totalValorKm, subtotal, iva, total };
-  };
-
-  const handleAccesorioChange = (accesorio) => {
-    setFormData(prev => {
-      const accesorios = prev.accesorios.includes(accesorio)
-        ? prev.accesorios.filter(a => a !== accesorio)
-        : [...prev.accesorios, accesorio];
-      return { ...prev, accesorios };
-    });
   };
 
   const handleSubmit = () => {
@@ -141,7 +126,7 @@ const Trabajos = ({
     setEditingItem(trabajo);
     setFormData({
       ...trabajo,
-      accesorios: trabajo.accesorios || [] // Asegurar que sea un array
+      accesorios: trabajo.accesorios || []
     });
     setShowForm(true);
   };
@@ -159,7 +144,7 @@ const Trabajos = ({
       <div className="page-content">
         <div className="page-card">
           <div className="page-header">
-            <h2 className="page-title">Trabajos</h2>
+            <h2 className="page-title">Trabajos del Mes</h2>
             <button onClick={() => setCurrentView('home')} className="btn btn-secondary">
               <Home size={20} /> Inicio
             </button>
@@ -256,7 +241,6 @@ const Trabajos = ({
                   <option>Visita Fallida</option>
                 </select>
                 
-                {/* Campo de Accesorios - Select múltiple */}
                 <select
                   multiple
                   value={formData.accesorios}
@@ -391,7 +375,7 @@ const Trabajos = ({
 
           {trabajosFiltrados.length > 0 && (
             <div className="summary-container">
-              <h3 className="summary-title">Resumen Trabajos</h3>
+              <h3 className="summary-title">Resumen del Mes</h3>
               <div className="summary-grid">
                 <div className="summary-card">
                   <span className="summary-label">Total UF</span>
