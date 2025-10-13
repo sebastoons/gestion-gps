@@ -53,6 +53,34 @@ const Equipos = ({
   };
 
   const handleScanSuccess = (scannedImei) => {
+    // Verificar si el IMEI ya existe en alguna categoría
+    const existeEnNuevos = equiposNuevos.find(e => e.imei === scannedImei);
+    const existeEnRetirados = equiposRetirados.find(e => e.imei === scannedImei);
+    const existeEnMalos = equiposMalos.find(e => e.imei === scannedImei);
+    
+    let mensaje = '';
+    let ubicacion = '';
+    
+    if (existeEnNuevos) {
+      ubicacion = 'Equipos Nuevos';
+      mensaje = `⚠️ IMEI DUPLICADO\n\nEste IMEI ya está registrado en "${ubicacion}":\n\nID: ${existeEnNuevos.id}\nIMEI: ${existeEnNuevos.imei}\nEstado: ${existeEnNuevos.estado || 'N/A'}\nCliente: ${existeEnNuevos.nombreCliente || 'Sin asignar'}\n\n¿Deseas usarlo de todos modos?`;
+    } else if (existeEnRetirados) {
+      ubicacion = 'Equipos Retirados';
+      mensaje = `⚠️ IMEI DUPLICADO\n\nEste IMEI ya está registrado en "${ubicacion}":\n\nID: ${existeEnRetirados.id}\nIMEI: ${existeEnRetirados.imei}\nCliente: ${existeEnRetirados.cliente}\nFecha: ${existeEnRetirados.fecha}\n\n¿Deseas usarlo de todos modos?`;
+    } else if (existeEnMalos) {
+      ubicacion = 'Equipos Malos';
+      mensaje = `⚠️ IMEI DUPLICADO\n\nEste IMEI ya está registrado en "${ubicacion}":\n\nID: ${existeEnMalos.id}\nIMEI: ${existeEnMalos.imei}\nCliente: ${existeEnMalos.nombreCliente || 'Sin asignar'}\n\n¿Deseas usarlo de todos modos?`;
+    }
+    
+    // Si existe, mostrar advertencia
+    if (mensaje) {
+      if (!window.confirm(mensaje)) {
+        setShowScanner(false);
+        return; // No continuar si el usuario cancela
+      }
+    }
+    
+    // Si no existe o el usuario confirma, proceder normalmente
     if (equipoView === 'nuevos') {
       setFormDataEquipo({...formDataEquipo, imei: scannedImei});
     } else if (equipoView === 'retirados') {
