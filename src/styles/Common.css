@@ -33,7 +33,7 @@
   color: #1f2937;
   font-family: 'Russo One';
   text-transform: uppercase;
-      text-align: center;
+  text-align: center;
 }
 
 /* Botones */
@@ -126,7 +126,7 @@
 /* Formularios */
 .form-container {
   background-color: #f0fdf4;
-  padding: 25px;
+  padding: 15px;
   border-radius: 0.5rem;
   margin-bottom: 10px;
   border: 2px solid #bbf7d0;
@@ -196,6 +196,39 @@
   justify-content: center;
 }
 
+/* Checkbox Personalizado */
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+  border: 1px solid rgba(220, 38, 38, 0.3);
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-input {
+  width: 17px;
+  height: 17px;
+  cursor: pointer;
+  accent-color: #dc2626;
+}
+
+.checkbox-text {
+  font-family: 'Changa';
+  font-size: 0.65em;
+  text-transform: uppercase;
+  color: #5f0c0c;
+  font-weight: 600;
+}
+
 /* Tablas */
 .table-container {
   overflow-x: auto;
@@ -248,7 +281,7 @@
 }
 
 .data-table td {
-  padding: 0.75rem;
+  padding: 0.6rem;
   border: 1px solid #d1d5db;
   font-family: 'quantico';
   text-transform: uppercase;
@@ -283,6 +316,8 @@
   padding: 0.25rem;
   cursor: pointer;
   transition: color 0.2s ease;
+  background: none;
+  border: none;
 }
 
 .action-btn.edit {
@@ -309,30 +344,169 @@
   color: #991b1b;
 }
 
-/* Estados y badges */
-.status-badge {
+/* Estados y badges para equipos */
+.status-badge-equipos {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
+  gap: 8px;
+  padding: 5px 10px;
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 7px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .status-dot {
-  width: 1rem;
-  height: 1rem;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .status-dot.green {
   background-color: #16a34a;
+  box-shadow: 0 0 8px rgba(22, 163, 74, 0.5);
 }
 
 .status-dot.orange {
   background-color: #ea580c;
+  box-shadow: 0 0 8px rgba(234, 88, 12, 0.5);
 }
 
 .status-dot.red {
   background-color: #dc2626;
+  box-shadow: 0 0 8px rgba(220, 38, 38, 0.5);
+}
+
+.status-text {
+  font-family: 'Quantico';
+  font-size: 0.7em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+/* Modal de Confirmación Personalizado */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 1rem;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-container {
+  background-color: white;
+  border-radius: 1rem;
+  padding: 35px;
+  max-width: 300px;
+  width: 100%;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.modal-icon-wrapper {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-icon-wrapper.warning {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 0.25rem;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close-btn:hover {
+  background-color: #f3f4f6;
+  color: #1f2937;
+}
+
+.modal-content {
+  margin-bottom: 1.5rem;
+}
+
+.modal-title {
+  font-family: 'Changa', sans-serif;
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #1f2937;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.modal-message {
+  font-family: 'Quantico';
+  font-size: 0.75em;
+  color: #4b5563;
+  line-height: 1.4;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.modal-message strong {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.modal-btn {
+  min-width: 100px;
+  justify-content: center;
 }
 
 /* Búsqueda */
@@ -563,12 +737,12 @@
 
 /* Toolbar */
 .toolbar {
-    display: grid;
-    grid-template-columns: repeat(1, 1fr);
-    gap: 10px;
-    margin-bottom: 1em;
-    justify-content: center;
-    align-items: center;
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 10px;
+  margin-bottom: 1em;
+  justify-content: center;
+  align-items: center;
 }
 
 @media (min-width: 768px) {

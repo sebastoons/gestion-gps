@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Download, Plus, Edit2, Trash2, Home, Camera } from 'lucide-react';
+import { Download, Plus, Edit2, Trash2, Home, Camera, X, AlertTriangle } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
 import BarcodeScanner from './BarcodeScanner';
 import '../styles/Scanner.css';
@@ -17,6 +17,8 @@ const Equipos = ({
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [showScanner, setShowScanner] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
 
   const [formDataEquipo, setFormDataEquipo] = useState({
     id: '',
@@ -50,7 +52,6 @@ const Equipos = ({
     }
   };
 
-  // Función para manejar el resultado del escaneo
   const handleScanSuccess = (scannedImei) => {
     if (equipoView === 'nuevos') {
       setFormDataEquipo({...formDataEquipo, imei: scannedImei});
@@ -123,12 +124,17 @@ const Equipos = ({
     setShowForm(true);
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('¿Estás seguro de eliminar este equipo?')) {
-      if (equipoView === 'nuevos') setEquiposNuevos(equiposNuevos.filter(e => e.id !== id));
-      if (equipoView === 'retirados') setEquiposRetirados(equiposRetirados.filter(e => e.id !== id));
-      if (equipoView === 'malos') setEquiposMalos(equiposMalos.filter(e => e.id !== id));
-    }
+  const confirmDelete = (id) => {
+    setItemToDelete(id);
+    setShowDeleteModal(true);
+  };
+
+  const handleDelete = () => {
+    if (equipoView === 'nuevos') setEquiposNuevos(equiposNuevos.filter(e => e.id !== itemToDelete));
+    if (equipoView === 'retirados') setEquiposRetirados(equiposRetirados.filter(e => e.id !== itemToDelete));
+    if (equipoView === 'malos') setEquiposMalos(equiposMalos.filter(e => e.id !== itemToDelete));
+    setShowDeleteModal(false);
+    setItemToDelete(null);
   };
 
   const getEstadoColor = (estado) => {
@@ -137,6 +143,15 @@ const Equipos = ({
       case 'asignado': return 'orange';
       case 'perdido': return 'red';
       default: return 'gray';
+    }
+  };
+
+  const getEstadoTexto = (estado) => {
+    switch(estado) {
+      case 'disponible': return 'Disponible';
+      case 'asignado': return 'Asignado';
+      case 'perdido': return 'Perdido';
+      default: return estado;
     }
   };
 
@@ -347,15 +362,15 @@ const Equipos = ({
                     <Camera size={20} />
                   </button>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div className="checkbox-container">
+                  <label className="checkbox-label">
                     <input
                       type="checkbox"
                       checked={formDataMalo.asignado}
                       onChange={(e) => setFormDataMalo({...formDataMalo, asignado: e.target.checked})}
-                      style={{ width: '1rem', height: '1rem' }}
+                      className="checkbox-input"
                     />
-                    <span>¿Estaba asignado a un cliente?</span>
+                    <span className="checkbox-text">¿Estaba asignado a un cliente?</span>
                   </label>
                 </div>
                 {formDataMalo.asignado && (
@@ -407,9 +422,9 @@ const Equipos = ({
                         <td>{equipo.fechaRecepcion}</td>
                         <td className="text-mono">{equipo.imei}</td>
                         <td className="center">
-                          <div className="status-badge">
+                          <div className="status-badge-equipos">
                             <div className={`status-dot ${getEstadoColor(equipo.estado)}`}></div>
-                            <span style={{ textTransform: 'capitalize' }}>{equipo.estado}</span>
+                            <span className="status-text">{getEstadoTexto(equipo.estado)}</span>
                           </div>
                         </td>
                         <td>{equipo.nombreCliente || '-'}</td>
@@ -418,7 +433,7 @@ const Equipos = ({
                             <button onClick={() => handleEdit(equipo)} className="action-btn edit" title="Editar">
                               <Edit2 size={18} />
                             </button>
-                            <button onClick={() => handleDelete(equipo.id)} className="action-btn delete" title="Eliminar">
+                            <button onClick={() => confirmDelete(equipo.id)} className="action-btn delete" title="Eliminar">
                               <Trash2 size={18} />
                             </button>
                           </div>
@@ -463,7 +478,7 @@ const Equipos = ({
                             <button onClick={() => handleEdit(equipo)} className="action-btn edit" title="Editar">
                               <Edit2 size={18} />
                             </button>
-                            <button onClick={() => handleDelete(equipo.id)} className="action-btn delete" title="Eliminar">
+                            <button onClick={() => confirmDelete(equipo.id)} className="action-btn delete" title="Eliminar">
                               <Trash2 size={18} />
                             </button>
                           </div>
@@ -484,8 +499,8 @@ const Equipos = ({
                   <tr>
                     <th>ID</th>
                     <th>IMEI</th>
-                    <th className="center">Estado Asignación</th>
-                    <th>Cliente (si aplica)</th>
+                    <th className="center">Estado</th>
+                    <th>Cliente</th>
                     <th className="center">Acciones</th>
                   </tr>
                 </thead>
@@ -502,9 +517,9 @@ const Equipos = ({
                         <td>{equipo.id}</td>
                         <td className="text-mono">{equipo.imei}</td>
                         <td className="center">
-                          <div className="status-badge">
+                          <div className="status-badge-equipos">
                             <div className={`status-dot ${equipo.asignado ? 'red' : 'green'}`}></div>
-                            <span>{equipo.asignado ? 'Estaba asignado' : 'No asignado'}</span>
+                            <span className="status-text">{equipo.asignado ? 'Estaba Asignado' : 'No Asignado'}</span>
                           </div>
                         </td>
                         <td>{equipo.nombreCliente || '-'}</td>
@@ -513,7 +528,7 @@ const Equipos = ({
                             <button onClick={() => handleEdit(equipo)} className="action-btn edit" title="Editar">
                               <Edit2 size={18} />
                             </button>
-                            <button onClick={() => handleDelete(equipo.id)} className="action-btn delete" title="Eliminar">
+                            <button onClick={() => confirmDelete(equipo.id)} className="action-btn delete" title="Eliminar">
                               <Trash2 size={18} />
                             </button>
                           </div>
@@ -534,6 +549,39 @@ const Equipos = ({
           onScanSuccess={handleScanSuccess}
           onClose={() => setShowScanner(false)}
         />
+      )}
+
+      {/* MODAL DE CONFIRMACIÓN DE ELIMINACIÓN */}
+      {showDeleteModal && (
+        <div className="modal-overlay">
+          <div className="modal-container">
+            <div className="modal-header">
+              <div className="modal-icon-wrapper warning">
+                <AlertTriangle size={32} />
+              </div>
+              <button onClick={() => setShowDeleteModal(false)} className="modal-close-btn">
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="modal-content">
+              <h3 className="modal-title">Confirmar Eliminación</h3>
+              <p className="modal-message">
+                ¿Estás seguro de que deseas eliminar este equipo? 
+                <br />
+              </p>
+            </div>
+
+            <div className="modal-actions">
+              <button onClick={handleDelete} className="btn btn-danger modal-btn">
+                Eliminar
+              </button>
+              <button onClick={() => setShowDeleteModal(false)} className="btn btn-secondary modal-btn">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
