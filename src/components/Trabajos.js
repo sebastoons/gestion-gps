@@ -32,29 +32,29 @@ const Trabajos = ({
     mes: mesSeleccionado
   });
 
-  // Costos de servicios en UF
-  const costosServicios = {
-    'Instalación': 0.8,
-    'Desinstalación': 0.5,
-    'Mantención': 0.7,
-    'Reinstalación': 0.8,
-    'Visita Fallida': 0.5
-  };
-
-  // Costos de accesorios en UF
-  const accesoriosDisponibles = {
-    'ON BATT': 0.6,
-    'edata': 0.6,
-    'dallas': 0.4,
-    'buzzer': 0.4,
-    'sos': 0.4,
-    'inmovilizador': 0.4,
-    'sensor T°': 0.4,
-    'sensor puerta': 0.4
-  };
-
   // Calcular valor UF automáticamente cuando cambian servicio o accesorios
   useEffect(() => {
+    // Costos de servicios en UF
+    const costosServicios = {
+      'Instalación': 0.8,
+      'Desinstalación': 0.5,
+      'Mantención': 0.7,
+      'Reinstalación': 0.8,
+      'Visita Fallida': 0.5
+    };
+
+    // Costos de accesorios en UF
+    const accesoriosDisponibles = {
+      'ON BATT': 0.6,
+      'edata': 0.6,
+      'dallas': 0.4,
+      'buzzer': 0.4,
+      'sos': 0.4,
+      'inmovilizador': 0.4,
+      'sensor T°': 0.4,
+      'sensor puerta': 0.4
+    };
+
     const costoServicio = costosServicios[formData.servicio] || 0;
     const costoAccesorios = formData.accesorios.reduce((sum, acc) => {
       return sum + (accesoriosDisponibles[acc] || 0);
@@ -71,6 +71,18 @@ const Trabajos = ({
       valorPesos: totalPesos.toString()
     }));
   }, [formData.servicio, formData.accesorios, valorUFMes]);
+
+  // Accesorios disponibles para el select (fuera del useEffect)
+  const accesoriosDisponibles = {
+    'ON BATT': 0.6,
+    'edata': 0.6,
+    'dallas': 0.4,
+    'buzzer': 0.4,
+    'sos': 0.4,
+    'inmovilizador': 0.4,
+    'sensor T°': 0.4,
+    'sensor puerta': 0.4
+  };
 
   const trabajosFiltrados = trabajos.filter(
     t => t.empresa === empresaSeleccionada && t.mes === mesSeleccionado
@@ -379,7 +391,7 @@ const Trabajos = ({
 
           {trabajosFiltrados.length > 0 && (
             <div className="summary-container">
-              <h3 className="summary-title">Resumen del Mes</h3>
+              <h3 className="summary-title">Resumen Trabajos</h3>
               <div className="summary-grid">
                 <div className="summary-card">
                   <span className="summary-label">Total UF</span>
