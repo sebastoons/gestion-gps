@@ -133,7 +133,7 @@ const Trabajos = ({
               }}
               className="btn btn-primary"
             >
-              <Plus size={20} /> Agregar Trabajo
+              <Plus size={20} /> Agregar
             </button>
             <button
               onClick={() => exportToCSV(trabajosFiltrados, `trabajos_${empresaSeleccionada}_${mesSeleccionado}`)}
@@ -168,9 +168,10 @@ const Trabajos = ({
                   className="form-select"
                 >
                   <option>Instalación</option>
-                  <option>Retiro</option>
+                  <option>Desinstalación</option>
                   <option>Mantención</option>
-                  <option>Reubicación</option>
+                  <option>Reinstalación</option>
+                  <option>Visita Fallida</option>
                 </select>
                 <input
                   type="text"
@@ -301,33 +302,33 @@ const Trabajos = ({
               <h3 className="summary-title">Resumen del Mes</h3>
               <div className="summary-grid">
                 <div className="summary-card">
-                  <span className="summary-label">Total UF:</span>
+                  <span className="summary-label">Total UF</span>
                   <div className="summary-value blue">{totales.totalUF.toFixed(2)}</div>
                 </div>
                 <div className="summary-card">
-                  <span className="summary-label">Total Pesos:</span>
+                  <span className="summary-label">Total Pesos</span>
                   <div className="summary-value green">${totales.totalPesos.toLocaleString()}</div>
                 </div>
                 <div className="summary-card">
-                  <span className="summary-label">Total KM:</span>
+                  <span className="summary-label">Total KM</span>
                   <div className="summary-value purple">{totales.totalKm}</div>
                 </div>
                 <div className="summary-card">
-                  <span className="summary-label">Valor KM:</span>
+                  <span className="summary-label">Valor KM</span>
                   <div className="summary-value orange">${totales.totalValorKm.toLocaleString()}</div>
                 </div>
               </div>
               <div className="summary-total">
                 <div className="summary-total-card">
-                  <span className="summary-total-label">Subtotal:</span>
+                  <span className="summary-total-label">Subtotal</span>
                   <div className="summary-total-value">${totales.subtotal.toLocaleString()}</div>
                 </div>
                 <div className="summary-total-card">
-                  <span className="summary-total-label">IVA (19%):</span>
+                  <span className="summary-total-label">IVA (19%)</span>
                   <div className="summary-total-value">${totales.iva.toLocaleString()}</div>
                 </div>
                 <div className="summary-total-card highlight">
-                  <span className="summary-total-label">TOTAL:</span>
+                  <span className="summary-total-label">TOTAL</span>
                   <div className="summary-total-value">${totales.total.toLocaleString()}</div>
                 </div>
               </div>
