@@ -11,7 +11,10 @@ const Equipos = ({
   equiposRetirados,
   setEquiposRetirados,
   equiposMalos,
-  setEquiposMalos
+  setEquiposMalos,
+  empresas,
+  empresaSeleccionada,
+  setEmpresaSeleccionada
 }) => {
   const [equipoView, setEquipoView] = useState('nuevos');
   const [showForm, setShowForm] = useState(false);
@@ -26,30 +29,43 @@ const Equipos = ({
     imei: '',
     asignado: false,
     nombreCliente: '',
-    estado: 'disponible'
+    estado: 'disponible',
+    empresa: empresaSeleccionada
   });
 
   const [formDataRetirado, setFormDataRetirado] = useState({
     id: '',
     fecha: '',
     cliente: '',
-    imei: ''
+    imei: '',
+    empresa: empresaSeleccionada
   });
 
   const [formDataMalo, setFormDataMalo] = useState({
     id: '',
     imei: '',
     asignado: false,
-    nombreCliente: ''
+    nombreCliente: '',
+    empresa: empresaSeleccionada
   });
 
   const getEquiposByView = () => {
+    let equipos = [];
     switch(equipoView) {
-      case 'nuevos': return equiposNuevos;
-      case 'retirados': return equiposRetirados;
-      case 'malos': return equiposMalos;
-      default: return [];
+      case 'nuevos': 
+        equipos = equiposNuevos;
+        break;
+      case 'retirados': 
+        equipos = equiposRetirados;
+        break;
+      case 'malos': 
+        equipos = equiposMalos;
+        break;
+      default: 
+        equipos = [];
     }
+    // Filtrar por empresa seleccionada
+    return equipos.filter(e => e.empresa === empresaSeleccionada);
   };
 
   const handleScanSuccess = (scannedImei) => {
@@ -63,13 +79,13 @@ const Equipos = ({
     
     if (existeEnNuevos) {
       ubicacion = 'Equipos Nuevos';
-      mensaje = `⚠️ IMEI DUPLICADO\n\nEste IMEI ya está registrado en "${ubicacion}":\n\nID: ${existeEnNuevos.id}\nIMEI: ${existeEnNuevos.imei}\nEstado: ${existeEnNuevos.estado || 'N/A'}\nCliente: ${existeEnNuevos.nombreCliente || 'Sin asignar'}\n\n¿Deseas usarlo de todos modos?`;
+      mensaje = `⚠️ IMEI DUPLICADO\n\nEste IMEI ya está registrado en "${ubicacion}":\n\nID: ${existeEnNuevos.id}\nIMEI: ${existeEnNuevos.imei}\nEmpresa: ${existeEnNuevos.empresa}\nEstado: ${existeEnNuevos.estado || 'N/A'}\nCliente: ${existeEnNuevos.nombreCliente || 'Sin asignar'}\n\n¿Deseas usarlo de todos modos?`;
     } else if (existeEnRetirados) {
       ubicacion = 'Equipos Retirados';
-      mensaje = `⚠️ IMEI DUPLICADO\n\nEste IMEI ya está registrado en "${ubicacion}":\n\nID: ${existeEnRetirados.id}\nIMEI: ${existeEnRetirados.imei}\nCliente: ${existeEnRetirados.cliente}\nFecha: ${existeEnRetirados.fecha}\n\n¿Deseas usarlo de todos modos?`;
+      mensaje = `⚠️ IMEI DUPLICADO\n\nEste IMEI ya está registrado en "${ubicacion}":\n\nID: ${existeEnRetirados.id}\nIMEI: ${existeEnRetirados.imei}\nEmpresa: ${existeEnRetirados.empresa}\nCliente: ${existeEnRetirados.cliente}\nFecha: ${existeEnRetirados.fecha}\n\n¿Deseas usarlo de todos modos?`;
     } else if (existeEnMalos) {
       ubicacion = 'Equipos Malos';
-      mensaje = `⚠️ IMEI DUPLICADO\n\nEste IMEI ya está registrado en "${ubicacion}":\n\nID: ${existeEnMalos.id}\nIMEI: ${existeEnMalos.imei}\nCliente: ${existeEnMalos.nombreCliente || 'Sin asignar'}\n\n¿Deseas usarlo de todos modos?`;
+      mensaje = `⚠️ IMEI DUPLICADO\n\nEste IMEI ya está registrado en "${ubicacion}":\n\nID: ${existeEnMalos.id}\nIMEI: ${existeEnMalos.imei}\nEmpresa: ${existeEnMalos.empresa}\nCliente: ${existeEnMalos.nombreCliente || 'Sin asignar'}\n\n¿Deseas usarlo de todos modos?`;
     }
     
     // Si existe, mostrar advertencia
@@ -101,12 +117,14 @@ const Equipos = ({
       setEquiposNuevos(equiposNuevos.map(e => e.id === editingItem.id ? { ...formDataEquipo, id: editingItem.id } : e));
       setEditingItem(null);
     } else {
-      const newId = `EQ${String(equiposNuevos.length + 1).padStart(3, '0')}`;
-      setEquiposNuevos([...equiposNuevos, { ...formDataEquipo, id: newId }]);
+      const prefix = empresaSeleccionada === 'Location World' ? 'ELW' : 'EU';
+      const count = equiposNuevos.filter(e => e.empresa === empresaSeleccionada).length + 1;
+      const newId = `${prefix}${String(count).padStart(3, '0')}`;
+      setEquiposNuevos([...equiposNuevos, { ...formDataEquipo, id: newId, empresa: empresaSeleccionada }]);
     }
     setShowForm(false);
     setFormDataEquipo({
-      id: '', fechaRecepcion: '', imei: '', asignado: false, nombreCliente: '', estado: 'disponible'
+      id: '', fechaRecepcion: '', imei: '', asignado: false, nombreCliente: '', estado: 'disponible', empresa: empresaSeleccionada
     });
   };
 
@@ -120,11 +138,13 @@ const Equipos = ({
       setEquiposRetirados(equiposRetirados.map(e => e.id === editingItem.id ? { ...formDataRetirado, id: editingItem.id } : e));
       setEditingItem(null);
     } else {
-      const newId = `ER${String(equiposRetirados.length + 1).padStart(3, '0')}`;
-      setEquiposRetirados([...equiposRetirados, { ...formDataRetirado, id: newId }]);
+      const prefix = empresaSeleccionada === 'Location World' ? 'RLW' : 'RU';
+      const count = equiposRetirados.filter(e => e.empresa === empresaSeleccionada).length + 1;
+      const newId = `${prefix}${String(count).padStart(3, '0')}`;
+      setEquiposRetirados([...equiposRetirados, { ...formDataRetirado, id: newId, empresa: empresaSeleccionada }]);
     }
     setShowForm(false);
-    setFormDataRetirado({ id: '', fecha: '', cliente: '', imei: '' });
+    setFormDataRetirado({ id: '', fecha: '', cliente: '', imei: '', empresa: empresaSeleccionada });
   };
 
   const handleSubmitMalo = () => {
@@ -137,11 +157,13 @@ const Equipos = ({
       setEquiposMalos(equiposMalos.map(e => e.id === editingItem.id ? { ...formDataMalo, id: editingItem.id } : e));
       setEditingItem(null);
     } else {
-      const newId = `EM${String(equiposMalos.length + 1).padStart(3, '0')}`;
-      setEquiposMalos([...equiposMalos, { ...formDataMalo, id: newId }]);
+      const prefix = empresaSeleccionada === 'Location World' ? 'MLW' : 'MU';
+      const count = equiposMalos.filter(e => e.empresa === empresaSeleccionada).length + 1;
+      const newId = `${prefix}${String(count).padStart(3, '0')}`;
+      setEquiposMalos([...equiposMalos, { ...formDataMalo, id: newId, empresa: empresaSeleccionada }]);
     }
     setShowForm(false);
-    setFormDataMalo({ id: '', imei: '', asignado: false, nombreCliente: '' });
+    setFormDataMalo({ id: '', imei: '', asignado: false, nombreCliente: '', empresa: empresaSeleccionada });
   };
 
   const handleEdit = (equipo) => {
@@ -185,6 +207,15 @@ const Equipos = ({
 
   const currentData = getEquiposByView();
 
+  // Contar equipos por empresa
+  const contarEquiposPorEmpresa = (tipo) => {
+    let equipos = [];
+    if (tipo === 'nuevos') equipos = equiposNuevos;
+    if (tipo === 'retirados') equipos = equiposRetirados;
+    if (tipo === 'malos') equipos = equiposMalos;
+    return equipos.filter(e => e.empresa === empresaSeleccionada).length;
+  };
+
   return (
     <div className="page-container">
       <div className="page-content">
@@ -196,6 +227,23 @@ const Equipos = ({
             </button>
           </div>
 
+          <div className="filter-container">
+            <div>
+              <label className="filter-label">Empresa GPS</label>
+              <select
+                value={empresaSeleccionada}
+                onChange={(e) => {
+                  setEmpresaSeleccionada(e.target.value);
+                  setShowForm(false);
+                  setEditingItem(null);
+                }}
+                className="form-select"
+              >
+                {empresas.map(emp => <option key={emp} value={emp}>{emp}</option>)}
+              </select>
+            </div>
+          </div>
+
           <div className="tab-container">
             <button
               onClick={() => {
@@ -205,7 +253,7 @@ const Equipos = ({
               }}
               className={`tab-button ${equipoView === 'nuevos' ? 'active green' : ''}`}
             >
-              Equipos Nuevos ({equiposNuevos.length})
+              Equipos Nuevos ({contarEquiposPorEmpresa('nuevos')})
             </button>
             <button
               onClick={() => {
@@ -215,7 +263,7 @@ const Equipos = ({
               }}
               className={`tab-button ${equipoView === 'retirados' ? 'active blue' : ''}`}
             >
-              Equipos Retirados ({equiposRetirados.length})
+              Equipos Retirados ({contarEquiposPorEmpresa('retirados')})
             </button>
             <button
               onClick={() => {
@@ -225,7 +273,7 @@ const Equipos = ({
               }}
               className={`tab-button ${equipoView === 'malos' ? 'active red' : ''}`}
             >
-              Equipos Malos ({equiposMalos.length})
+              Equipos Malos ({contarEquiposPorEmpresa('malos')})
             </button>
           </div>
 
@@ -234,16 +282,16 @@ const Equipos = ({
               onClick={() => {
                 setShowForm(true);
                 setEditingItem(null);
-                if (equipoView === 'nuevos') setFormDataEquipo({ id: '', fechaRecepcion: '', imei: '', asignado: false, nombreCliente: '', estado: 'disponible' });
-                if (equipoView === 'retirados') setFormDataRetirado({ id: '', fecha: '', cliente: '', imei: '' });
-                if (equipoView === 'malos') setFormDataMalo({ id: '', imei: '', asignado: false, nombreCliente: '' });
+                if (equipoView === 'nuevos') setFormDataEquipo({ id: '', fechaRecepcion: '', imei: '', asignado: false, nombreCliente: '', estado: 'disponible', empresa: empresaSeleccionada });
+                if (equipoView === 'retirados') setFormDataRetirado({ id: '', fecha: '', cliente: '', imei: '', empresa: empresaSeleccionada });
+                if (equipoView === 'malos') setFormDataMalo({ id: '', imei: '', asignado: false, nombreCliente: '', empresa: empresaSeleccionada });
               }}
               className="btn btn-primary"
             >
               <Plus size={20} /> Agregar Equipo
             </button>
             <button
-              onClick={() => exportToCSV(currentData, `equipos_${equipoView}_${new Date().toISOString().split('T')[0]}`)}
+              onClick={() => exportToCSV(currentData, `equipos_${equipoView}_${empresaSeleccionada}_${new Date().toISOString().split('T')[0]}`)}
               className="btn btn-success"
             >
               <Download size={20} /> Exportar
@@ -437,14 +485,14 @@ const Equipos = ({
                   </tr>
                 </thead>
                 <tbody>
-                  {equiposNuevos.length === 0 ? (
+                  {currentData.length === 0 ? (
                     <tr>
                       <td colSpan="6" className="empty-state">
-                        No hay equipos nuevos registrados
+                        No hay equipos nuevos registrados para {empresaSeleccionada}
                       </td>
                     </tr>
                   ) : (
-                    equiposNuevos.map(equipo => (
+                    currentData.map(equipo => (
                       <tr key={equipo.id}>
                         <td>{equipo.id}</td>
                         <td>{equipo.fechaRecepcion}</td>
@@ -488,14 +536,14 @@ const Equipos = ({
                   </tr>
                 </thead>
                 <tbody>
-                  {equiposRetirados.length === 0 ? (
+                  {currentData.length === 0 ? (
                     <tr>
                       <td colSpan="5" className="empty-state">
-                        No hay equipos retirados registrados
+                        No hay equipos retirados registrados para {empresaSeleccionada}
                       </td>
                     </tr>
                   ) : (
-                    equiposRetirados.map(equipo => (
+                    currentData.map(equipo => (
                       <tr key={equipo.id}>
                         <td>{equipo.id}</td>
                         <td>{equipo.fecha}</td>
@@ -533,14 +581,14 @@ const Equipos = ({
                   </tr>
                 </thead>
                 <tbody>
-                  {equiposMalos.length === 0 ? (
+                  {currentData.length === 0 ? (
                     <tr>
                       <td colSpan="5" className="empty-state">
-                        No hay equipos malos registrados
+                        No hay equipos malos registrados para {empresaSeleccionada}
                       </td>
                     </tr>
                   ) : (
-                    equiposMalos.map(equipo => (
+                    currentData.map(equipo => (
                       <tr key={equipo.id}>
                         <td>{equipo.id}</td>
                         <td className="text-mono">{equipo.imei}</td>

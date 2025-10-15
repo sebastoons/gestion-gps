@@ -87,6 +87,9 @@ const App = () => {
           setEquiposRetirados={setEquiposRetirados}
           equiposMalos={equiposMalos}
           setEquiposMalos={setEquiposMalos}
+          empresas={empresas}
+          empresaSeleccionada={empresaSeleccionada}
+          setEmpresaSeleccionada={setEmpresaSeleccionada}
         />
       )}
       
@@ -102,4 +105,4 @@ const App = () => {
   );
 };
 
-export default App;
+export default App
