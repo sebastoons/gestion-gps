@@ -69,23 +69,29 @@ const Equipos = ({
   };
 
   const handleScanSuccess = (scannedImei) => {
-    // Verificar si el IMEI ya existe en alguna categoría
-    const existeEnNuevos = equiposNuevos.find(e => e.imei === scannedImei);
-    const existeEnRetirados = equiposRetirados.find(e => e.imei === scannedImei);
-    const existeEnMalos = equiposMalos.find(e => e.imei === scannedImei);
+    // Verificar si el IMEI ya existe en la EMPRESA ACTUAL
+    const existeEnNuevos = equiposNuevos.find(
+      e => e.imei === scannedImei && e.empresa === empresaSeleccionada
+    );
+    const existeEnRetirados = equiposRetirados.find(
+      e => e.imei === scannedImei && e.empresa === empresaSeleccionada
+    );
+    const existeEnMalos = equiposMalos.find(
+      e => e.imei === scannedImei && e.empresa === empresaSeleccionada
+    );
     
     let mensaje = '';
     let ubicacion = '';
     
     if (existeEnNuevos) {
       ubicacion = 'Equipos Nuevos';
-      mensaje = `⚠️ IMEI DUPLICADO\n\nEste IMEI ya está registrado en "${ubicacion}":\n\nID: ${existeEnNuevos.id}\nIMEI: ${existeEnNuevos.imei}\nEmpresa: ${existeEnNuevos.empresa}\nEstado: ${existeEnNuevos.estado || 'N/A'}\nCliente: ${existeEnNuevos.nombreCliente || 'Sin asignar'}\n\n¿Deseas usarlo de todos modos?`;
+      mensaje = `⚠️ IMEI DUPLICADO EN ${empresaSeleccionada.toUpperCase()}\n\nEste IMEI ya está registrado en "${ubicacion}":\n\nID: ${existeEnNuevos.id}\nIMEI: ${existeEnNuevos.imei}\nEmpresa: ${existeEnNuevos.empresa}\nEstado: ${existeEnNuevos.estado || 'N/A'}\nCliente: ${existeEnNuevos.nombreCliente || 'Sin asignar'}\n\n¿Deseas usarlo de todos modos?`;
     } else if (existeEnRetirados) {
       ubicacion = 'Equipos Retirados';
-      mensaje = `⚠️ IMEI DUPLICADO\n\nEste IMEI ya está registrado en "${ubicacion}":\n\nID: ${existeEnRetirados.id}\nIMEI: ${existeEnRetirados.imei}\nEmpresa: ${existeEnRetirados.empresa}\nCliente: ${existeEnRetirados.cliente}\nFecha: ${existeEnRetirados.fecha}\n\n¿Deseas usarlo de todos modos?`;
+      mensaje = `⚠️ IMEI DUPLICADO EN ${empresaSeleccionada.toUpperCase()}\n\nEste IMEI ya está registrado en "${ubicacion}":\n\nID: ${existeEnRetirados.id}\nIMEI: ${existeEnRetirados.imei}\nEmpresa: ${existeEnRetirados.empresa}\nCliente: ${existeEnRetirados.cliente}\nFecha: ${existeEnRetirados.fecha}\n\n¿Deseas usarlo de todos modos?`;
     } else if (existeEnMalos) {
       ubicacion = 'Equipos Malos';
-      mensaje = `⚠️ IMEI DUPLICADO\n\nEste IMEI ya está registrado en "${ubicacion}":\n\nID: ${existeEnMalos.id}\nIMEI: ${existeEnMalos.imei}\nEmpresa: ${existeEnMalos.empresa}\nCliente: ${existeEnMalos.nombreCliente || 'Sin asignar'}\n\n¿Deseas usarlo de todos modos?`;
+      mensaje = `⚠️ IMEI DUPLICADO EN ${empresaSeleccionada.toUpperCase()}\n\nEste IMEI ya está registrado en "${ubicacion}":\n\nID: ${existeEnMalos.id}\nIMEI: ${existeEnMalos.imei}\nEmpresa: ${existeEnMalos.empresa}\nCliente: ${existeEnMalos.nombreCliente || 'Sin asignar'}\n\n¿Deseas usarlo de todos modos?`;
     }
     
     // Si existe, mostrar advertencia

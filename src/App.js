@@ -16,7 +16,7 @@ const App = () => {
   const [empresaSeleccionada, setEmpresaSeleccionada] = useState('Location World');
   const [mesSeleccionado, setMesSeleccionado] = useState('Octubre 2025');
 
-  // Cargar datos del localStorage
+  // Cargar datos del localStorage con migración
   useEffect(() => {
     const loadData = () => {
       const storedTrabajos = localStorage.getItem('trabajos');
@@ -26,10 +26,39 @@ const App = () => {
       const storedClientes = localStorage.getItem('clientes');
       const storedEmpresas = localStorage.getItem('empresas');
 
-      if (storedTrabajos) setTrabajos(JSON.parse(storedTrabajos));
-      if (storedEquiposNuevos) setEquiposNuevos(JSON.parse(storedEquiposNuevos));
-      if (storedEquiposRetirados) setEquiposRetirados(JSON.parse(storedEquiposRetirados));
-      if (storedEquiposMalos) setEquiposMalos(JSON.parse(storedEquiposMalos));
+      // MIGRACIÓN: Agregar empresa a equipos sin ella
+      const migrateEquipos = (equipos, defaultEmpresa = 'Location World') => {
+        if (!equipos) return [];
+        return equipos.map(equipo => ({
+          ...equipo,
+          empresa: equipo.empresa || defaultEmpresa
+        }));
+      };
+
+      // Migrar trabajos
+      if (storedTrabajos) {
+        const trabajosData = JSON.parse(storedTrabajos);
+        setTrabajos(migrateEquipos(trabajosData, 'Location World'));
+      }
+      
+      // Migrar equipos nuevos
+      if (storedEquiposNuevos) {
+        const equiposData = JSON.parse(storedEquiposNuevos);
+        setEquiposNuevos(migrateEquipos(equiposData, 'Location World'));
+      }
+      
+      // Migrar equipos retirados
+      if (storedEquiposRetirados) {
+        const equiposData = JSON.parse(storedEquiposRetirados);
+        setEquiposRetirados(migrateEquipos(equiposData, 'Location World'));
+      }
+      
+      // Migrar equipos malos
+      if (storedEquiposMalos) {
+        const equiposData = JSON.parse(storedEquiposMalos);
+        setEquiposMalos(migrateEquipos(equiposData, 'Location World'));
+      }
+      
       if (storedClientes) setClientes(JSON.parse(storedClientes));
       if (storedEmpresas) setEmpresas(JSON.parse(storedEmpresas));
     };
@@ -105,4 +134,4 @@ const App = () => {
   );
 };
 
-export default App
+export default App;
