@@ -1,6 +1,6 @@
 import React from 'react';
-import { Briefcase, Package, Users } from 'lucide-react';
-import '../styles/Home.css';  // ← Sin el @
+import { Briefcase, Package, Users, DollarSign } from 'lucide-react';
+import '../styles/Home.css';
 
 const Home = ({ setCurrentView }) => {
   return (
@@ -35,6 +35,15 @@ const Home = ({ setCurrentView }) => {
             <Users className="card-icon purple" />
             <h2 className="card-title">Gestión de Clientes</h2>
             <p className="card-description">Base de datos de clientes GPS</p>
+          </button>
+
+          <button
+            onClick={() => setCurrentView('valores')}
+            className="home-card"
+          >
+            <DollarSign className="card-icon orange" />
+            <h2 className="card-title">Valores de Trabajos</h2>
+            <p className="card-description">Tabla de precios y exportación</p>
           </button>
         </div>
       </div>

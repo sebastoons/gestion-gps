@@ -3,6 +3,7 @@ import Home from './components/Home';
 import Trabajos from './components/Trabajos';
 import Equipos from './components/Equipos';
 import Clientes from './components/Clientes';
+import ValoresTrabajos from './components/ValoresTrabajos';
 import './styles/Common.css';
 
 const App = () => {
@@ -128,6 +129,12 @@ const App = () => {
           clientes={clientes}
           setClientes={setClientes}
           empresas={empresas}
+        />
+      )}
+
+      {currentView === 'valores' && (
+        <ValoresTrabajos 
+          setCurrentView={setCurrentView}
         />
       )}
     </div>

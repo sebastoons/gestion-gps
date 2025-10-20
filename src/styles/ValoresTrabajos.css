@@ -1,0 +1,418 @@
+/* ValoresTrabajos.css */
+
+/* Contenedor principal */
+.valores-container {
+  min-height: 100vh;
+  background-color: #f9fafb;
+  padding: 1rem;
+}
+
+.valores-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Header card */
+.valores-header-card {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.valores-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.valores-title {
+  font-size: 1.4em;
+  font-weight: bold;
+  color: #1f2937;
+  margin: 0;
+  font-family: 'Russo One';
+  text-transform: uppercase;
+}
+
+/* Botones */
+.btn-valores {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Changa';
+  text-transform: uppercase;
+  font-size: 0.75em;
+}
+
+.btn-valores.btn-primary {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.btn-valores.btn-primary:hover {
+  background-color: #2563eb;
+}
+
+.btn-valores.btn-danger {
+  background-color: #dc2626;
+  color: white;
+}
+
+.btn-valores.btn-danger:hover {
+  background-color: #b91c1c;
+}
+
+.btn-valores.btn-success {
+  background-color: #16a34a;
+  color: white;
+}
+
+.btn-valores.btn-success:hover {
+  background-color: #15803d;
+}
+
+.btn-valores.btn-secondary {
+  background-color: #e5e7eb;
+  color: #1f2937;
+  font-family: 'Quantico';
+  font-size: 0.7em;
+}
+
+.btn-valores.btn-secondary:hover {
+  background-color: #d1d5db;
+}
+
+/* Toolbar */
+.valores-toolbar {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* Input UF */
+.valores-uf-input {
+  margin-top: 1rem;
+}
+
+.valores-label {
+  display: block;
+  font-size: 0.65em;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+  font-family: 'Quantico';
+  text-transform: uppercase;
+}
+
+.valores-input {
+  width: 200px;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 0.75em;
+  font-family: 'Changa';
+  text-transform: uppercase;
+}
+
+.valores-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Card exportable */
+.valores-export-card {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+}
+
+/* Header empresa */
+.valores-empresa-header {
+  border-bottom: 4px solid #3b82f6;
+  padding-bottom: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.valores-empresa-nombre {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+  text-align: center;
+  font-family: 'Russo One';
+  text-transform: uppercase;
+}
+
+.valores-form-grid {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+@media (min-width: 768px) {
+  .valores-form-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.valores-empresa-info {
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-family: 'Quantico';
+  text-transform: uppercase;
+}
+
+.valores-empresa-info p {
+  margin: 0.25rem 0;
+}
+
+/* Tabla section */
+.valores-tabla-section {
+  margin-bottom: 2rem;
+}
+
+.valores-tabla-title {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: white;
+  background-color: #3b82f6;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  text-align: center;
+  font-family: 'Changa';
+  text-transform: uppercase;
+}
+
+.valores-table-container {
+  overflow-x: auto;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border-radius: 0.5rem;
+}
+
+.valores-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.valores-table thead {
+  background-color: #1f2937;
+  color: white;
+}
+
+.valores-table th {
+  padding: 0.75rem;
+  border-bottom: 2px solid #374151;
+  font-weight: 600;
+  font-family: 'Changa';
+  text-transform: uppercase;
+  font-size: 0.75em;
+}
+
+.valores-table th.text-left {
+  text-align: left;
+}
+
+.valores-table th.text-center {
+  text-align: center;
+}
+
+.valores-table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.valores-table tbody tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+.valores-table tbody tr:nth-child(odd) {
+  background-color: white;
+}
+
+.valores-table tbody tr:hover {
+  background-color: #f3f4f6;
+}
+
+.valores-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+  font-family: 'Quantico';
+  text-transform: uppercase;
+  font-size: 0.6em;
+}
+
+.valores-table td.text-center {
+  text-align: center;
+}
+
+.valores-input-table {
+  width: 100%;
+  padding: 0.375rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  font-family: 'Quantico';
+  text-transform: uppercase;
+}
+
+.valores-input-uf {
+  width: 80px;
+  padding: 0.375rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  text-align: center;
+  font-family: 'Quantico';
+}
+
+.valores-uf-valor {
+  font-weight: 600;
+  font-family: 'Quantico';
+}
+
+/* Información adicional */
+.valores-info-adicional {
+  background-color: #eff6ff;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #bfdbfe;
+}
+
+.valores-info-title {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #1f2937;
+  margin-bottom: 1rem;
+  font-family: 'Changa';
+  text-transform: uppercase;
+}
+
+.valores-info-item {
+  margin-bottom: 1rem;
+}
+
+.valores-info-item:last-child {
+  margin-bottom: 0;
+}
+
+.valores-info-item strong {
+  color: #1f2937;
+  font-family: 'Quantico';
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+.valores-info-label {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.valores-input-km {
+  margin-left: 0.5rem;
+  padding: 0.375rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.25rem;
+  width: 100px;
+  font-family: 'Quantico';
+}
+
+.valores-km-valor {
+  margin-left: 0.5rem;
+  color: #16a34a;
+  font-weight: 600;
+  font-family: 'Quantico';
+  font-size: 0.75rem;
+}
+
+.valores-textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-family: 'Quantico';
+  resize: vertical;
+}
+
+.valores-detalles-text {
+  margin: 0;
+  color: #4b5563;
+  font-size: 0.75rem;
+  font-family: 'Quantico';
+  text-transform: none;
+}
+
+.valores-input-boleta {
+  margin-left: 0.5rem;
+  padding: 0.375rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.25rem;
+  width: 200px;
+  font-family: 'Quantico';
+}
+
+.valores-boleta-text {
+  margin-left: 0.5rem;
+  color: #4b5563;
+  font-family: 'Quantico';
+  font-size: 0.75rem;
+}
+
+/* Footer */
+.valores-footer {
+  border-top: 2px solid #e5e7eb;
+  padding-top: 1rem;
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.75rem;
+  font-family: 'Quantico';
+  text-transform: uppercase;
+}
+
+.valores-footer p {
+  margin: 0.5rem 0;
+}
+
+.valores-footer-italic {
+  font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .valores-title {
+    font-size: 1.2em;
+  }
+
+  .valores-empresa-nombre {
+    font-size: 1.8rem;
+  }
+
+  .valores-toolbar {
+    width: 100%;
+  }
+
+  .btn-valores {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .valores-input {
+    width: 100%;
+  }
+}
