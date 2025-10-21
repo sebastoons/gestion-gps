@@ -14,7 +14,7 @@ const ValoresTrabajos = ({ setCurrentView }) => {
     { detalle: 'MIGRACION', uf: 1.1 },
     { detalle: 'DESINSTALACION', uf: 0.5 },
     { detalle: 'DESINSTALACION GPS EXTERNO', uf: 0.3 },
-    { detalle: 'VISITA FALLIDA (MIN)', uf: 0.5 },
+    { detalle: 'VISITA FALLIDA (45 MIN)', uf: 0.5 },
     { detalle: 'INSTALACION CANBUS', uf: 0.6 },
     { detalle: 'ACCESORIOS (SOS, IBUTTON, BUZZER, BLOQUEO)', uf: 0.4 }
   ];
