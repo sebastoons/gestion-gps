@@ -145,7 +145,10 @@ const Clientes = ({
       <div className="page-content">
         <div className="page-card">
           <div className="page-header">
-            <h2 className="page-title">Gestión de Clientes</h2>
+            <div className="page-header-left">
+              <img src="/logo_solo.svg" alt="Logo" className="page-logo" />
+              <h2 className="page-title">Gestión de Clientes</h2>
+            </div>
             <button onClick={() => setCurrentView('home')} className="btn btn-secondary">
               <Home size={20} /> Inicio
             </button>
@@ -294,7 +297,7 @@ const Clientes = ({
             </div>
           )}
 
-          <div style={{ marginBottom: '1rem', fontSize: '0.6em', color: '#6b7280', fontFamily: 'Quantico', textTransform: 'uppercase' }}>
+          <div style={{ marginBottom: '1rem', fontSize: '0.55em', color: '#6b7280', fontFamily: 'Quantico', textTransform: 'uppercase' }}>
             Mostrando {clientesFiltrados.length} de {clientes.length} clientes
           </div>
 

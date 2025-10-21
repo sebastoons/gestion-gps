@@ -22,12 +22,12 @@ const ValoresTrabajos = ({ setCurrentView }) => {
   const infoIniciales = {
     valorKm: 250,
     detallesServicios: 'Incluye instalación, configuración y prueba del equipo GPS. Garantía de 6 meses en mano de obra.',
-    tipoBoleta: 'Boleta de Honorarios',
-    nombreEmpresa: 'Location World',
-    rutEmpresa: '12.345.678-9',
-    direccion: 'Av. Providencia 1234, Santiago',
-    telefono: '+56 9 1234 5678',
-    email: 'contacto@locationworld.cl'
+    tipoBoleta: 'Factura o Boleta de Honorarios',
+    usarLogo: true, // Nueva opción para usar logo
+    //rutEmpresa: '12.345.678-9',
+    //direccion: 'Av. Providencia 1234, Santiago',
+    telefono: '+56 9 26266291',
+    email: 'sebas.parragps@gmail.com'
   };
 
   const [servicios, setServicios] = useState(serviciosIniciales);
@@ -45,8 +45,13 @@ const ValoresTrabajos = ({ setCurrentView }) => {
           setEditedServicios(data.servicios);
         }
         if (data.infoAdicional) {
-          setInfoAdicional(data.infoAdicional);
-          setEditedInfo(data.infoAdicional);
+          // Asegurar que usarLogo esté presente
+          const infoConLogo = {
+            ...data.infoAdicional,
+            usarLogo: data.infoAdicional.usarLogo !== undefined ? data.infoAdicional.usarLogo : true
+          };
+          setInfoAdicional(infoConLogo);
+          setEditedInfo(infoConLogo);
         }
         if (data.valorUF) {
           setValorUF(data.valorUF);
@@ -138,12 +143,14 @@ const ValoresTrabajos = ({ setCurrentView }) => {
   return (
     <div className="valores-container">
       <div className="valores-content">
-        {/* Header principal */}
         <div className="valores-header-card">
           <div className="valores-header">
-            <h2 className="valores-title">Valores de Trabajos GPS</h2>
+            <div className="page-header-left">
+              <img src="/logo_solo.svg" alt="Logo" className="page-logo" />
+              <h2 className="valores-title">Valores Trabajos</h2>
+            </div>
             <button onClick={() => setCurrentView('home')} className="btn-valores btn-secondary">
-              <Home size={20} /> Inicio
+              <Home size={12} />Inicio
             </button>
           </div>
 
@@ -185,20 +192,42 @@ const ValoresTrabajos = ({ setCurrentView }) => {
           )}
         </div>
 
-        {/* Contenido exportable */}
         <div ref={exportRef} className="valores-export-card">
-          {/* Header de la empresa */}
           <div className="valores-empresa-header">
-            <h1 className="valores-empresa-nombre">{displayInfo.nombreEmpresa}</h1>
+            {/* Logo o Nombre de la empresa */}
+            {displayInfo.usarLogo ? (
+              <div className="valores-logo-container">
+                <img src="/logo.svg" alt="Logo Empresa" className="valores-empresa-logo" />
+              </div>
+            ) : (
+              <h1 className="valores-empresa-nombre">{displayInfo.nombreEmpresa}</h1>
+            )}
+
             {isEditing ? (
               <div className="valores-form-grid">
-                <input
-                  type="text"
-                  value={editedInfo.nombreEmpresa}
-                  onChange={(e) => setEditedInfo({...editedInfo, nombreEmpresa: e.target.value})}
-                  placeholder="Nombre Empresa"
-                  className="valores-input"
-                />
+                {/* Toggle para usar logo o nombre */}
+                <div className="valores-logo-toggle">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={editedInfo.usarLogo}
+                      onChange={(e) => setEditedInfo({...editedInfo, usarLogo: e.target.checked})}
+                      className="checkbox-input"
+                    />
+                    <span className="checkbox-text">Usar logo en lugar de nombre</span>
+                  </label>
+                </div>
+
+                {!editedInfo.usarLogo && (
+                  <input
+                    type="text"
+                    value={editedInfo.nombreEmpresa}
+                    onChange={(e) => setEditedInfo({...editedInfo, nombreEmpresa: e.target.value})}
+                    placeholder="Nombre Empresa"
+                    className="valores-input"
+                  />
+                )}
+                
                 <input
                   type="text"
                   value={editedInfo.rutEmpresa}
@@ -206,6 +235,7 @@ const ValoresTrabajos = ({ setCurrentView }) => {
                   placeholder="RUT"
                   className="valores-input"
                 />
+                
                 <input
                   type="text"
                   value={editedInfo.direccion}
@@ -230,14 +260,14 @@ const ValoresTrabajos = ({ setCurrentView }) => {
               </div>
             ) : (
               <div className="valores-empresa-info">
-                <p>RUT: {displayInfo.rutEmpresa}</p>
+                {/*<p>RUT: {displayInfo.rutEmpresa}</p>*/}
                 <p>{displayInfo.direccion}</p>
-                <p>Tel: {displayInfo.telefono} | Email: {displayInfo.email}</p>
+                <p>| Tel: {displayInfo.telefono}</p>
+                <p>| Email: {displayInfo.email}</p>
               </div>
             )}
           </div>
 
-          {/* Tabla de servicios */}
           <div className="valores-tabla-section">
             <h3 className="valores-tabla-title">Tabla de Precios - Servicios GPS</h3>
             
@@ -292,7 +322,6 @@ const ValoresTrabajos = ({ setCurrentView }) => {
             </div>
           </div>
 
-          {/* Información adicional */}
           <div className="valores-info-adicional">
             <h4 className="valores-info-title">Información Adicional</h4>
             
@@ -339,7 +368,6 @@ const ValoresTrabajos = ({ setCurrentView }) => {
             </div>
           </div>
 
-          {/* Footer */}
           <div className="valores-footer">
             <p>Valor UF considerado: ${valorUF.toLocaleString()}</p>
             <p>Documento generado el {new Date().toLocaleDateString('es-CL')}</p>

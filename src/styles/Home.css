@@ -3,19 +3,54 @@
   min-height: 100vh;
   background: linear-gradient(to bottom right, #eff6ff, #e0e7ff);
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
-  padding: 1rem;
+  padding: 30px;
   overflow: hidden;
 }
 
 .home-content {
-  max-width: 64rem;
+  max-width: 350px;
   width: 100%;
 }
 
+/* Logo */
+.logo-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+  animation: fadeInDown 0.8s ease-out;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.app-logo {
+  height: 120px;
+  width: auto;
+  transition: transform 0.3s ease;
+}
+
+.app-logo:hover {
+  transform: scale(1.05);
+}
+
+@media (min-width: 768px) {
+  .app-logo {
+    height: 120px;
+  }
+}
+
 .home-title {
-  font-size: 1.8em;
+  font-size: 1.4em;
   font-weight: bold;
   color: #1f2937;
   margin-bottom: 0;
@@ -23,6 +58,7 @@
   font-family: 'Russo One';
   text-transform: uppercase;
   padding: 15px;
+  margin-top: 30px;
 }
 
 .home-subtitle {

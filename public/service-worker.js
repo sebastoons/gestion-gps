@@ -1,5 +1,5 @@
 // Service Worker para PWA
-const CACHE_NAME = 'gps-manager-v1';
+const CACHE_NAME = 'gps-manager-v2';
 
 // Solo activar en producción
 const isProduction = !location.hostname.includes('localhost');

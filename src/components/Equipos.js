@@ -64,12 +64,10 @@ const Equipos = ({
       default: 
         equipos = [];
     }
-    // Filtrar por empresa seleccionada
     return equipos.filter(e => e.empresa === empresaSeleccionada);
   };
 
   const handleScanSuccess = (scannedImei) => {
-    // Verificar si el IMEI ya existe en la EMPRESA ACTUAL
     const existeEnNuevos = equiposNuevos.find(
       e => e.imei === scannedImei && e.empresa === empresaSeleccionada
     );
@@ -94,15 +92,13 @@ const Equipos = ({
       mensaje = `⚠️ IMEI DUPLICADO EN ${empresaSeleccionada.toUpperCase()}\n\nEste IMEI ya está registrado en "${ubicacion}":\n\nID: ${existeEnMalos.id}\nIMEI: ${existeEnMalos.imei}\nEmpresa: ${existeEnMalos.empresa}\nCliente: ${existeEnMalos.nombreCliente || 'Sin asignar'}\n\n¿Deseas usarlo de todos modos?`;
     }
     
-    // Si existe, mostrar advertencia
     if (mensaje) {
       if (!window.confirm(mensaje)) {
         setShowScanner(false);
-        return; // No continuar si el usuario cancela
+        return;
       }
     }
     
-    // Si no existe o el usuario confirma, proceder normalmente
     if (equipoView === 'nuevos') {
       setFormDataEquipo({...formDataEquipo, imei: scannedImei});
     } else if (equipoView === 'retirados') {
@@ -213,7 +209,6 @@ const Equipos = ({
 
   const currentData = getEquiposByView();
 
-  // Contar equipos por empresa
   const contarEquiposPorEmpresa = (tipo) => {
     let equipos = [];
     if (tipo === 'nuevos') equipos = equiposNuevos;
@@ -227,7 +222,10 @@ const Equipos = ({
       <div className="page-content">
         <div className="page-card">
           <div className="page-header">
-            <h2 className="page-title">Equipos GPS</h2>
+            <div className="page-header-left">
+              <img src="/logo_solo.svg" alt="Logo" className="page-logo" />
+              <h2 className="page-title">Equipos GPS</h2>
+            </div>
             <button onClick={() => setCurrentView('home')} className="btn btn-secondary">
               <Home size={20} /> Inicio
             </button>
@@ -304,7 +302,6 @@ const Equipos = ({
             </button>
           </div>
 
-          {/* FORMULARIO EQUIPOS NUEVOS */}
           {showForm && equipoView === 'nuevos' && (
             <div className="form-container">
               <h3 className="form-title">
@@ -367,7 +364,6 @@ const Equipos = ({
             </div>
           )}
 
-          {/* FORMULARIO EQUIPOS RETIRADOS */}
           {showForm && equipoView === 'retirados' && (
             <div className="form-container blue">
               <h3 className="form-title">
@@ -418,7 +414,6 @@ const Equipos = ({
             </div>
           )}
 
-          {/* FORMULARIO EQUIPOS MALOS */}
           {showForm && equipoView === 'malos' && (
             <div className="form-container red">
               <h3 className="form-title">
@@ -476,7 +471,6 @@ const Equipos = ({
             </div>
           )}
 
-          {/* TABLA EQUIPOS NUEVOS */}
           {equipoView === 'nuevos' && (
             <div className="table-container">
               <table className="data-table">
@@ -528,7 +522,6 @@ const Equipos = ({
             </div>
           )}
 
-          {/* TABLA EQUIPOS RETIRADOS */}
           {equipoView === 'retirados' && (
             <div className="table-container">
               <table className="data-table">
@@ -573,7 +566,6 @@ const Equipos = ({
             </div>
           )}
 
-          {/* TABLA EQUIPOS MALOS */}
           {equipoView === 'malos' && (
             <div className="table-container">
               <table className="data-table">
@@ -625,7 +617,6 @@ const Equipos = ({
         </div>
       </div>
 
-      {/* COMPONENTE ESCÁNER */}
       {showScanner && (
         <BarcodeScanner
           onScanSuccess={handleScanSuccess}
@@ -633,7 +624,6 @@ const Equipos = ({
         />
       )}
 
-      {/* MODAL DE CONFIRMACIÓN DE ELIMINACIÓN */}
       {showDeleteModal && (
         <div className="modal-overlay">
           <div className="modal-container">
@@ -649,8 +639,7 @@ const Equipos = ({
             <div className="modal-content">
               <h3 className="modal-title">Confirmar Eliminación</h3>
               <p className="modal-message">
-                ¿Estás seguro de que deseas eliminar este equipo? 
-                <br />
+                ¿Estás seguro de que deseas eliminar este equipo?
               </p>
             </div>
 

@@ -6,6 +6,11 @@ const Home = ({ setCurrentView }) => {
   return (
     <div className="home-container">
       <div className="home-content">
+        {/* Logo */}
+        <div className="logo-container">
+          <img src="/logo.svg" alt="Logo GPS Management" className="app-logo" />
+        </div>
+        
         <h1 className="home-title">Sistema de Gestión GPS</h1>
         <p className="home-subtitle">Gestiona tus trabajos, equipos y clientes</p>
         

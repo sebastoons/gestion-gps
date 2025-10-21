@@ -20,6 +20,60 @@
   margin-bottom: 1.5rem;
 }
 
+/* Agregar al inicio de Common.css, después de los contenedores principales */
+
+/* Logo en header de secciones */
+.page-logo {
+  height: 40px;
+  width: auto;
+  transition: transform 0.3s ease;
+}
+
+.page-logo:hover {
+  transform: scale(1.05);
+}
+
+/* Headers */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.page-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.page-title {
+  font-size: 1.4em;
+  color: #1f2937;
+  font-family: 'Russo One';
+  text-transform: uppercase;
+  text-align: center;
+  flex: 1;
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+  }
+  
+  .page-header-left {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .page-logo {
+    height: 50px;
+  }
+}
+
 /* Headers */
 .page-header {
   display: flex;
@@ -49,7 +103,7 @@
   transition: all 0.2s ease;
   font-family: 'changa';
   text-transform: uppercase;
-  font-size: 0.8em;
+  font-size: 0.7em;
 }
 
 .btn-primary {
@@ -57,7 +111,7 @@
   color: white;
   font-family: 'changa';
   text-transform: uppercase;
-  font-size: 0.75em;
+  font-size: 0.7em;
 }
 
 .btn-primary:hover {
@@ -263,13 +317,13 @@
 }
 
 .data-table th {
-  padding: 0.7em;
+  padding: 1px 5px;
   text-align: center;
   border: 1px solid rgba(255, 255, 255, 0.2);
   font-weight: 500;
   font-family: 'changa';
   text-transform: uppercase;
-  font-size: 0.75em;
+  font-size: 0.5em;
 }
 
 .data-table th.center {
@@ -285,7 +339,7 @@
   border: 1px solid #d1d5db;
   font-family: 'quantico';
   text-transform: uppercase;
-  font-size: 0.6em;
+  font-size: 0.5em;
   text-align: center;
 }
 

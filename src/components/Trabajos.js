@@ -14,7 +14,7 @@ const Trabajos = ({
 }) => {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  const [valorUFMes, setValorUFMes] = useState(38500);
+  const [valorUFMes, setValorUFMes] = useState(39000);
   const [formData, setFormData] = useState({
     id: '',
     nombreCliente: '',
@@ -49,6 +49,7 @@ const Trabajos = ({
       'buzzer': 0.4,
       'sos': 0.4,
       'inmovilizador': 0.4,
+      'GPS externo': 0.3,
       'sensor T°': 0.4,
       'sensor puerta': 0.4
     };
@@ -76,6 +77,7 @@ const Trabajos = ({
     'buzzer': 0.4,
     'sos': 0.4,
     'inmovilizador': 0.4,
+    'GPS externo': 0.3,
     'sensor T°': 0.4,
     'sensor puerta': 0.4
   };
@@ -144,9 +146,12 @@ const Trabajos = ({
       <div className="page-content">
         <div className="page-card">
           <div className="page-header">
-            <h2 className="page-title">Trabajos del Mes</h2>
+            <div className="page-header-left">
+              <img src="/logo_solo.svg" alt="Logo" className="page-logo" />
+              <h2 className="page-title">Trabajos del Mes</h2>
+            </div>
             <button onClick={() => setCurrentView('home')} className="btn btn-secondary">
-              <Home size={20} /> Inicio
+              <Home size={15} /> Inicio
             </button>
           </div>
 
@@ -168,19 +173,19 @@ const Trabajos = ({
                 onChange={(e) => setMesSeleccionado(e.target.value)}
                 className="form-select"
               >
-                <option>Agosto 2025</option>
-                <option>Septiembre 2025</option>
-                <option>Octubre 2025</option>
+                <option>Noviembre 2025</option>
+                <option>Diciembre 2025</option>
+                <option>Enero 2026</option>
               </select>
             </div>
             <div>
-              <label className="filter-label">Valor UF Último Día del Mes ($)</label>
+              <label className="filter-label">Valor UF($)</label>
               <input
                 type="number"
                 value={valorUFMes}
                 onChange={(e) => setValorUFMes(Number(e.target.value) || 0)}
                 className="form-input"
-                placeholder="Ej: 38500"
+                placeholder="Ej: 39000"
                 min="0"
                 step="1"
               />
