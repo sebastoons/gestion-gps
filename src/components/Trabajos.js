@@ -32,6 +32,29 @@ const Trabajos = ({
     mes: mesSeleccionado
   });
 
+  // Recalcular valores en pesos cuando cambia el valor UF
+  useEffect(() => {
+    const trabajosActualizados = trabajos.map(trabajo => {
+      // Solo actualizar trabajos de la empresa y mes seleccionados
+      if (trabajo.empresa === empresaSeleccionada && trabajo.mes === mesSeleccionado) {
+        const valorUFTrabajo = parseFloat(trabajo.valorUF) || 0;
+        const nuevoValorPesos = Math.round(valorUFTrabajo * valorUFMes);
+        return {
+          ...trabajo,
+          valorPesos: nuevoValorPesos.toString()
+        };
+      }
+      return trabajo;
+    });
+    
+    // Solo actualizar si hay cambios reales
+    const hayChangios = trabajosActualizados.some((t, i) => t.valorPesos !== trabajos[i]?.valorPesos);
+    if (hayChangios) {
+      setTrabajos(trabajosActualizados);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [valorUFMes]);
+
   // Calcular valor UF automáticamente cuando cambian servicio o accesorios
   useEffect(() => {
     const costosServicios = {
@@ -179,7 +202,17 @@ const Trabajos = ({
               </select>
             </div>
             <div>
-              <label className="filter-label">Valor UF($)</label>
+              <label className="filter-label">
+                Valor UF($) 
+                <span style={{ 
+                  marginLeft: '8px', 
+                  fontSize: '0.85em', 
+                  color: '#16a34a',
+                  fontWeight: 'bold'
+                }}>
+                  ⟳ Auto-actualiza tabla
+                </span>
+              </label>
               <input
                 type="number"
                 value={valorUFMes}

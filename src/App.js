@@ -14,7 +14,10 @@ const App = () => {
   const [equiposRetirados, setEquiposRetirados] = useState([]);
   const [equiposMalos, setEquiposMalos] = useState([]);
   const [clientes, setClientes] = useState([]);
-  const [empresas, setEmpresas] = useState(['Location World', 'UGPS', 'Entel', 'IntelTrack', 'TrackChile']);
+  
+  // Lista actualizada de empresas - NO se sobrescribirá con el backup
+  const [empresas] = useState(['Location World', 'UGPS', 'Entel', 'IntelTrack', 'TrackChile']);
+  
   const [empresaSeleccionada, setEmpresaSeleccionada] = useState('Location World');
   const [mesSeleccionado, setMesSeleccionado] = useState('Octubre 2025');
 
@@ -26,7 +29,6 @@ const App = () => {
       const storedEquiposRetirados = localStorage.getItem('equiposRetirados');
       const storedEquiposMalos = localStorage.getItem('equiposMalos');
       const storedClientes = localStorage.getItem('clientes');
-      const storedEmpresas = localStorage.getItem('empresas');
 
       // MIGRACIÓN: Agregar empresa a equipos sin ella
       const migrateEquipos = (equipos, defaultEmpresa = 'Location World') => {
@@ -62,7 +64,6 @@ const App = () => {
       }
       
       if (storedClientes) setClientes(JSON.parse(storedClientes));
-      if (storedEmpresas) setEmpresas(JSON.parse(storedEmpresas));
     };
     loadData();
   }, []);
@@ -88,27 +89,25 @@ const App = () => {
     localStorage.setItem('clientes', JSON.stringify(clientes));
   }, [clientes]);
 
-  useEffect(() => {
-    localStorage.setItem('empresas', JSON.stringify(empresas));
-  }, [empresas]);
-
-  // ========== SISTEMA DE BACKUP ==========
+  // ========== SISTEMA DE BACKUP MEJORADO ==========
   
-  // Exportar todos los datos a un archivo JSON
+  // Exportar solo los datos del usuario (NO las configuraciones del sistema)
   const exportarBackup = () => {
     const backup = {
-      version: '1.0',
+      version: '2.0', // Actualizada la versión
       fecha: new Date().toISOString(),
       datos: {
+        // SOLO datos ingresados por el usuario
         trabajos,
         equiposNuevos,
         equiposRetirados,
         equiposMalos,
         clientes,
-        empresas,
+        // Selecciones actuales (opcionales)
         empresaSeleccionada,
         mesSeleccionado
       }
+      // NO incluimos: empresas (es una configuración del sistema)
     };
 
     const dataStr = JSON.stringify(backup, null, 2);
@@ -123,7 +122,7 @@ const App = () => {
     alert('✓ Backup exportado correctamente. Guarda este archivo en un lugar seguro.');
   };
 
-  // Importar datos desde un archivo JSON
+  // Importar datos SOLO del usuario (preservando configuraciones del sistema)
   const importarBackup = (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -139,22 +138,68 @@ const App = () => {
         }
 
         // Confirmar antes de importar
-        if (window.confirm('⚠️ ¿Deseas restaurar este backup? Esto reemplazará todos los datos actuales.')) {
-          // Restaurar datos
-          if (backup.datos.trabajos) setTrabajos(backup.datos.trabajos);
-          if (backup.datos.equiposNuevos) setEquiposNuevos(backup.datos.equiposNuevos);
-          if (backup.datos.equiposRetirados) setEquiposRetirados(backup.datos.equiposRetirados);
-          if (backup.datos.equiposMalos) setEquiposMalos(backup.datos.equiposMalos);
+        const mensaje = `⚠️ ¿Deseas restaurar este backup?\n\n` +
+          `Fecha del backup: ${new Date(backup.fecha).toLocaleString('es-CL')}\n` +
+          `Versión: ${backup.version || '1.0'}\n\n` +
+          `Esto reemplazará:\n` +
+          `• Trabajos registrados\n` +
+          `• Equipos GPS\n` +
+          `• Clientes\n\n` +
+          `Las configuraciones del sistema (lista de empresas) se mantendrán actualizadas.`;
+
+        if (window.confirm(mensaje)) {
+          // Restaurar SOLO los datos del usuario
+          if (backup.datos.trabajos) {
+            // Validar y migrar empresas en trabajos
+            const trabajosValidados = backup.datos.trabajos.map(trabajo => ({
+              ...trabajo,
+              empresa: empresas.includes(trabajo.empresa) ? trabajo.empresa : 'Location World'
+            }));
+            setTrabajos(trabajosValidados);
+          }
+          
+          if (backup.datos.equiposNuevos) {
+            // Validar y migrar empresas en equipos nuevos
+            const equiposValidados = backup.datos.equiposNuevos.map(equipo => ({
+              ...equipo,
+              empresa: empresas.includes(equipo.empresa) ? equipo.empresa : 'Location World'
+            }));
+            setEquiposNuevos(equiposValidados);
+          }
+          
+          if (backup.datos.equiposRetirados) {
+            // Validar y migrar empresas en equipos retirados
+            const equiposValidados = backup.datos.equiposRetirados.map(equipo => ({
+              ...equipo,
+              empresa: empresas.includes(equipo.empresa) ? equipo.empresa : 'Location World'
+            }));
+            setEquiposRetirados(equiposValidados);
+          }
+          
+          if (backup.datos.equiposMalos) {
+            // Validar y migrar empresas en equipos malos
+            const equiposValidados = backup.datos.equiposMalos.map(equipo => ({
+              ...equipo,
+              empresa: empresas.includes(equipo.empresa) ? equipo.empresa : 'Location World'
+            }));
+            setEquiposMalos(equiposValidados);
+          }
+          
           if (backup.datos.clientes) setClientes(backup.datos.clientes);
-          if (backup.datos.empresas) setEmpresas(backup.datos.empresas);
-          if (backup.datos.empresaSeleccionada) setEmpresaSeleccionada(backup.datos.empresaSeleccionada);
+          
+          // Restaurar selecciones (opcional)
+          if (backup.datos.empresaSeleccionada && empresas.includes(backup.datos.empresaSeleccionada)) {
+            setEmpresaSeleccionada(backup.datos.empresaSeleccionada);
+          }
           if (backup.datos.mesSeleccionado) setMesSeleccionado(backup.datos.mesSeleccionado);
 
-          alert(`✓ Backup restaurado correctamente\nFecha del backup: ${new Date(backup.fecha).toLocaleString('es-CL')}`);
+          // NO restauramos la lista de empresas - usamos la actual del código
+
+          alert(`✓ Backup restaurado correctamente\n\nFecha del backup: ${new Date(backup.fecha).toLocaleString('es-CL')}\n\nSe han restaurado tus datos y se mantiene la lista actualizada de empresas.`);
         }
       } catch (error) {
         console.error('Error al importar backup:', error);
-        alert('❌ Error al leer el archivo de backup');
+        alert('❌ Error al leer el archivo de backup. Verifica que sea un archivo válido.');
       }
     };
     reader.readAsText(file);
