@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Plus, Edit2, Trash2, Home, FileImage } from 'lucide-react';
+import { Download, Plus, Home, FileImage } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
 import { exportToVisualPDF, exportToVisualImage } from '../utils/visualExportUtils';
 
@@ -33,9 +33,6 @@ const Trabajos = ({
     mes: mesSeleccionado
   });
 
-  // ... (mantener todo el código existente del componente)
-  // Solo agregar las nuevas funciones de exportación
-
   // Recalcular valores en pesos cuando cambia el valor UF
   useEffect(() => {
     const trabajosActualizados = trabajos.map(trabajo => {
@@ -54,7 +51,7 @@ const Trabajos = ({
     if (hayChangios) {
       setTrabajos(trabajosActualizados);
     }
-  }, [valorUFMes]);
+  }, [valorUFMes, empresaSeleccionada, mesSeleccionado, trabajos, setTrabajos]);
 
   useEffect(() => {
     const costosServicios = {
@@ -145,21 +142,6 @@ const Trabajos = ({
       accesorios: [], ppuIn: '', ppuOut: '', imeiIn: '', imeiOut: '', km: '',
       valorUF: '', valorPesos: '', empresa: empresaSeleccionada, mes: mesSeleccionado
     });
-  };
-
-  const handleEdit = (trabajo) => {
-    setEditingItem(trabajo);
-    setFormData({
-      ...trabajo,
-      accesorios: trabajo.accesorios || []
-    });
-    setShowForm(true);
-  };
-
-  const handleDelete = (id) => {
-    if (window.confirm('¿Estás seguro de eliminar este trabajo?')) {
-      setTrabajos(trabajos.filter(t => t.id !== id));
-    }
   };
 
   const totales = calcularTotales();

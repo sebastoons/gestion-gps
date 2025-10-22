@@ -39,7 +39,6 @@ export const exportToVisualPDF = async (elementId, filename, options = {}) => {
 
     // Si la imagen es muy alta, dividir en páginas
     if (imgHeight > pageHeight - 20) {
-      let position = 10;
       let remainingHeight = imgHeight;
       let pageNumber = 1;
 
@@ -52,7 +51,6 @@ export const exportToVisualPDF = async (elementId, filename, options = {}) => {
         pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
         
         remainingHeight -= currentPageHeight;
-        position += currentPageHeight;
         pageNumber++;
       }
     } else {
@@ -103,26 +101,5 @@ export const exportToVisualImage = async (elementId, filename, options = {}) => 
   } catch (error) {
     console.error('Error al exportar imagen:', error);
     alert('❌ Error al generar la imagen. Por favor intenta nuevamente.');
-  }
-};
-
-// Función auxiliar para preparar el elemento antes de exportar
-export const prepareElementForExport = (elementId) => {
-  const element = document.getElementById(elementId);
-  if (!element) return null;
-
-  // Clonar el elemento para no afectar la vista actual
-  const clone = element.cloneNode(true);
-  clone.style.position = 'absolute';
-  clone.style.left = '-9999px';
-  clone.style.top = '0';
-  document.body.appendChild(clone);
-
-  return clone;
-};
-
-export const cleanupClonedElement = (clone) => {
-  if (clone && clone.parentNode) {
-    clone.parentNode.removeChild(clone);
   }
 };
