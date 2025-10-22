@@ -94,20 +94,17 @@ const App = () => {
   // Exportar solo los datos del usuario (NO las configuraciones del sistema)
   const exportarBackup = () => {
     const backup = {
-      version: '2.0', // Actualizada la versión
+      version: '2.0',
       fecha: new Date().toISOString(),
       datos: {
-        // SOLO datos ingresados por el usuario
         trabajos,
         equiposNuevos,
         equiposRetirados,
         equiposMalos,
         clientes,
-        // Selecciones actuales (opcionales)
         empresaSeleccionada,
         mesSeleccionado
       }
-      // NO incluimos: empresas (es una configuración del sistema)
     };
 
     const dataStr = JSON.stringify(backup, null, 2);
@@ -148,40 +145,44 @@ const App = () => {
           `Las configuraciones del sistema (lista de empresas) se mantendrán actualizadas.`;
 
         if (window.confirm(mensaje)) {
-          // Restaurar SOLO los datos del usuario
+          // Función de validación y migración de empresas
+          const validarYMigrarEmpresa = (item) => {
+            // Si no tiene empresa, asignar Location World por defecto
+            if (!item.empresa) {
+              return { ...item, empresa: 'Location World' };
+            }
+            
+            // Si la empresa existe en la lista actual, mantenerla
+            if (empresas.includes(item.empresa)) {
+              return item;
+            }
+            
+            // Si la empresa no existe, asignar Location World y notificar
+            console.warn(`Empresa "${item.empresa}" no encontrada, migrando a Location World`);
+            return { ...item, empresa: 'Location World' };
+          };
+
+          // Restaurar trabajos con validación estricta
           if (backup.datos.trabajos) {
-            // Validar y migrar empresas en trabajos
-            const trabajosValidados = backup.datos.trabajos.map(trabajo => ({
-              ...trabajo,
-              empresa: empresas.includes(trabajo.empresa) ? trabajo.empresa : 'Location World'
-            }));
+            const trabajosValidados = backup.datos.trabajos.map(validarYMigrarEmpresa);
             setTrabajos(trabajosValidados);
           }
           
+          // Restaurar equipos nuevos con validación estricta
           if (backup.datos.equiposNuevos) {
-            // Validar y migrar empresas en equipos nuevos
-            const equiposValidados = backup.datos.equiposNuevos.map(equipo => ({
-              ...equipo,
-              empresa: empresas.includes(equipo.empresa) ? equipo.empresa : 'Location World'
-            }));
+            const equiposValidados = backup.datos.equiposNuevos.map(validarYMigrarEmpresa);
             setEquiposNuevos(equiposValidados);
           }
           
+          // Restaurar equipos retirados con validación estricta
           if (backup.datos.equiposRetirados) {
-            // Validar y migrar empresas en equipos retirados
-            const equiposValidados = backup.datos.equiposRetirados.map(equipo => ({
-              ...equipo,
-              empresa: empresas.includes(equipo.empresa) ? equipo.empresa : 'Location World'
-            }));
+            const equiposValidados = backup.datos.equiposRetirados.map(validarYMigrarEmpresa);
             setEquiposRetirados(equiposValidados);
           }
           
+          // Restaurar equipos malos con validación estricta
           if (backup.datos.equiposMalos) {
-            // Validar y migrar empresas en equipos malos
-            const equiposValidados = backup.datos.equiposMalos.map(equipo => ({
-              ...equipo,
-              empresa: empresas.includes(equipo.empresa) ? equipo.empresa : 'Location World'
-            }));
+            const equiposValidados = backup.datos.equiposMalos.map(validarYMigrarEmpresa);
             setEquiposMalos(equiposValidados);
           }
           
@@ -192,8 +193,6 @@ const App = () => {
             setEmpresaSeleccionada(backup.datos.empresaSeleccionada);
           }
           if (backup.datos.mesSeleccionado) setMesSeleccionado(backup.datos.mesSeleccionado);
-
-          // NO restauramos la lista de empresas - usamos la actual del código
 
           alert(`✓ Backup restaurado correctamente\n\nFecha del backup: ${new Date(backup.fecha).toLocaleString('es-CL')}\n\nSe han restaurado tus datos y se mantiene la lista actualizada de empresas.`);
         }
