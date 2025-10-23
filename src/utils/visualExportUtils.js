@@ -1,68 +1,50 @@
 // Utilidad para exportar tabla visual como imagen o PDF
 // Replica exactamente el diseño de la app
 
-// Función auxiliar para preparar el elemento antes de capturar
-const prepareElementForCapture = (element) => {
-  // Guardar estilos originales
-  const originalStyles = {
-    overflow: element.style.overflow,
-    height: element.style.height,
-    maxHeight: element.style.maxHeight,
-    width: element.style.width
-  };
-
-  // Encontrar todos los contenedores con scroll
-  const scrollContainers = element.querySelectorAll('.table-container, .summary-container');
-  const scrollStyles = [];
-
-  scrollContainers.forEach((container) => {
-    scrollStyles.push({
-      element: container,
-      overflow: container.style.overflow,
-      overflowX: container.style.overflowX,
-      overflowY: container.style.overflowY,
-      maxHeight: container.style.maxHeight,
-      height: container.style.height
-    });
-
-    // Remover restricciones de scroll para capturar todo el contenido
+// Función para crear un clon expandido del elemento
+const createExpandedClone = (element) => {
+  // Clonar el elemento
+  const clone = element.cloneNode(true);
+  
+  // Aplicar estilos al clon para que se renderice completamente
+  clone.style.position = 'absolute';
+  clone.style.left = '-9999px';
+  clone.style.top = '0';
+  clone.style.width = 'auto';
+  clone.style.minWidth = '1200px'; // Ancho mínimo para tablas
+  clone.style.height = 'auto';
+  clone.style.maxHeight = 'none';
+  clone.style.overflow = 'visible';
+  clone.style.backgroundColor = 'white';
+  clone.style.padding = '40px';
+  clone.style.boxShadow = 'none';
+  
+  // Remover restricciones de todos los contenedores internos
+  const containers = clone.querySelectorAll('.table-container, .summary-container, div[style*="overflow"]');
+  containers.forEach(container => {
     container.style.overflow = 'visible';
     container.style.overflowX = 'visible';
     container.style.overflowY = 'visible';
     container.style.maxHeight = 'none';
     container.style.height = 'auto';
   });
-
-  // Remover restricciones del elemento principal
-  element.style.overflow = 'visible';
-  element.style.height = 'auto';
-  element.style.maxHeight = 'none';
-  element.style.width = 'auto';
-
-  return { originalStyles, scrollStyles };
-};
-
-// Función auxiliar para restaurar estilos originales
-const restoreElementStyles = (element, savedStyles) => {
-  const { originalStyles, scrollStyles } = savedStyles;
-
-  // Restaurar estilos del elemento principal
-  element.style.overflow = originalStyles.overflow;
-  element.style.height = originalStyles.height;
-  element.style.maxHeight = originalStyles.maxHeight;
-  element.style.width = originalStyles.width;
-
-  // Restaurar estilos de contenedores con scroll
-  scrollStyles.forEach((style) => {
-    style.element.style.overflow = style.overflow;
-    style.element.style.overflowX = style.overflowX;
-    style.element.style.overflowY = style.overflowY;
-    style.element.style.maxHeight = style.maxHeight;
-    style.element.style.height = style.height;
+  
+  // Asegurar que la tabla sea visible completamente
+  const tables = clone.querySelectorAll('table');
+  tables.forEach(table => {
+    table.style.width = '100%';
+    table.style.tableLayout = 'auto';
   });
+  
+  // Agregar el clon al body
+  document.body.appendChild(clone);
+  
+  return clone;
 };
 
 export const exportToVisualPDF = async (elementId, filename, options = {}) => {
+  let clone = null;
+  
   try {
     const element = document.getElementById(elementId);
     
@@ -71,92 +53,105 @@ export const exportToVisualPDF = async (elementId, filename, options = {}) => {
       return;
     }
 
-    // Preparar el elemento para captura (remover scrolls temporalmente)
-    const savedStyles = prepareElementForCapture(element);
+    // Crear clon expandido del elemento
+    clone = createExpandedClone(element);
 
-    // Esperar un momento para que el DOM se actualice
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Esperar a que el DOM se actualice con el clon
+    await new Promise(resolve => setTimeout(resolve, 200));
 
-    // Opciones por defecto
-    const defaultOptions = {
+    // Opciones optimizadas para captura
+    const captureOptions = {
       scale: 2,
       backgroundColor: '#ffffff',
       logging: false,
       useCORS: true,
       allowTaint: true,
-      windowWidth: element.scrollWidth,
-      windowHeight: element.scrollHeight,
+      width: clone.scrollWidth,
+      height: clone.scrollHeight,
+      windowWidth: clone.scrollWidth,
+      windowHeight: clone.scrollHeight,
       ...options
     };
 
-    // Capturar el elemento como canvas
-    const canvas = await window.html2canvas(element, defaultOptions);
-    
-    // Restaurar estilos originales
-    restoreElementStyles(element, savedStyles);
+    // Capturar el clon como canvas
+    const canvas = await window.html2canvas(clone, captureOptions);
 
-    // Crear PDF en orientación horizontal para tablas anchas
+    // Crear PDF en orientación horizontal (landscape)
     const pdf = new window.jspdf.jsPDF({
       orientation: 'landscape',
       unit: 'mm',
       format: 'a4'
     });
 
-    // Calcular dimensiones para que quepa en la página
+    // Calcular dimensiones
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
-    const imgWidth = pageWidth - 20; // 10mm de margen a cada lado
+    const margin = 10;
+    const imgWidth = pageWidth - (margin * 2);
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
     // Convertir canvas a imagen
-    const imgData = canvas.toDataURL('image/png');
+    const imgData = canvas.toDataURL('image/png', 1.0);
 
     // Si la imagen es muy alta, dividir en múltiples páginas
-    if (imgHeight > pageHeight - 20) {
-      const pageImgHeight = pageHeight - 20;
-      const totalPages = Math.ceil(imgHeight / pageImgHeight);
+    if (imgHeight > pageHeight - (margin * 2)) {
+      const pageContentHeight = pageHeight - (margin * 2);
+      const totalPages = Math.ceil(imgHeight / pageContentHeight);
 
       for (let i = 0; i < totalPages; i++) {
         if (i > 0) {
           pdf.addPage();
         }
 
-        const sourceY = (i * pageImgHeight * canvas.width) / imgWidth;
-        const sourceHeight = (pageImgHeight * canvas.width) / imgWidth;
+        // Calcular qué porción de la imagen va en esta página
+        const sourceY = (i * pageContentHeight * canvas.width) / imgWidth;
+        const sourceHeight = Math.min(
+          (pageContentHeight * canvas.width) / imgWidth,
+          canvas.height - sourceY
+        );
 
-        // Crear un canvas temporal para cada página
+        // Crear canvas temporal para esta página
         const pageCanvas = document.createElement('canvas');
         pageCanvas.width = canvas.width;
-        pageCanvas.height = Math.min(sourceHeight, canvas.height - sourceY);
+        pageCanvas.height = sourceHeight;
 
         const ctx = pageCanvas.getContext('2d');
         ctx.drawImage(
           canvas,
           0, sourceY,
-          canvas.width, pageCanvas.height,
+          canvas.width, sourceHeight,
           0, 0,
-          canvas.width, pageCanvas.height
+          canvas.width, sourceHeight
         );
 
-        const pageImgData = pageCanvas.toDataURL('image/png');
-        const actualHeight = (pageCanvas.height * imgWidth) / canvas.width;
+        const pageImgData = pageCanvas.toDataURL('image/png', 1.0);
+        const actualHeight = (sourceHeight * imgWidth) / canvas.width;
 
-        pdf.addImage(pageImgData, 'PNG', 10, 10, imgWidth, actualHeight);
+        pdf.addImage(pageImgData, 'PNG', margin, margin, imgWidth, actualHeight);
       }
     } else {
-      // Si cabe en una página
-      pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+      // Si cabe en una sola página
+      pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
     }
 
+    // Guardar el PDF
     pdf.save(`${filename}.pdf`);
     alert('✓ PDF exportado correctamente con toda la tabla visible');
+    
   } catch (error) {
     console.error('Error al exportar PDF:', error);
     alert('❌ Error al generar el PDF. Por favor intenta nuevamente.');
+  } finally {
+    // Remover el clon del DOM
+    if (clone && clone.parentNode) {
+      clone.parentNode.removeChild(clone);
+    }
   }
 };
 
 export const exportToVisualImage = async (elementId, filename, options = {}) => {
+  let clone = null;
+  
   try {
     const element = document.getElementById(elementId);
     
@@ -165,29 +160,28 @@ export const exportToVisualImage = async (elementId, filename, options = {}) => 
       return;
     }
 
-    // Preparar el elemento para captura (remover scrolls temporalmente)
-    const savedStyles = prepareElementForCapture(element);
+    // Crear clon expandido del elemento
+    clone = createExpandedClone(element);
 
-    // Esperar un momento para que el DOM se actualice
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Esperar a que el DOM se actualice con el clon
+    await new Promise(resolve => setTimeout(resolve, 200));
 
-    // Opciones por defecto
-    const defaultOptions = {
-      scale: 3,
+    // Opciones optimizadas para captura de alta calidad
+    const captureOptions = {
+      scale: 3, // Alta resolución para imágenes
       backgroundColor: '#ffffff',
       logging: false,
       useCORS: true,
       allowTaint: true,
-      windowWidth: element.scrollWidth,
-      windowHeight: element.scrollHeight,
+      width: clone.scrollWidth,
+      height: clone.scrollHeight,
+      windowWidth: clone.scrollWidth,
+      windowHeight: clone.scrollHeight,
       ...options
     };
 
-    // Capturar el elemento como canvas
-    const canvas = await window.html2canvas(element, defaultOptions);
-    
-    // Restaurar estilos originales
-    restoreElementStyles(element, savedStyles);
+    // Capturar el clon como canvas
+    const canvas = await window.html2canvas(clone, captureOptions);
     
     // Convertir a imagen y descargar
     canvas.toBlob((blob) => {
@@ -199,8 +193,14 @@ export const exportToVisualImage = async (elementId, filename, options = {}) => 
       URL.revokeObjectURL(url);
       alert('✓ Imagen exportada correctamente con toda la tabla visible');
     }, 'image/jpeg', 0.95);
+    
   } catch (error) {
     console.error('Error al exportar imagen:', error);
     alert('❌ Error al generar la imagen. Por favor intenta nuevamente.');
+  } finally {
+    // Remover el clon del DOM
+    if (clone && clone.parentNode) {
+      clone.parentNode.removeChild(clone);
+    }
   }
 };

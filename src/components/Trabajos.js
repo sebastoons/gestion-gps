@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Plus, Home, FileImage } from 'lucide-react';
+import { Download, Plus, Home, FileImage, Edit2, Trash2 } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
 import { exportToVisualPDF, exportToVisualImage } from '../utils/visualExportUtils';
 
@@ -102,6 +102,7 @@ const Trabajos = ({
     'sensor puerta': 0.4
   };
 
+  // FILTRAR TRABAJOS POR EMPRESA Y MES
   const trabajosFiltrados = trabajos.filter(
     t => t.empresa === empresaSeleccionada && t.mes === mesSeleccionado
   );
@@ -128,13 +129,16 @@ const Trabajos = ({
     }
 
     if (editingItem) {
+      // Actualizar trabajo existente
       setTrabajos(trabajos.map(t => t.id === editingItem.id ? { ...formData, id: editingItem.id } : t));
       setEditingItem(null);
     } else {
+      // Crear nuevo trabajo con ID único por empresa
       const prefix = empresaSeleccionada === 'Location World' ? 'LW' : 'U';
-      const count = trabajos.filter(t => t.empresa === empresaSeleccionada).length + 1;
+      const trabajosDeEmpresa = trabajos.filter(t => t.empresa === empresaSeleccionada);
+      const count = trabajosDeEmpresa.length + 1;
       const newId = `${prefix}${String(count).padStart(3, '0')}`;
-      setTrabajos([...trabajos, { ...formData, id: newId }]);
+      setTrabajos([...trabajos, { ...formData, id: newId, empresa: empresaSeleccionada, mes: mesSeleccionado }]);
     }
     setShowForm(false);
     setFormData({
@@ -142,6 +146,19 @@ const Trabajos = ({
       accesorios: [], ppuIn: '', ppuOut: '', imeiIn: '', imeiOut: '', km: '',
       valorUF: '', valorPesos: '', empresa: empresaSeleccionada, mes: mesSeleccionado
     });
+  };
+
+  const handleEdit = (trabajo) => {
+    setEditingItem(trabajo);
+    setFormData(trabajo);
+    setShowForm(true);
+  };
+
+  const handleDelete = (id) => {
+    if (window.confirm('¿Estás seguro de eliminar este trabajo?')) {
+      // Solo eliminar el trabajo con ese ID específico
+      setTrabajos(trabajos.filter(t => t.id !== id));
+    }
   };
 
   const totales = calcularTotales();
@@ -385,12 +402,13 @@ const Trabajos = ({
                     <th className="right">KM</th>
                     <th className="right">UF</th>
                     <th className="right">Valor $</th>
+                    <th className="center">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {trabajosFiltrados.length === 0 ? (
                     <tr>
-                      <td colSpan="12" className="empty-state">
+                      <td colSpan="13" className="empty-state">
                         No hay trabajos registrados para este mes
                       </td>
                     </tr>
@@ -413,6 +431,24 @@ const Trabajos = ({
                         <td className="right">{trabajo.km}</td>
                         <td className="right">{trabajo.valorUF}</td>
                         <td className="right">${Number(trabajo.valorPesos).toLocaleString()}</td>
+                        <td className="center">
+                          <div className="table-actions">
+                            <button 
+                              onClick={() => handleEdit(trabajo)} 
+                              className="action-btn edit"
+                              title="Editar"
+                            >
+                              <Edit2 size={18} />
+                            </button>
+                            <button 
+                              onClick={() => handleDelete(trabajo.id)} 
+                              className="action-btn delete"
+                              title="Eliminar"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     ))
                   )}
