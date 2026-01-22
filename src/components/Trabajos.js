@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Plus, Home, FileImage, Edit2, Trash2 } from 'lucide-react';
+import { Download, Plus, Home, FileImage, Edit2, Trash2, AlertCircle } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
 import { exportToVisualPDF, exportToVisualImage } from '../utils/visualExportUtils';
 
@@ -11,7 +11,11 @@ const Trabajos = ({
   empresaSeleccionada, 
   setEmpresaSeleccionada,
   mesSeleccionado,
-  setMesSeleccionado
+  setMesSeleccionado,
+  equiposNuevos,
+  setEquiposNuevos,
+  equiposRetirados,
+  setEquiposRetirados
 }) => {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -122,6 +126,54 @@ const Trabajos = ({
     return { totalUF: totalUFFormateado, totalPesos, totalKm, totalValorKm, subtotal, iva, total };
   };
 
+  // FUNCIÓN PARA DESCONTAR EQUIPOS DEL INVENTARIO
+  const descontarEquipos = (imeiIn, imeiOut) => {
+    let mensajesDescuento = [];
+
+    // Procesar IMEI IN (equipo instalado)
+    if (imeiIn && imeiIn.trim() !== '') {
+      const imeiInLimpio = imeiIn.trim();
+      
+      // Buscar en equipos nuevos
+      const equipoNuevo = equiposNuevos.find(
+        e => e.imei === imeiInLimpio && e.empresa === empresaSeleccionada
+      );
+      
+      if (equipoNuevo) {
+        // Eliminar de equipos nuevos
+        const nuevosEquiposNuevos = equiposNuevos.filter(
+          e => !(e.imei === imeiInLimpio && e.empresa === empresaSeleccionada)
+        );
+        setEquiposNuevos(nuevosEquiposNuevos);
+        mensajesDescuento.push(`✓ Equipo NUEVO (${imeiInLimpio}) descontado del inventario`);
+      }
+    }
+
+    // Procesar IMEI OUT (equipo retirado)
+    if (imeiOut && imeiOut.trim() !== '') {
+      const imeiOutLimpio = imeiOut.trim();
+      
+      // Buscar en equipos retirados
+      const equipoRetirado = equiposRetirados.find(
+        e => e.imei === imeiOutLimpio && e.empresa === empresaSeleccionada
+      );
+      
+      if (equipoRetirado) {
+        // Eliminar de equipos retirados
+        const nuevosEquiposRetirados = equiposRetirados.filter(
+          e => !(e.imei === imeiOutLimpio && e.empresa === empresaSeleccionada)
+        );
+        setEquiposRetirados(nuevosEquiposRetirados);
+        mensajesDescuento.push(`✓ Equipo RETIRADO (${imeiOutLimpio}) descontado del inventario`);
+      }
+    }
+
+    // Mostrar mensajes de confirmación
+    if (mensajesDescuento.length > 0) {
+      alert(`EQUIPOS DESCONTADOS:\n\n${mensajesDescuento.join('\n')}\n\nLos equipos ya no aparecerán en la sección de Equipos.`);
+    }
+  };
+
   const handleSubmit = () => {
     if (!formData.nombreCliente || !formData.fecha) {
       alert('Por favor completa los campos obligatorios');
@@ -129,17 +181,23 @@ const Trabajos = ({
     }
 
     if (editingItem) {
-      // Actualizar trabajo existente
+      // Actualizar trabajo existente (NO descontar equipos en edición)
       setTrabajos(trabajos.map(t => t.id === editingItem.id ? { ...formData, id: editingItem.id } : t));
       setEditingItem(null);
     } else {
-      // Crear nuevo trabajo con ID único por empresa
+      // Crear nuevo trabajo
       const prefix = empresaSeleccionada === 'Location World' ? 'LW' : 'U';
       const trabajosDeEmpresa = trabajos.filter(t => t.empresa === empresaSeleccionada);
       const count = trabajosDeEmpresa.length + 1;
       const newId = `${prefix}${String(count).padStart(3, '0')}`;
+      
+      // Guardar el trabajo
       setTrabajos([...trabajos, { ...formData, id: newId, empresa: empresaSeleccionada, mes: mesSeleccionado }]);
+      
+      // DESCONTAR EQUIPOS DEL INVENTARIO
+      descontarEquipos(formData.imeiIn, formData.imeiOut);
     }
+    
     setShowForm(false);
     setFormData({
       id: '', nombreCliente: '', fecha: '', servicio: 'Instalación',
@@ -156,7 +214,6 @@ const Trabajos = ({
 
   const handleDelete = (id) => {
     if (window.confirm('¿Estás seguro de eliminar este trabajo?')) {
-      // Solo eliminar el trabajo con ese ID específico
       setTrabajos(trabajos.filter(t => t.id !== id));
     }
   };
@@ -170,6 +227,29 @@ const Trabajos = ({
 
   const handleExportVisualImage = () => {
     exportToVisualImage('trabajos-export-container', `trabajos_${empresaSeleccionada}_${mesSeleccionado}_${new Date().toISOString().split('T')[0]}`);
+  };
+
+  // Verificar si un IMEI existe en el inventario
+  const verificarIMEIEnInventario = (imei, tipo) => {
+    if (!imei || imei.trim() === '') return null;
+    
+    const imeiLimpio = imei.trim();
+    
+    if (tipo === 'IN') {
+      // Buscar en equipos nuevos
+      const equipoNuevo = equiposNuevos.find(
+        e => e.imei === imeiLimpio && e.empresa === empresaSeleccionada
+      );
+      return equipoNuevo ? 'NUEVO' : null;
+    } else if (tipo === 'OUT') {
+      // Buscar en equipos retirados
+      const equipoRetirado = equiposRetirados.find(
+        e => e.imei === imeiLimpio && e.empresa === empresaSeleccionada
+      );
+      return equipoRetirado ? 'RETIRADO' : null;
+    }
+    
+    return null;
   };
 
   return (
@@ -275,6 +355,33 @@ const Trabajos = ({
               <h3 className="form-title">
                 {editingItem ? 'Editar Trabajo' : 'Nuevo Trabajo'}
               </h3>
+              
+              {/* Alerta informativa */}
+              {!editingItem && (
+                <div style={{
+                  backgroundColor: '#eff6ff',
+                  border: '1px solid #bfdbfe',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  marginBottom: '15px',
+                  display: 'flex',
+                  gap: '10px',
+                  alignItems: 'flex-start'
+                }}>
+                  <AlertCircle size={20} style={{ color: '#3b82f6', flexShrink: 0, marginTop: '2px' }} />
+                  <div style={{
+                    fontFamily: 'Quantico',
+                    fontSize: '0.65em',
+                    color: '#1e40af',
+                    textTransform: 'uppercase',
+                    lineHeight: '1.4'
+                  }}>
+                    <strong>Sistema de descuento automático:</strong><br />
+                    Al guardar este trabajo, los equipos con IMEI ingresados serán descontados automáticamente del inventario de Equipos.
+                  </div>
+                </div>
+              )}
+
               <div className="form-grid three-cols">
                 <input
                   type="text"
@@ -318,34 +425,92 @@ const Trabajos = ({
                   ))}
                 </select>
 
-                <input
-                  type="text"
-                  placeholder="PPU IN"
-                  value={formData.ppuIn}
-                  onChange={(e) => setFormData({...formData, ppuIn: e.target.value})}
-                  className="form-input"
-                />
-                <input
-                  type="text"
-                  placeholder="PPU OUT"
-                  value={formData.ppuOut}
-                  onChange={(e) => setFormData({...formData, ppuOut: e.target.value})}
-                  className="form-input"
-                />
-                <input
-                  type="text"
-                  placeholder="IMEI IN"
-                  value={formData.imeiIn}
-                  onChange={(e) => setFormData({...formData, imeiIn: e.target.value})}
-                  className="form-input"
-                />
-                <input
-                  type="text"
-                  placeholder="IMEI OUT"
-                  value={formData.imeiOut}
-                  onChange={(e) => setFormData({...formData, imeiOut: e.target.value})}
-                  className="form-input"
-                />
+                {/* PPU IN */}
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="text"
+                    placeholder="PPU IN (Patente Entrada)"
+                    value={formData.ppuIn}
+                    onChange={(e) => setFormData({...formData, ppuIn: e.target.value.toUpperCase()})}
+                    className="form-input"
+                    style={{ textTransform: 'uppercase' }}
+                  />
+                </div>
+
+                {/* PPU OUT */}
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="text"
+                    placeholder="PPU OUT (Patente Salida)"
+                    value={formData.ppuOut}
+                    onChange={(e) => setFormData({...formData, ppuOut: e.target.value.toUpperCase()})}
+                    className="form-input"
+                    style={{ textTransform: 'uppercase' }}
+                  />
+                </div>
+
+                {/* IMEI IN con indicador */}
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="text"
+                    placeholder="IMEI IN (Equipo Instalado)"
+                    value={formData.imeiIn}
+                    onChange={(e) => setFormData({...formData, imeiIn: e.target.value})}
+                    className="form-input"
+                    style={{
+                      paddingRight: verificarIMEIEnInventario(formData.imeiIn, 'IN') ? '50px' : '10px'
+                    }}
+                  />
+                  {!editingItem && verificarIMEIEnInventario(formData.imeiIn, 'IN') && (
+                    <span style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      backgroundColor: '#16a34a',
+                      color: 'white',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      fontSize: '0.6em',
+                      fontFamily: 'Quantico',
+                      fontWeight: 'bold'
+                    }}>
+                      EN STOCK
+                    </span>
+                  )}
+                </div>
+
+                {/* IMEI OUT con indicador */}
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="text"
+                    placeholder="IMEI OUT (Equipo Retirado)"
+                    value={formData.imeiOut}
+                    onChange={(e) => setFormData({...formData, imeiOut: e.target.value})}
+                    className="form-input"
+                    style={{
+                      paddingRight: verificarIMEIEnInventario(formData.imeiOut, 'OUT') ? '50px' : '10px'
+                    }}
+                  />
+                  {!editingItem && verificarIMEIEnInventario(formData.imeiOut, 'OUT') && (
+                    <span style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      backgroundColor: '#3b82f6',
+                      color: 'white',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      fontSize: '0.6em',
+                      fontFamily: 'Quantico',
+                      fontWeight: 'bold'
+                    }}>
+                      EN STOCK
+                    </span>
+                  )}
+                </div>
+
                 <input
                   type="number"
                   placeholder="KM"
@@ -424,10 +589,10 @@ const Trabajos = ({
                             ? trabajo.accesorios.join(', ') 
                             : '-'}
                         </td>
-                        <td>{trabajo.ppuIn}</td>
-                        <td>{trabajo.ppuOut}</td>
-                        <td className="text-mono">{trabajo.imeiIn}</td>
-                        <td className="text-mono">{trabajo.imeiOut}</td>
+                        <td>{trabajo.ppuIn || '-'}</td>
+                        <td>{trabajo.ppuOut || '-'}</td>
+                        <td className="text-mono">{trabajo.imeiIn || '-'}</td>
+                        <td className="text-mono">{trabajo.imeiOut || '-'}</td>
                         <td className="right">{trabajo.km}</td>
                         <td className="right">{trabajo.valorUF}</td>
                         <td className="right">${Number(trabajo.valorPesos).toLocaleString()}</td>

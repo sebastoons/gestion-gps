@@ -269,6 +269,10 @@ const App = () => {
           setEmpresaSeleccionada={setEmpresaSeleccionada}
           mesSeleccionado={mesSeleccionado}
           setMesSeleccionado={setMesSeleccionado}
+          equiposNuevos={equiposNuevos}
+          setEquiposNuevos={setEquiposNuevos}
+          equiposRetirados={equiposRetirados}
+          setEquiposRetirados={setEquiposRetirados}
         />
       )}
       
