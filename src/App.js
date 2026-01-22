@@ -16,7 +16,7 @@ const App = () => {
   const [clientes, setClientes] = useState([]);
   
   // Lista actualizada de empresas - NO se sobrescribirá con el backup
-  const [empresas] = useState(['Location World', 'UGPS', 'Entel', 'IntelTrack', 'TrackChile']);
+  const [empresas] = useState(['Location World', 'UGPS']);
   
   const [empresaSeleccionada, setEmpresaSeleccionada] = useState('Location World');
   const [mesSeleccionado, setMesSeleccionado] = useState('Octubre 2025');

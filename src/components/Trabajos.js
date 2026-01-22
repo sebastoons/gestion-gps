@@ -312,8 +312,12 @@ const Trabajos = ({
                 onChange={(e) => setMesSeleccionado(e.target.value)}
                 className="form-select"
               >
-                <option>Noviembre 2025</option>
-                <option>Diciembre 2025</option>
+                <option>Febrero 2026</option>
+                <option>Marzo 2026</option>
+                <option>Abril 2026</option>
+                <option>Mayo 2026</option>
+                <option>Junio 2026</option>
+                <option>Julio 2026</option>
                 <option>Enero 2026</option>
               </select>
             </div>
@@ -405,7 +409,7 @@ const Trabajos = ({
                     lineHeight: '1.4'
                   }}>
                     <strong>Sistema de descuento automático:</strong><br />
-                    Al guardar, los IMEI ingresados se buscarán en TODOS los inventarios (Nuevos y Retirados) y serán descontados automáticamente.
+                    Los IMEI ingresados se buscarán en TODOS los inventarios (Nuevos y Retirados) y serán descontados automáticamente.
                   </div>
                 </div>
               )}
@@ -457,7 +461,7 @@ const Trabajos = ({
                 <div style={{ position: 'relative' }}>
                   <input
                     type="text"
-                    placeholder="PPU IN (Patente Entrada)"
+                    placeholder="PPU IN"
                     value={formData.ppuIn}
                     onChange={(e) => setFormData({...formData, ppuIn: e.target.value.toUpperCase()})}
                     className="form-input"
@@ -469,7 +473,7 @@ const Trabajos = ({
                 <div style={{ position: 'relative' }}>
                   <input
                     type="text"
-                    placeholder="PPU OUT (Patente Salida)"
+                    placeholder="PPU OUT"
                     value={formData.ppuOut}
                     onChange={(e) => setFormData({...formData, ppuOut: e.target.value.toUpperCase()})}
                     className="form-input"
@@ -481,7 +485,7 @@ const Trabajos = ({
                 <div style={{ position: 'relative' }}>
                   <input
                     type="text"
-                    placeholder="IMEI IN (Equipo Instalado)"
+                    placeholder="IMEI IN"
                     value={formData.imeiIn}
                     onChange={(e) => setFormData({...formData, imeiIn: e.target.value})}
                     className="form-input"
@@ -512,7 +516,7 @@ const Trabajos = ({
                 <div style={{ position: 'relative' }}>
                   <input
                     type="text"
-                    placeholder="IMEI OUT (Equipo Retirado)"
+                    placeholder="IMEI OUT"
                     value={formData.imeiOut}
                     onChange={(e) => setFormData({...formData, imeiOut: e.target.value})}
                     className="form-input"
