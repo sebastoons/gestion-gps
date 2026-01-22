@@ -126,7 +126,7 @@ const Trabajos = ({
     return { totalUF: totalUFFormateado, totalPesos, totalKm, totalValorKm, subtotal, iva, total };
   };
 
-  // FUNCIÓN PARA DESCONTAR EQUIPOS DEL INVENTARIO
+  // FUNCIÓN MEJORADA: Busca en AMBOS inventarios (nuevos Y retirados)
   const descontarEquipos = (imeiIn, imeiOut) => {
     let mensajesDescuento = [];
 
@@ -134,7 +134,7 @@ const Trabajos = ({
     if (imeiIn && imeiIn.trim() !== '') {
       const imeiInLimpio = imeiIn.trim();
       
-      // Buscar en equipos nuevos
+      // Buscar PRIMERO en equipos nuevos
       const equipoNuevo = equiposNuevos.find(
         e => e.imei === imeiInLimpio && e.empresa === empresaSeleccionada
       );
@@ -146,6 +146,20 @@ const Trabajos = ({
         );
         setEquiposNuevos(nuevosEquiposNuevos);
         mensajesDescuento.push(`✓ Equipo NUEVO (${imeiInLimpio}) descontado del inventario`);
+      } else {
+        // Si no está en nuevos, buscar en retirados
+        const equipoRetirado = equiposRetirados.find(
+          e => e.imei === imeiInLimpio && e.empresa === empresaSeleccionada
+        );
+        
+        if (equipoRetirado) {
+          // Eliminar de equipos retirados
+          const nuevosEquiposRetirados = equiposRetirados.filter(
+            e => !(e.imei === imeiInLimpio && e.empresa === empresaSeleccionada)
+          );
+          setEquiposRetirados(nuevosEquiposRetirados);
+          mensajesDescuento.push(`✓ Equipo RETIRADO (${imeiInLimpio}) descontado del inventario`);
+        }
       }
     }
 
@@ -153,7 +167,7 @@ const Trabajos = ({
     if (imeiOut && imeiOut.trim() !== '') {
       const imeiOutLimpio = imeiOut.trim();
       
-      // Buscar en equipos retirados
+      // Buscar PRIMERO en equipos retirados
       const equipoRetirado = equiposRetirados.find(
         e => e.imei === imeiOutLimpio && e.empresa === empresaSeleccionada
       );
@@ -165,6 +179,20 @@ const Trabajos = ({
         );
         setEquiposRetirados(nuevosEquiposRetirados);
         mensajesDescuento.push(`✓ Equipo RETIRADO (${imeiOutLimpio}) descontado del inventario`);
+      } else {
+        // Si no está en retirados, buscar en nuevos
+        const equipoNuevo = equiposNuevos.find(
+          e => e.imei === imeiOutLimpio && e.empresa === empresaSeleccionada
+        );
+        
+        if (equipoNuevo) {
+          // Eliminar de equipos nuevos
+          const nuevosEquiposNuevos = equiposNuevos.filter(
+            e => !(e.imei === imeiOutLimpio && e.empresa === empresaSeleccionada)
+          );
+          setEquiposNuevos(nuevosEquiposNuevos);
+          mensajesDescuento.push(`✓ Equipo NUEVO (${imeiOutLimpio}) descontado del inventario`);
+        }
       }
     }
 
@@ -229,25 +257,25 @@ const Trabajos = ({
     exportToVisualImage('trabajos-export-container', `trabajos_${empresaSeleccionada}_${mesSeleccionado}_${new Date().toISOString().split('T')[0]}`);
   };
 
-  // Verificar si un IMEI existe en el inventario
-  const verificarIMEIEnInventario = (imei, tipo) => {
+  // FUNCIÓN MEJORADA: Verifica en AMBOS inventarios
+  const verificarIMEIEnInventario = (imei) => {
     if (!imei || imei.trim() === '') return null;
     
     const imeiLimpio = imei.trim();
     
-    if (tipo === 'IN') {
-      // Buscar en equipos nuevos
-      const equipoNuevo = equiposNuevos.find(
-        e => e.imei === imeiLimpio && e.empresa === empresaSeleccionada
-      );
-      return equipoNuevo ? 'NUEVO' : null;
-    } else if (tipo === 'OUT') {
-      // Buscar en equipos retirados
-      const equipoRetirado = equiposRetirados.find(
-        e => e.imei === imeiLimpio && e.empresa === empresaSeleccionada
-      );
-      return equipoRetirado ? 'RETIRADO' : null;
-    }
+    // Buscar en equipos nuevos
+    const equipoNuevo = equiposNuevos.find(
+      e => e.imei === imeiLimpio && e.empresa === empresaSeleccionada
+    );
+    
+    if (equipoNuevo) return 'NUEVO';
+    
+    // Buscar en equipos retirados
+    const equipoRetirado = equiposRetirados.find(
+      e => e.imei === imeiLimpio && e.empresa === empresaSeleccionada
+    );
+    
+    if (equipoRetirado) return 'RETIRADO';
     
     return null;
   };
@@ -284,12 +312,8 @@ const Trabajos = ({
                 onChange={(e) => setMesSeleccionado(e.target.value)}
                 className="form-select"
               >
-                <option>Febrero 2026</option>
-                <option>Marzo 2026</option>
-                <option>Abril 2026</option>
-                <option>Mayo 2026</option>
-                <option>Junio 2026</option>
-                <option>Julio 2026</option>
+                <option>Noviembre 2025</option>
+                <option>Diciembre 2025</option>
                 <option>Enero 2026</option>
               </select>
             </div>
@@ -302,7 +326,7 @@ const Trabajos = ({
                   color: '#16a34a',
                   fontWeight: 'bold'
                 }}>
-                  ⟳ Actualizar tabla
+                  ⟳ Auto-actualiza tabla
                 </span>
               </label>
               <input
@@ -381,7 +405,7 @@ const Trabajos = ({
                     lineHeight: '1.4'
                   }}>
                     <strong>Sistema de descuento automático:</strong><br />
-                    Al guardar este trabajo, los equipos con IMEI ingresados serán descontados automáticamente del inventario de Equipos.
+                    Al guardar, los IMEI ingresados se buscarán en TODOS los inventarios (Nuevos y Retirados) y serán descontados automáticamente.
                   </div>
                 </div>
               )}
@@ -453,7 +477,7 @@ const Trabajos = ({
                   />
                 </div>
 
-                {/* IMEI IN con indicador */}
+                {/* IMEI IN con indicador mejorado */}
                 <div style={{ position: 'relative' }}>
                   <input
                     type="text"
@@ -462,29 +486,29 @@ const Trabajos = ({
                     onChange={(e) => setFormData({...formData, imeiIn: e.target.value})}
                     className="form-input"
                     style={{
-                      paddingRight: verificarIMEIEnInventario(formData.imeiIn, 'IN') ? '50px' : '10px'
+                      paddingRight: verificarIMEIEnInventario(formData.imeiIn) ? '80px' : '10px'
                     }}
                   />
-                  {!editingItem && verificarIMEIEnInventario(formData.imeiIn, 'IN') && (
+                  {!editingItem && verificarIMEIEnInventario(formData.imeiIn) && (
                     <span style={{
                       position: 'absolute',
                       right: '10px',
                       top: '50%',
                       transform: 'translateY(-50%)',
-                      backgroundColor: '#16a34a',
+                      backgroundColor: verificarIMEIEnInventario(formData.imeiIn) === 'NUEVO' ? '#16a34a' : '#3b82f6',
                       color: 'white',
                       padding: '2px 8px',
                       borderRadius: '4px',
-                      fontSize: '0.6em',
+                      fontSize: '0.55em',
                       fontFamily: 'Quantico',
                       fontWeight: 'bold'
                     }}>
-                      EN STOCK
+                      {verificarIMEIEnInventario(formData.imeiIn)}
                     </span>
                   )}
                 </div>
 
-                {/* IMEI OUT con indicador */}
+                {/* IMEI OUT con indicador mejorado */}
                 <div style={{ position: 'relative' }}>
                   <input
                     type="text"
@@ -493,24 +517,24 @@ const Trabajos = ({
                     onChange={(e) => setFormData({...formData, imeiOut: e.target.value})}
                     className="form-input"
                     style={{
-                      paddingRight: verificarIMEIEnInventario(formData.imeiOut, 'OUT') ? '50px' : '10px'
+                      paddingRight: verificarIMEIEnInventario(formData.imeiOut) ? '80px' : '10px'
                     }}
                   />
-                  {!editingItem && verificarIMEIEnInventario(formData.imeiOut, 'OUT') && (
+                  {!editingItem && verificarIMEIEnInventario(formData.imeiOut) && (
                     <span style={{
                       position: 'absolute',
                       right: '10px',
                       top: '50%',
                       transform: 'translateY(-50%)',
-                      backgroundColor: '#3b82f6',
+                      backgroundColor: verificarIMEIEnInventario(formData.imeiOut) === 'NUEVO' ? '#16a34a' : '#3b82f6',
                       color: 'white',
                       padding: '2px 8px',
                       borderRadius: '4px',
-                      fontSize: '0.6em',
+                      fontSize: '0.55em',
                       fontFamily: 'Quantico',
                       fontWeight: 'bold'
                     }}>
-                      EN STOCK
+                      {verificarIMEIEnInventario(formData.imeiOut)}
                     </span>
                   )}
                 </div>
