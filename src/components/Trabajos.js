@@ -284,8 +284,12 @@ const Trabajos = ({
                 onChange={(e) => setMesSeleccionado(e.target.value)}
                 className="form-select"
               >
-                <option>Noviembre 2025</option>
-                <option>Diciembre 2025</option>
+                <option>Febrero 2026</option>
+                <option>Marzo 2026</option>
+                <option>Abril 2026</option>
+                <option>Mayo 2026</option>
+                <option>Junio 2026</option>
+                <option>Julio 2026</option>
                 <option>Enero 2026</option>
               </select>
             </div>
@@ -298,7 +302,7 @@ const Trabajos = ({
                   color: '#16a34a',
                   fontWeight: 'bold'
                 }}>
-                  ⟳ Auto-actualiza tabla
+                  ⟳ Actualizar tabla
                 </span>
               </label>
               <input
