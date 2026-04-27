@@ -4,6 +4,7 @@ import Trabajos from './components/Trabajos';
 import Equipos from './components/Equipos';
 import Clientes from './components/Clientes';
 import ValoresTrabajos from './components/ValoresTrabajos';
+import ValidacionWhatsapp from './components/ValidacionWhatsapp';
 import { Download, Upload } from 'lucide-react';
 import './styles/Common.css';
 
@@ -260,7 +261,7 @@ const App = () => {
       {currentView === 'home' && <Home setCurrentView={setCurrentView} />}
       
       {currentView === 'trabajos' && (
-        <Trabajos 
+        <Trabajos
           setCurrentView={setCurrentView}
           trabajos={trabajos}
           setTrabajos={setTrabajos}
@@ -273,6 +274,8 @@ const App = () => {
           setEquiposNuevos={setEquiposNuevos}
           equiposRetirados={equiposRetirados}
           setEquiposRetirados={setEquiposRetirados}
+          clientes={clientes}
+          setClientes={setClientes}
         />
       )}
       
@@ -301,8 +304,25 @@ const App = () => {
       )}
 
       {currentView === 'valores' && (
-        <ValoresTrabajos 
+        <ValoresTrabajos
           setCurrentView={setCurrentView}
+        />
+      )}
+
+      {currentView === 'validacion' && (
+        <ValidacionWhatsapp
+          setCurrentView={setCurrentView}
+          equiposNuevos={equiposNuevos}
+          setEquiposNuevos={setEquiposNuevos}
+          equiposRetirados={equiposRetirados}
+          setEquiposRetirados={setEquiposRetirados}
+          equiposMalos={equiposMalos}
+          setEquiposMalos={setEquiposMalos}
+          trabajos={trabajos}
+          setTrabajos={setTrabajos}
+          clientes={clientes}
+          setClientes={setClientes}
+          mesSeleccionado={mesSeleccionado}
         />
       )}
     </div>
