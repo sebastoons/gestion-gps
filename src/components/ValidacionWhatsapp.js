@@ -7,7 +7,7 @@ const COSTOS = {
 };
 
 const VACIO = {
-  cliente: '', fecha: '', servicio: 'Instalación',
+  cliente: '', fecha: '', servicio: 'Instalación', empresa: 'UGPS',
   ppuVinIn: '', ppuVinOut: '', marcaModelo: '',
   gpsIn: '', gpsOut: '', kms: '',
   ubicacion: '', perifericos: '', detalles: '', trabajo: '',
@@ -38,28 +38,29 @@ const ValidacionWhatsapp = ({
 
   const generarMensaje = () => {
     const lineas = [
-      `*CLIENTE: ${cap(form.cliente)}*`,
-      `*FECHA: ${form.fecha}*`,
-      `*SERVICIO: ${cap(form.servicio)}*`,
+      `*EMPRESA*: ${form.empresa}`,
+      `*CLIENTE*: ${cap(form.cliente)}`,
+      `*FECHA*: ${form.fecha}`,
+      `*SERVICIO*: ${cap(form.servicio)}`,
     ];
     if (form.ppuVinIn || form.ppuVinOut) {
       const partes = [];
-      if (form.ppuVinIn) partes.push(`PPU/VIN IN: ${form.ppuVinIn.toUpperCase()}`);
-      if (form.ppuVinOut) partes.push(`PPU/VIN OUT: ${form.ppuVinOut.toUpperCase()}`);
-      lineas.push(`*${partes.join(' | ')}*`);
+      if (form.ppuVinIn) partes.push(`*PPU/VIN IN*: ${form.ppuVinIn.toUpperCase()}`);
+      if (form.ppuVinOut) partes.push(`*PPU/VIN OUT*: ${form.ppuVinOut.toUpperCase()}`);
+      lineas.push(partes.join(' | '));
     }
-    if (form.marcaModelo) lineas.push(`*MARCA/MODELO: ${cap(form.marcaModelo)}*`);
+    if (form.marcaModelo) lineas.push(`*MARCA/MODELO*: ${cap(form.marcaModelo)}`);
     if (form.gpsIn || form.gpsOut) {
       const partes = [];
-      if (form.gpsIn) partes.push(`GPS IN: ${form.gpsIn}`);
-      if (form.gpsOut) partes.push(`GPS OUT: ${form.gpsOut}`);
-      lineas.push(`*${partes.join(' | ')}*`);
+      if (form.gpsIn) partes.push(`*GPS IN*: ${form.gpsIn}`);
+      if (form.gpsOut) partes.push(`*GPS OUT*: ${form.gpsOut}`);
+      lineas.push(partes.join(' | '));
     }
-    if (form.kms) lineas.push(`*KMS: ${form.kms}*`);
-    if (form.ubicacion) lineas.push(`*UBICACION: ${cap(form.ubicacion)}*`);
-    if (form.perifericos) lineas.push(`*PERIFERICOS: ${cap(form.perifericos)}*`);
-    if (form.detalles) lineas.push(`*DETALLES: ${cap(form.detalles)}*`);
-    if (form.trabajo) lineas.push(`*TRABAJO: ${cap(form.trabajo)}*`);
+    if (form.kms) lineas.push(`*KMS*: ${form.kms}`);
+    if (form.ubicacion) lineas.push(`*UBICACION*: ${cap(form.ubicacion)}`);
+    if (form.perifericos) lineas.push(`*PERIFERICOS*: ${cap(form.perifericos)}`);
+    if (form.detalles) lineas.push(`*DETALLES*: ${cap(form.detalles)}`);
+    if (form.trabajo) lineas.push(`*TRABAJO*: ${cap(form.trabajo)}`);
     return lineas.join('\n');
   };
 
@@ -214,6 +215,15 @@ const ValidacionWhatsapp = ({
 
           <div className="form-container" style={{ borderLeft: '4px solid #25D366' }}>
             <div className="form-grid three-cols">
+              <div>
+                <label style={lbl}>EMPRESA</label>
+                <select className="form-select" value={form.empresa}
+                  onChange={e => setForm({ ...form, empresa: e.target.value })}>
+                  <option>UGPS</option>
+                  <option>LW ENTEL</option>
+                  <option>Location World</option>
+                </select>
+              </div>
               <div>
                 <label style={lbl}>CLIENTE *</label>
                 <input className="form-input" value={form.cliente}
