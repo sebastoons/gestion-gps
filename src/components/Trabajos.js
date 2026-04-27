@@ -3,19 +3,21 @@ import { Download, Plus, Home, FileImage, Edit2, Trash2, AlertCircle } from 'luc
 import { exportToCSV } from '../utils/exportUtils';
 import { exportToVisualPDF, exportToVisualImage } from '../utils/visualExportUtils';
 
-const Trabajos = ({ 
-  setCurrentView, 
-  trabajos, 
-  setTrabajos, 
-  empresas, 
-  empresaSeleccionada, 
+const Trabajos = ({
+  setCurrentView,
+  trabajos,
+  setTrabajos,
+  empresas,
+  empresaSeleccionada,
   setEmpresaSeleccionada,
   mesSeleccionado,
   setMesSeleccionado,
   equiposNuevos,
   setEquiposNuevos,
   equiposRetirados,
-  setEquiposRetirados
+  setEquiposRetirados,
+  clientes,
+  setClientes
 }) => {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -202,6 +204,19 @@ const Trabajos = ({
     }
   };
 
+  const agregarClienteSiNoExiste = (nombre) => {
+    if (!nombre?.trim() || !clientes || !setClientes) return;
+    const existe = clientes.some(c => c.nombreCliente.trim().toLowerCase() === nombre.trim().toLowerCase());
+    if (!existe) {
+      setClientes(prev => [...prev, {
+        id: `CL${String(prev.length + 1).padStart(3, '0')}`,
+        nombreCliente: nombre.trim(), empresa: empresaSeleccionada,
+        nombreContacto1: '', telefono1: '', nombreContacto2: '', telefono2: '',
+        region: '', ciudad: '', comuna: '', direccion: '', tipoVehiculo: ''
+      }]);
+    }
+  };
+
   const handleSubmit = () => {
     if (!formData.nombreCliente || !formData.fecha) {
       alert('Por favor completa los campos obligatorios');
@@ -209,23 +224,18 @@ const Trabajos = ({
     }
 
     if (editingItem) {
-      // Actualizar trabajo existente (NO descontar equipos en edición)
       setTrabajos(trabajos.map(t => t.id === editingItem.id ? { ...formData, id: editingItem.id } : t));
       setEditingItem(null);
     } else {
-      // Crear nuevo trabajo
       const prefix = empresaSeleccionada === 'Location World' ? 'LW' : 'U';
       const trabajosDeEmpresa = trabajos.filter(t => t.empresa === empresaSeleccionada);
       const count = trabajosDeEmpresa.length + 1;
       const newId = `${prefix}${String(count).padStart(3, '0')}`;
-      
-      // Guardar el trabajo
       setTrabajos([...trabajos, { ...formData, id: newId, empresa: empresaSeleccionada, mes: mesSeleccionado }]);
-      
-      // DESCONTAR EQUIPOS DEL INVENTARIO
       descontarEquipos(formData.imeiIn, formData.imeiOut);
+      agregarClienteSiNoExiste(formData.nombreCliente);
     }
-    
+
     setShowForm(false);
     setFormData({
       id: '', nombreCliente: '', fecha: '', servicio: 'Instalación',
@@ -387,7 +397,42 @@ const Trabajos = ({
               <h3 className="form-title">
                 {editingItem ? 'Editar Trabajo' : 'Nuevo Trabajo'}
               </h3>
-              
+
+              {/* Copiar datos de trabajo anterior */}
+              {!editingItem && trabajosFiltrados.length > 0 && (
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{
+                    display: 'block', fontFamily: 'Quantico', fontSize: '0.6em',
+                    fontWeight: 'bold', textTransform: 'uppercase', color: '#1e40af', marginBottom: '4px'
+                  }}>
+                    Copiar datos de trabajo anterior (fecha, cliente, accesorios)
+                  </label>
+                  <select
+                    className="form-select"
+                    defaultValue=""
+                    onChange={e => {
+                      if (!e.target.value) return;
+                      const trabajosPorCliente = trabajosFiltrados.filter(t => t.nombreCliente === e.target.value);
+                      const ultimo = trabajosPorCliente[trabajosPorCliente.length - 1];
+                      if (ultimo) {
+                        setFormData(prev => ({
+                          ...prev,
+                          nombreCliente: ultimo.nombreCliente,
+                          fecha: ultimo.fecha,
+                          accesorios: ultimo.accesorios || []
+                        }));
+                      }
+                      e.target.value = '';
+                    }}
+                  >
+                    <option value="">-- Seleccionar cliente anterior --</option>
+                    {[...new Set(trabajosFiltrados.map(t => t.nombreCliente))].map(nombre => (
+                      <option key={nombre} value={nombre}>{nombre}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               {/* Alerta informativa */}
               {!editingItem && (
                 <div style={{

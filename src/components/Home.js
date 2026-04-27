@@ -1,5 +1,5 @@
 import React from 'react';
-import { Briefcase, Package, Users, DollarSign } from 'lucide-react';
+import { Briefcase, Package, Users, DollarSign, MessageCircle } from 'lucide-react';
 import '../styles/Home.css';
 
 const Home = ({ setCurrentView }) => {
@@ -49,6 +49,15 @@ const Home = ({ setCurrentView }) => {
             <DollarSign className="card-icon orange" />
             <h2 className="card-title">Valores de Trabajos</h2>
             <p className="card-description">Tabla de precios y exportación</p>
+          </button>
+
+          <button
+            onClick={() => setCurrentView('validacion')}
+            className="home-card"
+          >
+            <MessageCircle className="card-icon" style={{ color: '#25D366' }} />
+            <h2 className="card-title">Validación WhatsApp</h2>
+            <p className="card-description">Genera y envía validaciones por WhatsApp</p>
           </button>
         </div>
       </div>
