@@ -1,5 +1,5 @@
 import React from 'react';
-import { Briefcase, Package, Users, DollarSign, MessageCircle, ClipboardList } from 'lucide-react';
+import { Briefcase, Package, DollarSign, MessageCircle, ClipboardList } from 'lucide-react';
 import '../styles/Home.css';
 
 const Home = ({ setCurrentView }) => {
@@ -31,15 +31,6 @@ const Home = ({ setCurrentView }) => {
             <Package className="card-icon green" />
             <h2 className="card-title">Equipos GPS</h2>
             <p className="card-description">Administra equipos nuevos, retirados y malos</p>
-          </button>
-
-          <button
-            onClick={() => setCurrentView('clientes')}
-            className="home-card"
-          >
-            <Users className="card-icon purple" />
-            <h2 className="card-title">Gestión de Clientes</h2>
-            <p className="card-description">Base de datos de clientes GPS</p>
           </button>
 
           <button
