@@ -5,6 +5,7 @@ import Equipos from './components/Equipos';
 import Clientes from './components/Clientes';
 import ValoresTrabajos from './components/ValoresTrabajos';
 import ValidacionWhatsapp from './components/ValidacionWhatsapp';
+import OrdenesTrabajo from './components/OrdenesTrabajo';
 import { Download, Upload } from 'lucide-react';
 import './styles/Common.css';
 
@@ -306,6 +307,16 @@ const App = () => {
       {currentView === 'valores' && (
         <ValoresTrabajos
           setCurrentView={setCurrentView}
+        />
+      )}
+
+      {currentView === 'ordenes' && (
+        <OrdenesTrabajo
+          setCurrentView={setCurrentView}
+          empresas={empresas}
+          empresaSeleccionada={empresaSeleccionada}
+          setEmpresaSeleccionada={setEmpresaSeleccionada}
+          clientes={clientes}
         />
       )}
 
