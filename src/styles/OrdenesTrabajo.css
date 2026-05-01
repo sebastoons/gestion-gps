@@ -1,0 +1,315 @@
+/* OrdenesTrabajo.css */
+
+/* ── Filtros ── */
+.ot-filter-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* ── Accesorios ── */
+.ot-acc-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+@media (min-width: 768px) {
+  .ot-acc-grid { grid-template-columns: repeat(4, 1fr); }
+}
+.ot-acc-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: 'Changa';
+  font-size: 0.7em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.6);
+  border: 1px solid #e5e7eb;
+}
+.ot-acc-label input { accent-color: #507cdd; }
+
+/* ── Inventario ── */
+.ot-inv-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+}
+@media (min-width: 640px) {
+  .ot-inv-grid { grid-template-columns: repeat(2, 1fr); }
+}
+.ot-inv-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255,255,255,0.5);
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+.ot-inv-label {
+  font-family: 'Quantico';
+  font-size: 0.65em;
+  text-transform: uppercase;
+  color: #374151;
+}
+.ot-inv-btns { display: flex; gap: 3px; }
+.ot-inv-btn {
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid #d1d5db;
+  background: #f3f4f6;
+  font-family: 'Quantico';
+  font-size: 0.65em;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-weight: 600;
+}
+.ot-inv-btn.active {
+  background: #507cdd;
+  color: white;
+  border-color: #507cdd;
+}
+
+/* ── Confirm step ── */
+.ot-confirm-card {
+  background: white;
+  border-radius: 12px;
+  padding: 40px 32px;
+  text-align: center;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.ot-confirm-title {
+  font-family: 'Changa';
+  font-size: 1.4em;
+  text-transform: uppercase;
+  color: #1f2937;
+}
+.ot-confirm-sub {
+  font-family: 'Quantico';
+  font-size: 0.75em;
+  text-transform: uppercase;
+  color: #4b5563;
+  line-height: 1.6;
+}
+.ot-confirm-sub small {
+  font-size: 0.85em;
+  color: #9ca3af;
+  text-transform: none;
+}
+.ot-confirm-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 6px;
+}
+
+/* ── Canvas firma ── */
+.ot-canvas-wrapper {
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  background: #fafafa;
+  cursor: crosshair;
+  overflow: hidden;
+  max-width: 100%;
+}
+.ot-canvas {
+  display: block;
+  touch-action: none;
+  max-width: 100%;
+}
+
+/* ══════════════════════════════════════════════
+   DOCUMENTO OT (para captura PDF)
+══════════════════════════════════════════════ */
+.ot-doc {
+  font-family: Arial, sans-serif;
+  font-size: 9px;
+  color: #111;
+  background: #fff;
+  padding: 12px;
+  width: 100%;
+}
+
+.ot-doc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #1a3a6b;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+.ot-doc-empresa-name {
+  font-size: 11px;
+  font-weight: bold;
+  font-family: 'Changa', Arial, sans-serif;
+  letter-spacing: 1px;
+}
+.ot-doc-title {
+  font-size: 13px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-align: center;
+}
+.ot-doc-num {
+  font-size: 13px;
+  font-weight: bold;
+  color: #fbbf24;
+  white-space: nowrap;
+}
+
+.ot-section {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 5px;
+  overflow: hidden;
+}
+.ot-section-title {
+  background: #e8ecf4;
+  padding: 3px 8px;
+  font-size: 8px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #ccc;
+}
+
+.ot-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 6px;
+}
+.ot-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+  padding: 6px;
+}
+.ot-field {
+  display: flex;
+  flex-direction: column;
+}
+.ot-span2 { grid-column: span 2; }
+.ot-span3 { grid-column: span 3; }
+.ot-fl {
+  font-size: 7px;
+  color: #666;
+  text-transform: uppercase;
+  margin-bottom: 1px;
+}
+.ot-fv {
+  border-bottom: 1px solid #333;
+  min-height: 14px;
+  padding: 1px 2px;
+  font-size: 9px;
+  text-transform: uppercase;
+  word-break: break-all;
+}
+
+.ot-row-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 6px 8px;
+  align-items: center;
+}
+.ot-check-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 8px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+.ot-circle {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid #333;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.ot-circle.filled {
+  background: #1a3a6b;
+  border-color: #1a3a6b;
+}
+
+.ot-row-2col {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 5px;
+}
+.ot-row-2col > .ot-section {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+/* Inventario tabla */
+.ot-inv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8px;
+}
+.ot-inv-table th {
+  background: #e8ecf4;
+  border: 1px solid #ccc;
+  padding: 2px 4px;
+  text-align: center;
+}
+.ot-inv-table td {
+  border: 1px solid #ddd;
+  padding: 2px 4px;
+  text-align: center;
+}
+.ot-inv-table td:first-child { text-align: left; }
+
+/* Combustible */
+.ot-fuel-bar {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 8px;
+}
+.ot-fuel-label { font-size: 8px; font-weight: bold; }
+.ot-fuel-seg {
+  width: 14px;
+  height: 10px;
+  border: 1px solid #666;
+  border-radius: 2px;
+}
+.ot-fuel-seg.filled { background: #2563eb; }
+
+/* Firma */
+.ot-firma-box {
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-top: 1px solid #eee;
+}
+.ot-firma-img { max-height: 55px; max-width: 160px; }
+.ot-firma-empty { font-size: 14px; color: #ccc; letter-spacing: 2px; }
+
+.ot-disclaimer {
+  font-size: 7px;
+  color: #555;
+  line-height: 1.4;
+  padding: 4px 6px;
+  border-top: 1px solid #eee;
+  margin-top: 5px;
+}
