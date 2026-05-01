@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import Home from './components/Home';
 import Trabajos from './components/Trabajos';
 import Equipos from './components/Equipos';
-import Clientes from './components/Clientes';
 import ValoresTrabajos from './components/ValoresTrabajos';
 import ValidacionWhatsapp from './components/ValidacionWhatsapp';
 import OrdenesTrabajo from './components/OrdenesTrabajo';
@@ -18,9 +17,9 @@ const App = () => {
   const [clientes, setClientes] = useState([]);
   
   // Lista actualizada de empresas - NO se sobrescribirá con el backup
-  const [empresas] = useState(['Location World', 'UGPS']);
-  
-  const [empresaSeleccionada, setEmpresaSeleccionada] = useState('Location World');
+  const [empresas] = useState(['Entel', 'UGPS']);
+
+  const [empresaSeleccionada, setEmpresaSeleccionada] = useState('Entel');
   const [mesSeleccionado, setMesSeleccionado] = useState('Octubre 2025');
 
   // Cargar datos del localStorage con migración
@@ -32,38 +31,23 @@ const App = () => {
       const storedEquiposMalos = localStorage.getItem('equiposMalos');
       const storedClientes = localStorage.getItem('clientes');
 
-      // MIGRACIÓN: Agregar empresa a equipos sin ella
-      const migrateEquipos = (equipos, defaultEmpresa = 'Location World') => {
+      // MIGRACIÓN: normalizar empresa (Location World / LW → Entel)
+      const normalizeEmpresa = (e) => {
+        if (!e || e === 'Location World' || e === 'LW' || e === 'LW ENTEL') return 'Entel';
+        return e;
+      };
+      const migrateEquipos = (equipos) => {
         if (!equipos) return [];
         return equipos.map(equipo => ({
           ...equipo,
-          empresa: equipo.empresa || defaultEmpresa
+          empresa: normalizeEmpresa(equipo.empresa)
         }));
       };
 
-      // Migrar trabajos
-      if (storedTrabajos) {
-        const trabajosData = JSON.parse(storedTrabajos);
-        setTrabajos(migrateEquipos(trabajosData, 'Location World'));
-      }
-      
-      // Migrar equipos nuevos
-      if (storedEquiposNuevos) {
-        const equiposData = JSON.parse(storedEquiposNuevos);
-        setEquiposNuevos(migrateEquipos(equiposData, 'Location World'));
-      }
-      
-      // Migrar equipos retirados
-      if (storedEquiposRetirados) {
-        const equiposData = JSON.parse(storedEquiposRetirados);
-        setEquiposRetirados(migrateEquipos(equiposData, 'Location World'));
-      }
-      
-      // Migrar equipos malos
-      if (storedEquiposMalos) {
-        const equiposData = JSON.parse(storedEquiposMalos);
-        setEquiposMalos(migrateEquipos(equiposData, 'Location World'));
-      }
+      if (storedTrabajos)        setTrabajos(migrateEquipos(JSON.parse(storedTrabajos)));
+      if (storedEquiposNuevos)   setEquiposNuevos(migrateEquipos(JSON.parse(storedEquiposNuevos)));
+      if (storedEquiposRetirados) setEquiposRetirados(migrateEquipos(JSON.parse(storedEquiposRetirados)));
+      if (storedEquiposMalos)    setEquiposMalos(migrateEquipos(JSON.parse(storedEquiposMalos)));
       
       if (storedClientes) setClientes(JSON.parse(storedClientes));
     };
@@ -147,22 +131,11 @@ const App = () => {
           `Las configuraciones del sistema (lista de empresas) se mantendrán actualizadas.`;
 
         if (window.confirm(mensaje)) {
-          // Función de validación y migración de empresas
-          const validarYMigrarEmpresa = (item) => {
-            // Si no tiene empresa, asignar Location World por defecto
-            if (!item.empresa) {
-              return { ...item, empresa: 'Location World' };
-            }
-            
-            // Si la empresa existe en la lista actual, mantenerla
-            if (empresas.includes(item.empresa)) {
-              return item;
-            }
-            
-            // Si la empresa no existe, asignar Location World y notificar
-            console.warn(`Empresa "${item.empresa}" no encontrada, migrando a Location World`);
-            return { ...item, empresa: 'Location World' };
+          const norm = (e) => {
+            if (!e || e === 'Location World' || e === 'LW' || e === 'LW ENTEL') return 'Entel';
+            return empresas.includes(e) ? e : 'Entel';
           };
+          const validarYMigrarEmpresa = (item) => ({ ...item, empresa: norm(item.empresa) });
 
           // Restaurar trabajos con validación estricta
           if (backup.datos.trabajos) {
@@ -191,8 +164,9 @@ const App = () => {
           if (backup.datos.clientes) setClientes(backup.datos.clientes);
           
           // Restaurar selecciones (opcional)
-          if (backup.datos.empresaSeleccionada && empresas.includes(backup.datos.empresaSeleccionada)) {
-            setEmpresaSeleccionada(backup.datos.empresaSeleccionada);
+          if (backup.datos.empresaSeleccionada) {
+            const e = norm(backup.datos.empresaSeleccionada);
+            setEmpresaSeleccionada(e);
           }
           if (backup.datos.mesSeleccionado) setMesSeleccionado(backup.datos.mesSeleccionado);
 
@@ -295,15 +269,6 @@ const App = () => {
         />
       )}
       
-      {currentView === 'clientes' && (
-        <Clientes 
-          setCurrentView={setCurrentView}
-          clientes={clientes}
-          setClientes={setClientes}
-          empresas={empresas}
-        />
-      )}
-
       {currentView === 'valores' && (
         <ValoresTrabajos
           setCurrentView={setCurrentView}

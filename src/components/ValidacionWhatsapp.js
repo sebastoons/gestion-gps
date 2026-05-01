@@ -7,7 +7,7 @@ const COSTOS = {
 };
 
 const VACIO = {
-  cliente: '', fecha: '', servicio: 'Instalación', empresa: 'UGPS',
+  cliente: '', fecha: '', servicio: 'Instalación', empresa: 'Entel',
   ppuVinIn: '', ppuVinOut: '', marcaModelo: '',
   gpsIn: '', gpsOut: '', kms: '',
   ubicacion: '', perifericos: '', detalles: '', trabajo: '',
@@ -20,7 +20,6 @@ const ValidacionWhatsapp = ({
   equiposRetirados, setEquiposRetirados,
   equiposMalos, setEquiposMalos,
   trabajos, setTrabajos,
-  clientes, setClientes,
   mesSeleccionado
 }) => {
   const [form, setForm] = useState({ ...VACIO });
@@ -83,13 +82,13 @@ const ValidacionWhatsapp = ({
       if (gpsOut) {
         if (dest === 'Malo') {
           setEquiposMalos(prev => [...prev, {
-            id: `MU${String(prev.length + 1).padStart(3, '0')}`,
-            imei: gpsOut, asignado: true, nombreCliente: form.cliente, empresa: 'UGPS'
+            id: `M${String(prev.length + 1).padStart(3, '0')}`,
+            imei: gpsOut, asignado: true, nombreCliente: form.cliente, empresa: form.empresa
           }]);
         } else {
           setEquiposRetirados(prev => [...prev, {
-            id: `RU${String(prev.length + 1).padStart(3, '0')}`,
-            fecha: form.fecha, cliente: form.cliente, imei: gpsOut, empresa: 'UGPS'
+            id: `R${String(prev.length + 1).padStart(3, '0')}`,
+            fecha: form.fecha, cliente: form.cliente, imei: gpsOut, empresa: form.empresa
           }]);
         }
       }
@@ -97,16 +96,18 @@ const ValidacionWhatsapp = ({
       if (gpsIn) quitarInventario(gpsIn);
       if (gpsOut) {
         setEquiposRetirados(prev => [...prev, {
-          id: `RU${String(prev.length + 1).padStart(3, '0')}`,
-          fecha: form.fecha, cliente: form.cliente, imei: gpsOut, empresa: 'UGPS'
+          id: `R${String(prev.length + 1).padStart(3, '0')}`,
+          fecha: form.fecha, cliente: form.cliente, imei: gpsOut, empresa: form.empresa
         }]);
       }
     }
   };
 
   const agregarATrabajos = () => {
-    const trabajosUGPS = trabajos.filter(t => t.empresa === 'UGPS');
-    const newId = `U${String(trabajosUGPS.length + 1).padStart(3, '0')}`;
+    const emp = form.empresa;
+    const trabajosEmp = trabajos.filter(t => t.empresa === emp);
+    const prefix = emp === 'UGPS' ? 'U' : 'E';
+    const newId = `${prefix}${String(trabajosEmp.length + 1).padStart(3, '0')}`;
     const uf = COSTOS[form.servicio] || 0.8;
     const accs = form.perifericos ? form.perifericos.split(',').map(s => s.trim()).filter(Boolean) : [];
     setTrabajos(prev => [...prev, {
@@ -115,22 +116,8 @@ const ValidacionWhatsapp = ({
       ppuIn: form.ppuVinIn.toUpperCase(), ppuOut: form.ppuVinOut.toUpperCase(),
       imeiIn: form.gpsIn, imeiOut: form.gpsOut, km: form.kms,
       valorUF: uf.toString(), valorPesos: Math.round(uf * 39000).toString(),
-      empresa: 'UGPS', mes: mesSeleccionado
+      empresa: emp, mes: mesSeleccionado
     }]);
-  };
-
-  const agregarAClientes = () => {
-    const nombre = form.cliente.trim();
-    if (!nombre) return;
-    const existe = clientes.some(c => c.nombreCliente.trim().toLowerCase() === nombre.toLowerCase());
-    if (!existe) {
-      setClientes(prev => [...prev, {
-        id: `CL${String(prev.length + 1).padStart(3, '0')}`,
-        nombreCliente: nombre, empresa: 'UGPS',
-        nombreContacto1: '', telefono1: '', nombreContacto2: '', telefono2: '',
-        region: '', ciudad: '', comuna: '', direccion: '', tipoVehiculo: ''
-      }]);
-    }
   };
 
   const validar = () => {
@@ -144,7 +131,6 @@ const ValidacionWhatsapp = ({
   const ejecutarAcciones = () => {
     procesarEquipos();
     agregarATrabajos();
-    agregarAClientes();
     setForm({ ...VACIO });
   };
 
@@ -160,7 +146,7 @@ const ValidacionWhatsapp = ({
     const msg = generarMensaje();
     const copiar = () => {
       ejecutarAcciones();
-      alert('✓ Copiado y registrado en trabajos UGPS');
+      alert(`✓ Copiado y registrado en trabajos ${form.empresa}`);
     };
     if (navigator.clipboard) {
       navigator.clipboard.writeText(msg).then(copiar).catch(() => {
@@ -219,9 +205,8 @@ const ValidacionWhatsapp = ({
                 <label style={lbl}>EMPRESA</label>
                 <select className="form-select" value={form.empresa}
                   onChange={e => setForm({ ...form, empresa: e.target.value })}>
+                  <option>Entel</option>
                   <option>UGPS</option>
-                  <option>LW ENTEL</option>
-                  <option>Location World</option>
                 </select>
               </div>
               <div>
