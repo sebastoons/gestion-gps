@@ -159,7 +159,6 @@ const OTDoc = ({ ot, numero, empresa, cliente, rut, firma, aceptacion }) => {
   const cl = ot.checklist||{};
   const clBg = {NA:'#d1d5db',OK:'#16a34a',DETALLE:'#dc2626'};
   const inIn=showImeiIn(ot.tipoServicio), inOut=showImeiOut(ot.tipoServicio);
-  const accSpan = inIn&&inOut?'ot-span2':inIn||inOut?'ot-span3':'ot-span4';
   return (
     <div className="ot-doc">
       {/* ── Header ── */}
