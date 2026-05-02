@@ -142,6 +142,20 @@
   width: 100%;
 }
 
+/* Logos en header del documento OT */
+.ot-logos-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.ot-logo-img {
+  height: 36px;
+  width: auto;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
 .ot-doc-header {
   display: flex;
   align-items: center;

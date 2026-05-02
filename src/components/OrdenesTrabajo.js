@@ -38,13 +38,28 @@ const makeOT = () => ({
   nombreResponsable: '', cargoResponsable: '', ccResponsable: '', empresaInstaladora: '',
 });
 
-// ── Documento OT (visible / capturado como PDF) ──────────────────────────────
+// ── Logos por empresa ─────────────────────────────────────────────────────────
+const EmpresaLogos = ({ empresa }) => {
+  if (empresa === 'UGPS') return (
+    <div className="ot-logos-wrap">
+      <img src="/logos/ugps.png" alt="UGPS" className="ot-logo-img" />
+    </div>
+  );
+  return (
+    <div className="ot-logos-wrap">
+      <img src="/logos/onway.png" alt="Onway" className="ot-logo-img" />
+      <img src="/logos/entel.png" alt="Entel" className="ot-logo-img" />
+    </div>
+  );
+};
+
+
 const OTDoc = ({ ot, numero, empresa, cliente, firma }) => {
   const num = String(numero || 0).padStart(6, '0');
   return (
     <div className="ot-doc">
       <div className="ot-doc-header">
-        <div className="ot-doc-empresa-name">{empresa}</div>
+        <EmpresaLogos empresa={empresa} />
         <div className="ot-doc-title">ORDEN DE SERVICIO TÉCNICO</div>
         <div className="ot-doc-num">N° {num}</div>
       </div>
