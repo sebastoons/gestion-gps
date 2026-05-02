@@ -1,534 +1,411 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FileText, Plus, Download, Search, ChevronLeft, X, Trash2, Mail, Check } from 'lucide-react';
+import { Plus, Download, Search, ChevronLeft, X, Trash2, Mail, Check, Home as HomeIcon, ChevronDown } from 'lucide-react';
 import '../styles/OrdenesTrabajo.css';
 
-const ACCESORIOS = [
-  { key: 'inmovilizacion', label: 'Inmovilización' },
-  { key: 'apDePuerta', label: 'AP de Puerta' },
-  { key: 'sos', label: 'SOS' },
-  { key: 'can100Edata', label: 'CAN100 EDATA' },
-  { key: 'dallas', label: 'Dallas' },
-  { key: 'temperatura', label: 'Temperatura' },
-  { key: 'magnetico', label: 'Magnético' },
+const REGIONES = [
+  'Arica y Parinacota','Tarapacá','Antofagasta','Atacama','Coquimbo','Valparaíso',
+  'Metropolitana de Santiago',"O'Higgins",'Maule','Ñuble','Biobío','Araucanía',
+  'Los Ríos','Los Lagos','Aysén','Magallanes'
 ];
+const CIUDADES = {
+  'Arica y Parinacota':['Arica','Putre'],
+  'Tarapacá':['Iquique','Alto Hospicio','Pozo Almonte'],
+  'Antofagasta':['Antofagasta','Calama','Tocopilla','Mejillones'],
+  'Atacama':['Copiapó','Vallenar','Caldera'],
+  'Coquimbo':['La Serena','Coquimbo','Ovalle','Vicuña'],
+  'Valparaíso':['Valparaíso','Viña del Mar','Quilpué','Villa Alemana','San Antonio','Quillota'],
+  'Metropolitana de Santiago':['Santiago','Puente Alto','Maipú','La Florida','Las Condes','Providencia','Ñuñoa','San Bernardo','Pudahuel','Vitacura'],
+  "O'Higgins":['Rancagua','San Fernando','Rengo','Machalí'],
+  'Maule':['Talca','Curicó','Linares','Constitución'],
+  'Ñuble':['Chillán','Bulnes','San Carlos'],
+  'Biobío':['Concepción','Talcahuano','Los Ángeles','Chiguayante'],
+  'Araucanía':['Temuco','Villarrica','Pucón','Angol'],
+  'Los Ríos':['Valdivia','La Unión','Río Bueno'],
+  'Los Lagos':['Puerto Montt','Osorno','Castro','Ancud'],
+  'Aysén':['Coyhaique','Puerto Aysén'],
+  'Magallanes':['Punta Arenas','Puerto Natales'],
+};
+const COMUNAS = {
+  'Santiago':['Santiago Centro','Estación Central','Independencia','Recoleta','Quinta Normal','Peñalolén','La Cisterna'],
+  'Puente Alto':['Puente Alto'],'Maipú':['Maipú'],'La Florida':['La Florida'],
+  'Las Condes':['Las Condes'],'Providencia':['Providencia'],'Ñuñoa':['Ñuñoa'],
+  'San Bernardo':['San Bernardo'],'Pudahuel':['Pudahuel'],'Vitacura':['Vitacura'],
+  'Valparaíso':['Valparaíso'],'Viña del Mar':['Viña del Mar'],'Quilpué':['Quilpué'],
+  'Villa Alemana':['Villa Alemana'],'Concepción':['Concepción'],
+  'Temuco':['Temuco','Padre Las Casas'],'Antofagasta':['Antofagasta'],
+  'La Serena':['La Serena'],'Coquimbo':['Coquimbo'],'Iquique':['Iquique','Alto Hospicio'],
+  'Rancagua':['Rancagua'],'Talca':['Talca'],'Chillán':['Chillán'],
+  'Puerto Montt':['Puerto Montt'],'Osorno':['Osorno'],'Valdivia':['Valdivia'],
+  'Punta Arenas':['Punta Arenas'],'Coyhaique':['Coyhaique'],
+};
 
-const SERVICIOS = ['Instalación', 'Mantenimiento', 'Desinstalación', 'Homologación'];
-
-const INVENTARIO = [
-  'Luces Altas','Luces Bajas','Luces de Reversa','Reversa','Direccionales',
-  'Plumillas','Aire Acondicionado','Pito','Radio','Pantalla de Video',
-  'Cámara de Reversa','Testigos del Tablero','Espejos Retrovisores',
-  'Est. Tapicería Interior','Estado de la Batería','Master','Llanta de Repuesto'
+const MARCAS = [
+  'Toyota','Chevrolet','Ford','Hyundai','Kia','Mazda','Nissan','Volkswagen','Honda',
+  'Suzuki','Mitsubishi','Subaru','Mercedes-Benz','BMW','Audi','Jeep','Fiat','Peugeot',
+  'Citroën','Renault','Volvo','Land Rover','JAC','Chery','BAIC','Haval','BYD','MG',
+  'Isuzu','Ssangyong','Geely','Foton','Great Wall','Ram','Dodge','Otros'
 ];
+const COLORES = ['Blanco','Negro','Gris','Plata','Rojo','Azul','Verde','Amarillo','Naranja','Café/Marrón','Beige','Celeste','Morado','Otro'];
+const AÑOS = Array.from({length:37},(_,i)=>String(2026-i));
+const TECNICOS = ['Sebastian Parra'];
+const EMPRESAS_INST = ['Sebastian Parra'];
+const ACCESORIOS_GPS = ['Inmovilización','SOS','Dallas','Buzzer','Edata','Sensor T°','Sensor Puerta'];
+const SERVICIOS = ['Instalación','Desinstalación','Mantención','Reinstalación','Visita Fallida'];
+const CHECKLIST_ITEMS = ['Carrocería','Parabrisas/Vidrios','Luces','Neumáticos','Interior','Batería'];
 
 const makeOT = () => ({
   fecha: new Date().toISOString().split('T')[0],
-  tipoServicio: 'Instalación',
-  ciudad: '', tecnico: '', linea: '', canal: '', tecnologia: '',
-  placa: '', marca: '', modelo: '', color: '', vin: '', kilometraje: '',
-  imei: '', imeiAnterior: '',
-  accesorios: { inmovilizacion:false, apDePuerta:false, sos:false, can100Edata:false, dallas:false, temperatura:false, magnetico:false, otro:'' },
-  inventario: Object.fromEntries(INVENTARIO.map(k => [k, 'NA'])),
-  combustible: 4,
-  estadoPruebas: 'OK',
-  in1:'', in2:'', in3:'', in4:'', out1:'', out2:'', out3:'', out4:'',
-  ubicacionEquipo: '',
-  materiales: '', voltajeEncendido: '', voltajeApagado: '',
-  trabajoRealizado: '', observaciones: '',
-  nombreResponsable: '', cargoResponsable: '', ccResponsable: '', empresaInstaladora: '',
+  tipoServicio:'Instalación', region:'', ciudad:'', comuna:'',
+  tecnico:'Sebastian Parra', empresaInstaladora:'Sebastian Parra',
+  ppu:'', marca:'', modelo:'', anio:'', color:'', kilometraje:'',
+  imeiIn:'', imeiOut:'', accesoriosGPS:[],
+  checklist: Object.fromEntries(CHECKLIST_ITEMS.map(k=>[k,{estado:'NA',nota:''}])),
+  observaciones:'',
 });
 
-// ── Logos por empresa ─────────────────────────────────────────────────────────
-const EmpresaLogos = ({ empresa }) => {
-  if (empresa === 'UGPS') return (
-    <div className="ot-logos-wrap">
-      <img src="/logos/ugps.png" alt="UGPS" className="ot-logo-img" />
-    </div>
-  );
+const formatRut = val => {
+  const c = val.replace(/[^0-9kK]/g,'').toUpperCase();
+  if (c.length<=1) return c;
+  return `${c.slice(0,-1)}-${c.slice(-1)}`;
+};
+
+const showImeiIn  = s => ['Instalación','Mantención','Reinstalación'].includes(s);
+const showImeiOut = s => ['Desinstalación','Mantención'].includes(s);
+
+// ── AccesoriosDropdown ────────────────────────────────────────────────────────
+const AccesoriosDropdown = ({ selected, onChange }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(()=>{
+    const h = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown',h);
+    return ()=>document.removeEventListener('mousedown',h);
+  },[]);
+  const toggle = acc => onChange(selected.includes(acc)?selected.filter(a=>a!==acc):[...selected,acc]);
   return (
-    <div className="ot-logos-wrap">
-      <img src="/logos/onway.png" alt="Onway" className="ot-logo-img" />
-      <img src="/logos/entel.png" alt="Entel" className="ot-logo-img" />
+    <div ref={ref} style={{position:'relative'}}>
+      <div className="acc-trigger" onClick={()=>setOpen(!open)}>
+        <span>{selected.length===0?'Seleccionar accesorios...':selected.join(', ')}</span>
+        <ChevronDown size={13} style={{flexShrink:0}}/>
+      </div>
+      {open && (
+        <div className="acc-menu">
+          {ACCESORIOS_GPS.map(acc=>(
+            <label key={acc} className="acc-item">
+              <input type="checkbox" checked={selected.includes(acc)} onChange={()=>toggle(acc)}/>{acc}
+            </label>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
 
+// ── ChecklistRow (formulario) ─────────────────────────────────────────────────
+const ChecklistRow = ({ item, estado, nota, onChange }) => {
+  const cycle = () => { const n=estado==='NA'?'OK':estado==='OK'?'DETALLE':'NA'; onChange(n,n==='NA'?'':nota); };
+  const bg={NA:'#d1d5db',OK:'#16a34a',DETALLE:'#dc2626'}[estado];
+  return (
+    <div className="cl-item">
+      <button type="button" className="cl-box" style={{background:bg}} onClick={cycle}>
+        {estado==='OK'&&'✓'}{estado==='DETALLE'&&'!'}
+      </button>
+      <span className="cl-label">{item}</span>
+      {estado==='DETALLE' && (
+        <input className="form-input cl-nota" placeholder="Detalle..."
+          value={nota} onChange={e=>onChange('DETALLE',e.target.value)}/>
+      )}
+    </div>
+  );
+};
 
-const OTDoc = ({ ot, numero, empresa, cliente, firma }) => {
-  const num = String(numero || 0).padStart(6, '0');
+// ── EmpresaLogos ──────────────────────────────────────────────────────────────
+const EmpresaLogos = ({ empresa }) => empresa==='UGPS'
+  ? <div className="ot-logos-wrap"><img src="/logos/ugps.png" alt="UGPS" className="ot-logo-img"/></div>
+  : <div className="ot-logos-wrap"><img src="/logos/onway.png" alt="Onway" className="ot-logo-img"/><img src="/logos/entel.png" alt="Entel" className="ot-logo-img"/></div>;
+
+// ── OTDoc ─────────────────────────────────────────────────────────────────────
+const OTDoc = ({ ot, numero, empresa, cliente, rut, firma, aceptacion }) => {
+  const esVF = ot.tipoServicio==='Visita Fallida';
+  const cl = ot.checklist||{};
+  const clBg = {NA:'#d1d5db',OK:'#16a34a',DETALLE:'#dc2626'};
+  const inIn=showImeiIn(ot.tipoServicio), inOut=showImeiOut(ot.tipoServicio);
+  const accSpan = inIn&&inOut?'ot-span2':inIn||inOut?'ot-span3':'ot-span4';
   return (
     <div className="ot-doc">
       <div className="ot-doc-header">
-        <EmpresaLogos empresa={empresa} />
-        <div className="ot-doc-title">ORDEN DE SERVICIO TÉCNICO</div>
-        <div className="ot-doc-num">N° {num}</div>
+        <EmpresaLogos empresa={empresa}/>
+        <div className="ot-doc-title">ORDEN DE TRABAJO</div>
+        <div className="ot-doc-num">{numero}</div>
       </div>
 
-      {/* Datos de servicio */}
       <div className="ot-section">
-        <div className="ot-section-title">DATOS DE SERVICIO</div>
-        <div className="ot-grid-3">
-          {[['FECHA', ot.fecha],['CIUDAD', ot.ciudad],['TÉCNICO', ot.tecnico],
-            ['PLACA', ot.placa],['MARCA', ot.marca],['MODELO', ot.modelo],
-            ['COLOR', ot.color],['KM', ot.kilometraje],['VIN', ot.vin],
-            ['IMEI NUEVO', ot.imei],['IMEI ANTERIOR', ot.imeiAnterior],['TECNOLOGÍA', ot.tecnologia]].map(([l,v]) => (
-            <div key={l} className="ot-field"><span className="ot-fl">{l}</span><span className="ot-fv">{v}</span></div>
-          ))}
-          <div className="ot-field ot-span2"><span className="ot-fl">CLIENTE / EMPRESA</span><span className="ot-fv">{cliente}</span></div>
-          <div className="ot-field"><span className="ot-fl">EMPRESA INSTALADORA</span><span className="ot-fv">{ot.empresaInstaladora}</span></div>
-        </div>
-      </div>
-
-      {/* Tipo de servicio */}
-      <div className="ot-section">
-        <div className="ot-section-title">TIPO DE SERVICIO</div>
-        <div className="ot-row-wrap">
-          {SERVICIOS.map(s => (
-            <span key={s} className="ot-check-item">
-              <span className={`ot-circle${ot.tipoServicio === s ? ' filled' : ''}`}></span>
-              {s.toUpperCase()}
-            </span>
+        <div className="ot-section-title">DATOS DEL SERVICIO</div>
+        <div className="ot-grid-4">
+          {[['TIPO',ot.tipoServicio],['FECHA',ot.fecha],['TÉCNICO',ot.tecnico],['EMP. INSTALADORA',ot.empresaInstaladora],
+            ['REGIÓN',ot.region],['CIUDAD',ot.ciudad],['COMUNA',ot.comuna],['PPU',ot.ppu]].map(([l,v])=>(
+            <div key={l} className="ot-field"><span className="ot-fl">{l}</span><span className="ot-fv" style={l==='PPU'?{fontWeight:'bold'}:{}}>{v}</span></div>
           ))}
         </div>
       </div>
 
-      {/* Accesorios */}
-      <div className="ot-section">
-        <div className="ot-section-title">ACCESORIOS INSTALADOS</div>
-        <div className="ot-row-wrap">
-          {ACCESORIOS.map(a => (
-            <span key={a.key} className="ot-check-item">
-              <span className={`ot-circle${ot.accesorios[a.key] ? ' filled' : ''}`}></span>
-              {a.label.toUpperCase()}
-            </span>
-          ))}
-          {ot.accesorios.otro && <span className="ot-check-item">OTRO: {ot.accesorios.otro}</span>}
-        </div>
-      </div>
-
-      {/* Inventario + combustible en 2 columnas */}
-      <div className="ot-row-2col">
-        <div className="ot-section" style={{flex:2}}>
-          <div className="ot-section-title">INVENTARIO INICIAL</div>
-          <table className="ot-inv-table">
-            <thead><tr><th>ÍTEM</th><th>B</th><th>M</th><th>N/A</th></tr></thead>
-            <tbody>
-              {INVENTARIO.map(item => (
-                <tr key={item}>
-                  <td>{item}</td>
-                  <td>{ot.inventario[item] === 'B' ? '✓' : ''}</td>
-                  <td>{ot.inventario[item] === 'M' ? '✓' : ''}</td>
-                  <td>{ot.inventario[item] === 'NA' ? '✓' : ''}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div style={{flex:1, display:'flex', flexDirection:'column', gap:'6px'}}>
-          <div className="ot-section">
-            <div className="ot-section-title">COMBUSTIBLE</div>
-            <div className="ot-fuel-bar">
-              <span className="ot-fuel-label">E</span>
-              {Array.from({length:8},(_,i) => (
-                <div key={i} className={`ot-fuel-seg${i < ot.combustible ? ' filled' : ''}`}></div>
-              ))}
-              <span className="ot-fuel-label">F</span>
-            </div>
-          </div>
-          <div className="ot-section">
-            <div className="ot-section-title">PRUEBAS</div>
-            <div className="ot-row-wrap">
-              {['OK','NO OK'].map(s => (
-                <span key={s} className="ot-check-item">
-                  <span className={`ot-circle${ot.estadoPruebas === s ? ' filled' : ''}`}></span>{s}
-                </span>
-              ))}
-            </div>
-          </div>
-          <div className="ot-section">
-            <div className="ot-section-title">ENTRADAS / SALIDAS</div>
-            <div className="ot-grid-2">
-              {[1,2,3,4].map(n => (
-                <React.Fragment key={n}>
-                  <div className="ot-field"><span className="ot-fl">IN {n}</span><span className="ot-fv">{ot[`in${n}`]}</span></div>
-                  <div className="ot-field"><span className="ot-fl">OUT {n}</span><span className="ot-fv">{ot[`out${n}`]}</span></div>
-                </React.Fragment>
-              ))}
-            </div>
-          </div>
-          <div className="ot-section">
-            <div className="ot-section-title">VOLTAJES</div>
-            <div className="ot-grid-2">
-              <div className="ot-field"><span className="ot-fl">ENCENDIDO</span><span className="ot-fv">{ot.voltajeEncendido}</span></div>
-              <div className="ot-field"><span className="ot-fl">APAGADO</span><span className="ot-fv">{ot.voltajeApagado}</span></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Trabajo */}
-      <div className="ot-section">
-        <div className="ot-section-title">TRABAJO REALIZADO</div>
-        <div className="ot-grid-3">
-          <div className="ot-field ot-span3"><span className="ot-fl">MATERIALES UTILIZADOS</span><span className="ot-fv">{ot.materiales}</span></div>
-          <div className="ot-field ot-span3"><span className="ot-fl">TRABAJO REALIZADO</span><span className="ot-fv">{ot.trabajoRealizado}</span></div>
-          <div className="ot-field ot-span3"><span className="ot-fl">OBSERVACIONES</span><span className="ot-fv">{ot.observaciones}</span></div>
-        </div>
-      </div>
-
-      {/* Responsable + Firma */}
-      <div className="ot-row-2col">
+      {!esVF && <>
         <div className="ot-section">
-          <div className="ot-section-title">RESPONSABLE TÉCNICO</div>
-          <div className="ot-grid-2">
-            <div className="ot-field ot-span2"><span className="ot-fl">NOMBRE</span><span className="ot-fv">{ot.nombreResponsable}</span></div>
-            <div className="ot-field"><span className="ot-fl">CC / RUT</span><span className="ot-fv">{ot.ccResponsable}</span></div>
-            <div className="ot-field"><span className="ot-fl">CARGO</span><span className="ot-fv">{ot.cargoResponsable}</span></div>
+          <div className="ot-section-title">DATOS DEL VEHÍCULO</div>
+          <div className="ot-grid-4">
+            {[['MARCA',ot.marca],['MODELO',ot.modelo],['AÑO',ot.anio],['COLOR',ot.color],['KILOMETRAJE',ot.kilometraje?`${ot.kilometraje} km`:'']].map(([l,v])=>(
+              <div key={l} className="ot-field"><span className="ot-fl">{l}</span><span className="ot-fv">{v}</span></div>
+            ))}
           </div>
         </div>
+
         <div className="ot-section">
-          <div className="ot-section-title">FIRMA CLIENTE: {cliente}</div>
-          <div className="ot-firma-box">
-            {firma ? <img src={firma} alt="Firma" className="ot-firma-img" /> : <span className="ot-firma-empty">_________________</span>}
+          <div className="ot-section-title">DATOS GPS</div>
+          <div className="ot-grid-4">
+            {inIn && <div className="ot-field"><span className="ot-fl">IMEI IN</span><span className="ot-fv">{ot.imeiIn}</span></div>}
+            {inOut && <div className="ot-field"><span className="ot-fl">IMEI OUT</span><span className="ot-fv">{ot.imeiOut}</span></div>}
+            <div className={`ot-field ${accSpan}`}><span className="ot-fl">ACCESORIOS</span><span className="ot-fv">{ot.accesoriosGPS?.join(', ')||'-'}</span></div>
           </div>
+        </div>
+
+        <div className="ot-section">
+          <div className="ot-section-title">CHECK LIST</div>
+          <div className="ot-cl-grid">
+            {CHECKLIST_ITEMS.map(item=>{
+              const d=cl[item]||{estado:'NA',nota:''};
+              return (
+                <div key={item} className="ot-cl-item">
+                  <span className="ot-cl-box" style={{background:clBg[d.estado]||'#d1d5db'}}>
+                    {d.estado==='OK'&&'✓'}{d.estado==='DETALLE'&&'!'}
+                  </span>
+                  <span className="ot-cl-label">{item}</span>
+                  {d.estado==='DETALLE'&&d.nota&&<span className="ot-cl-nota">({d.nota})</span>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </>}
+
+      <div className="ot-section">
+        <div className="ot-section-title">OBSERVACIONES</div>
+        <div style={{padding:'5px 8px',minHeight:'28px',fontSize:'9px'}}>{ot.observaciones}</div>
+      </div>
+
+      <div className="ot-section">
+        <div className="ot-section-title">RECEPCIÓN DEL VEHÍCULO</div>
+        <div className="ot-grid-4" style={{paddingBottom:2}}>
+          <div className="ot-field ot-span2"><span className="ot-fl">NOMBRE</span><span className="ot-fv">{cliente}</span></div>
+          <div className="ot-field ot-span2"><span className="ot-fl">RUT</span><span className="ot-fv">{rut}</span></div>
+        </div>
+        <div style={{padding:'4px 8px',fontSize:'7.5px',display:'flex',alignItems:'flex-start',gap:6,borderTop:'1px solid #eee'}}>
+          <span className="ot-cl-box" style={{background:aceptacion?'#16a34a':'#d1d5db',flexShrink:0,marginTop:1}}>
+            {aceptacion&&'✓'}
+          </span>
+          <span>Declaro haber recibido el vehículo en las condiciones técnicas descritas en la presente orden, conforme a las actividades realizadas, sin observaciones ni reclamos respecto a la intervención efectuada.</span>
+        </div>
+        <div className="ot-firma-box">
+          {firma?<img src={firma} alt="Firma" className="ot-firma-img"/>:<span className="ot-firma-empty">_________________</span>}
+          <div style={{fontSize:'7px',textAlign:'center',marginTop:2,color:'#666'}}>Firma del cliente</div>
         </div>
       </div>
 
       <div className="ot-disclaimer">
-        Con la firma del presente documento manifiesto que la intervención del vehículo fue autorizada y que las actividades realizadas fueron recibidas a satisfacción.
+        Con la firma del presente documento el cliente manifiesta que la intervención fue autorizada y recibida a satisfacción, sin reclamos al respecto. | {empresa} | {ot.fecha}
       </div>
     </div>
   );
 };
 
-// ── Función de descarga PDF ───────────────────────────────────────────────────
+// ── PDF ───────────────────────────────────────────────────────────────────────
 const downloadPDF = async (elementId, filename) => {
   const el = document.getElementById(elementId);
   if (!el) return;
   try {
-    const canvas = await window.html2canvas(el, { scale: 2, backgroundColor: '#fff', useCORS: true, logging: false });
-    const pdf = new window.jspdf.jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const pw = pdf.internal.pageSize.getWidth();
-    const ph = pdf.internal.pageSize.getHeight();
-    const m = 8;
-    const iw = pw - m * 2;
-    const ih = (canvas.height * iw) / canvas.width;
-    const imgData = canvas.toDataURL('image/png', 1.0);
-    if (ih <= ph - m * 2) {
-      pdf.addImage(imgData, 'PNG', m, m, iw, ih);
+    const canvas = await window.html2canvas(el,{scale:2,backgroundColor:'#fff',useCORS:true,logging:false});
+    const pdf = new window.jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const m=8, pw=pdf.internal.pageSize.getWidth(), ph=pdf.internal.pageSize.getHeight();
+    const iw=pw-m*2, ih=(canvas.height*iw)/canvas.width;
+    if (ih<=ph-m*2) {
+      pdf.addImage(canvas.toDataURL('image/png',1.0),'PNG',m,m,iw,ih);
     } else {
-      const pch = ph - m * 2;
-      const pages = Math.ceil(ih / pch);
-      for (let i = 0; i < pages; i++) {
-        if (i > 0) pdf.addPage();
-        const sy = (i * pch * canvas.width) / iw;
-        const sh = Math.min((pch * canvas.width) / iw, canvas.height - sy);
-        const pc = document.createElement('canvas');
-        pc.width = canvas.width; pc.height = sh;
-        pc.getContext('2d').drawImage(canvas, 0, sy, canvas.width, sh, 0, 0, canvas.width, sh);
-        pdf.addImage(pc.toDataURL('image/png'), 'PNG', m, m, iw, (sh * iw) / canvas.width);
+      const pch=ph-m*2, pages=Math.ceil(ih/pch);
+      for (let i=0;i<pages;i++) {
+        if (i>0) pdf.addPage();
+        const sy=(i*pch*canvas.width)/iw, sh=Math.min((pch*canvas.width)/iw,canvas.height-sy);
+        const pc=document.createElement('canvas'); pc.width=canvas.width; pc.height=sh;
+        pc.getContext('2d').drawImage(canvas,0,sy,canvas.width,sh,0,0,canvas.width,sh);
+        pdf.addImage(pc.toDataURL('image/png'),'PNG',m,m,iw,(sh*iw)/canvas.width);
       }
     }
     pdf.save(`${filename}.pdf`);
-  } catch (e) {
-    console.error(e);
-    alert('Error al generar PDF.');
-  }
+  } catch(e){ console.error(e); alert('Error al generar PDF.'); }
 };
 
 // ── Componente principal ──────────────────────────────────────────────────────
 const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada }) => {
-  const [step, setStep] = useState('list');
-  const [otsList, setOtsList] = useState([]);
-  const [sessionOTs, setSessionOTs] = useState([]);
-  const [currentOT, setCurrentOT] = useState(makeOT());
-  const [sessionEmpresa, setSessionEmpresa] = useState(empresaSeleccionada || 'Location World');
-  const [clienteData, setClienteData] = useState({ nombre: '', correo: '', rut: '' });
-  const [firma, setFirma] = useState(null);
-  const [search, setSearch] = useState('');
-  const [filterMes, setFilterMes] = useState('');
-  const [otCounter, setOtCounter] = useState(1);
-  const [historyOT, setHistoryOT] = useState(null);
-  const [downloading, setDownloading] = useState(false);
+  const [step,setStep] = useState('list');
+  const [otsList,setOtsList] = useState([]);
+  const [sessionOTs,setSessionOTs] = useState([]);
+  const [currentOT,setCurrentOT] = useState(makeOT());
+  const [sessionEmpresa,setSessionEmpresa] = useState(empresaSeleccionada||'Entel');
+  const [clienteData,setClienteData] = useState({nombre:'',rut:''});
+  const [aceptacion,setAceptacion] = useState(false);
+  const [firma,setFirma] = useState(null);
+  const [search,setSearch] = useState('');
+  const [filterMes,setFilterMes] = useState('');
+  const [counters,setCounters] = useState({Entel:1,UGPS:1});
+  const [historyOT,setHistoryOT] = useState(null);
+  const [downloading,setDownloading] = useState(false);
   const canvasRef = useRef(null);
   const isDrawing = useRef(false);
 
-  // Cargar datos
-  useEffect(() => {
-    const stored = localStorage.getItem('ordenesTrabajo');
-    if (stored) {
-      const data = JSON.parse(stored);
-      setOtsList(data);
-      if (data.length > 0) {
-        setOtCounter(Math.max(...data.map(o => o.numero || 0)) + 1);
-      }
-    }
-    const cnt = localStorage.getItem('otCounter');
-    if (cnt) setOtCounter(parseInt(cnt));
-  }, []);
-
-  const saveOTs = (list) => {
-    setOtsList(list);
-    localStorage.setItem('ordenesTrabajo', JSON.stringify(list));
-  };
-
-  // Filtros - últimos 3 meses
-  const threeMonthsAgo = new Date();
-  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-
-  const filteredOTs = otsList.filter(ot => {
-    const d = new Date(ot.createdAt || ot.fecha);
-    if (d < threeMonthsAgo) return false;
-    if (filterMes && !ot.fecha?.startsWith(filterMes)) return false;
-    if (search) {
-      const q = search.toLowerCase();
-      return (ot.placa||'').toLowerCase().includes(q) ||
-        (ot.cliente||'').toLowerCase().includes(q) ||
-        String(ot.numero).includes(q);
-    }
-    return true;
-  });
-
-  const getMeses = () => {
-    const now = new Date();
-    return Array.from({length:3},(_,i) => {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  useEffect(()=>{
+    const s=localStorage.getItem('ordenesTrabajo');
+    if (s) setOtsList(JSON.parse(s));
+    setCounters({
+      Entel:parseInt(localStorage.getItem('otCounterEntel')||'1'),
+      UGPS:parseInt(localStorage.getItem('otCounterUGPS')||'1'),
     });
-  };
+  },[]);
 
-  // Firma canvas
-  useEffect(() => {
-    if (step !== 'cliente') return;
-    const c = canvasRef.current;
-    if (!c) return;
-    const ctx = c.getContext('2d');
-    ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 2; ctx.lineCap = 'round';
-  }, [step]);
+  const saveOTs = list => { setOtsList(list); localStorage.setItem('ordenesTrabajo',JSON.stringify(list)); };
 
-  const getPos = (e, c) => {
-    const r = c.getBoundingClientRect();
-    const src = e.touches ? e.touches[0] : e;
-    return { x: src.clientX - r.left, y: src.clientY - r.top };
-  };
-  const startDraw = (e) => {
-    e.preventDefault();
-    isDrawing.current = true;
-    const c = canvasRef.current;
-    const ctx = c.getContext('2d');
-    const p = getPos(e, c);
-    ctx.beginPath(); ctx.moveTo(p.x, p.y);
-  };
-  const draw = (e) => {
-    e.preventDefault();
-    if (!isDrawing.current) return;
-    const c = canvasRef.current;
-    const p = getPos(e, c);
-    c.getContext('2d').lineTo(p.x, p.y);
-    c.getContext('2d').stroke();
-  };
-  const endDraw = () => {
-    isDrawing.current = false;
-    if (canvasRef.current) setFirma(canvasRef.current.toDataURL());
-  };
-  const clearFirma = () => {
-    const c = canvasRef.current;
-    if (c) c.getContext('2d').clearRect(0, 0, c.width, c.height);
-    setFirma(null);
-  };
+  // Canvas firma
+  useEffect(()=>{
+    if (step!=='cliente') return;
+    const c=canvasRef.current; if (!c) return;
+    const ctx=c.getContext('2d'); ctx.strokeStyle='#1f2937'; ctx.lineWidth=2; ctx.lineCap='round';
+  },[step]);
 
-  // Flujo de creación
-  const startSession = () => {
-    setSessionOTs([]);
-    setCurrentOT({ ...makeOT(), empresaInstaladora: sessionEmpresa });
-    setClienteData({ nombre: '', correo: '', rut: '' });
-    setFirma(null);
-    setStep('form');
-  };
+  const getPos=(e,c)=>{const r=c.getBoundingClientRect(),s=e.touches?e.touches[0]:e;return{x:s.clientX-r.left,y:s.clientY-r.top};};
+  const startDraw=e=>{e.preventDefault();isDrawing.current=true;const c=canvasRef.current,p=getPos(e,c),ctx=c.getContext('2d');ctx.beginPath();ctx.moveTo(p.x,p.y);};
+  const draw=e=>{e.preventDefault();if(!isDrawing.current)return;const c=canvasRef.current,p=getPos(e,c),ctx=c.getContext('2d');ctx.lineTo(p.x,p.y);ctx.stroke();};
+  const endDraw=()=>{isDrawing.current=false;if(canvasRef.current)setFirma(canvasRef.current.toDataURL());};
+  const clearFirma=()=>{const c=canvasRef.current;if(c)c.getContext('2d').clearRect(0,0,c.width,c.height);setFirma(null);};
 
-  const saveCurrentOT = () => {
-    if (!currentOT.placa && !currentOT.imei) {
-      alert('Ingresa la Placa o el IMEI del vehículo.');
-      return;
-    }
-    setSessionOTs(prev => [...prev, { ...currentOT, _tmp: Date.now() }]);
+  const startSession=()=>{setSessionOTs([]);setCurrentOT(makeOT());setClienteData({nombre:'',rut:''});setAceptacion(false);setFirma(null);setStep('form');};
+
+  const saveCurrentOT=()=>{
+    if (!currentOT.ppu){alert('Ingresa la PPU del vehículo.');return;}
+    setSessionOTs(prev=>[...prev,{...currentOT,_tmp:Date.now()}]);
     setStep('confirm');
   };
 
-  const addAnotherOT = () => {
-    setCurrentOT({
-      ...makeOT(),
-      fecha: currentOT.fecha,
-      tipoServicio: currentOT.tipoServicio,
-      ciudad: currentOT.ciudad,
-      tecnico: currentOT.tecnico,
-      empresaInstaladora: currentOT.empresaInstaladora,
-      nombreResponsable: currentOT.nombreResponsable,
-      cargoResponsable: currentOT.cargoResponsable,
-      ccResponsable: currentOT.ccResponsable,
-    });
+  const addAnotherOT=()=>{
+    setCurrentOT({...makeOT(),fecha:currentOT.fecha,tipoServicio:currentOT.tipoServicio,
+      region:currentOT.region,ciudad:currentOT.ciudad,comuna:currentOT.comuna,
+      tecnico:currentOT.tecnico,empresaInstaladora:currentOT.empresaInstaladora});
     setStep('form');
   };
 
-  const finalizeSession = async () => {
-    const sessionId = Date.now().toString();
-    let counter = otCounter;
-    const newOTs = sessionOTs.map((ot, i) => ({
-      ...ot,
-      id: `${sessionId}-${i}`,
-      numero: counter + i,
-      sessionId,
-      empresa: sessionEmpresa,
-      cliente: clienteData.nombre,
-      correoCliente: clienteData.correo,
-      rutCliente: clienteData.rut,
-      firma,
-      createdAt: new Date().toISOString(),
-      emailEnviado: false,
-    }));
-    const updated = [...otsList, ...newOTs];
-    saveOTs(updated);
-    const newCounter = counter + sessionOTs.length;
-    setOtCounter(newCounter);
-    localStorage.setItem('otCounter', String(newCounter));
+  const finalizeSession=async()=>{
+    const emp=sessionEmpresa,prefix=emp==='UGPS'?'U':'E';
+    const key=emp==='UGPS'?'otCounterUGPS':'otCounterEntel',start=counters[emp];
+    const sid=Date.now().toString();
+    const newOTs=sessionOTs.map((ot,i)=>({...ot,id:`${sid}-${i}`,numero:`${prefix}${start+i}`,
+      sessionId:sid,empresa:emp,cliente:clienteData.nombre,rutCliente:clienteData.rut,
+      firma,aceptacion,createdAt:new Date().toISOString(),emailEnviado:false}));
+    const nn=start+sessionOTs.length;
+    localStorage.setItem(key,String(nn));
+    setCounters(p=>({...p,[emp]:nn}));
+    saveOTs([...otsList,...newOTs]);
     setSessionOTs(newOTs);
     setStep('preview');
-    setTimeout(() => {
-      downloadPDF('ot-preview-wrap', `OT-${sessionEmpresa}-${new Date().toISOString().split('T')[0]}`);
-    }, 800);
+    setTimeout(()=>downloadPDF('ot-preview-wrap',`OT-${emp}-${new Date().toISOString().split('T')[0]}`),800);
   };
 
-  // Descarga desde historial
-  const downloadHistoryOT = async (ot) => {
-    setHistoryOT(ot);
-    setDownloading(true);
-    await new Promise(r => setTimeout(r, 600));
-    await downloadPDF('ot-history-render', `OT-${String(ot.numero).padStart(6,'0')}`);
-    setDownloading(false);
-    setHistoryOT(null);
-  };
+  const downloadHistoryOT=async ot=>{setHistoryOT(ot);setDownloading(true);await new Promise(r=>setTimeout(r,600));await downloadPDF('ot-history-render',`OT-${ot.numero}`);setDownloading(false);setHistoryOT(null);};
+  const deleteOT=id=>{if(!window.confirm('¿Eliminar esta OT?'))return;saveOTs(otsList.filter(o=>o.id!==id));};
+  const setOTField=(f,v)=>setCurrentOT(p=>({...p,[f]:v}));
+  const setChecklist=(item,estado,nota)=>setCurrentOT(p=>({...p,checklist:{...p.checklist,[item]:{estado,nota}}}));
 
-  const deleteOT = (id) => {
-    if (!window.confirm('¿Eliminar esta OT?')) return;
-    saveOTs(otsList.filter(o => o.id !== id));
-  };
+  const threeAgo=new Date(); threeAgo.setMonth(threeAgo.getMonth()-3);
+  const filteredOTs=otsList.filter(ot=>{
+    if(new Date(ot.createdAt||ot.fecha)<threeAgo)return false;
+    if(filterMes&&!ot.fecha?.startsWith(filterMes))return false;
+    if(search){const q=search.toLowerCase();return(ot.ppu||'').toLowerCase().includes(q)||(ot.cliente||'').toLowerCase().includes(q)||String(ot.numero).toLowerCase().includes(q);}
+    return true;
+  });
+  const getMeses=()=>{const now=new Date();return Array.from({length:3},(_,i)=>{const d=new Date(now.getFullYear(),now.getMonth()-i,1);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;});};
+  const comunasDisp=currentOT.ciudad?(COMUNAS[currentOT.ciudad]||[currentOT.ciudad]):[];
+  const isVF=currentOT.tipoServicio==='Visita Fallida';
 
-  const setOTField = (field, val) => setCurrentOT(prev => ({ ...prev, [field]: val }));
-  const setAccesorio = (key, val) => setCurrentOT(prev => ({ ...prev, accesorios: { ...prev.accesorios, [key]: val } }));
-  const setInventario = (item, val) => setCurrentOT(prev => ({ ...prev, inventario: { ...prev.inventario, [item]: val } }));
-
-  // ── VISTA: Lista / Historial ─────────────────────────────────────────────
-  if (step === 'list') return (
+  // ── LIST ──────────────────────────────────────────────────────────────────
+  if(step==='list') return (
     <div className="page-container">
       <div className="page-content">
         <div className="page-card">
           <div className="page-header">
             <div className="page-header-left">
-              <button className="btn btn-secondary" onClick={() => setCurrentView('home')}>
-                <ChevronLeft size={14}/> Inicio
-              </button>
-              <img src="/logo.svg" alt="Logo" className="page-logo" />
+              <button className="btn btn-secondary" onClick={()=>setCurrentView('home')}><ChevronLeft size={14}/> Inicio</button>
+              <img src="/logo.svg" alt="Logo" className="page-logo"/>
             </div>
             <h1 className="page-title">Órdenes de Trabajo</h1>
-            <button className="btn btn-success" onClick={startSession}>
-              <Plus size={14}/> Nueva OT
-            </button>
+            <button className="btn btn-success" onClick={startSession}><Plus size={14}/> Nueva OT</button>
           </div>
-
-          {/* Filtros */}
           <div className="ot-filter-bar">
             <div style={{position:'relative',flex:1}}>
               <Search size={13} style={{position:'absolute',left:8,top:'50%',transform:'translateY(-50%)',color:'#9ca3af'}}/>
-              <input className="search-input" style={{paddingLeft:28}} placeholder="Buscar placa, cliente, N°..." value={search} onChange={e=>setSearch(e.target.value)}/>
+              <input className="search-input" style={{paddingLeft:28}} placeholder="Buscar PPU, cliente, N°..." value={search} onChange={e=>setSearch(e.target.value)}/>
             </div>
             <select className="form-select" style={{maxWidth:160}} value={filterMes} onChange={e=>setFilterMes(e.target.value)}>
               <option value="">Todos (3 meses)</option>
-              {getMeses().map(m => <option key={m} value={m}>{m}</option>)}
-            </select>
-            <select className="form-select" style={{maxWidth:160}} value={sessionEmpresa} onChange={e=>setSessionEmpresa(e.target.value)}>
-              {empresas.map(e => <option key={e}>{e}</option>)}
+              {getMeses().map(m=><option key={m} value={m}>{m}</option>)}
             </select>
           </div>
-
-          {/* Tabla */}
           <div className="table-container">
             <table className="data-table">
               <thead className="blue">
-                <tr>
-                  <th>N° OT</th><th>EMPRESA</th><th>FECHA</th><th>CLIENTE</th>
-                  <th>PLACA</th><th>SERVICIO</th><th>IMEI</th><th>ACCIONES</th>
-                </tr>
+                <tr><th>N° OT</th><th>EMPRESA</th><th>FECHA</th><th>CLIENTE</th><th>PPU</th><th>SERVICIO</th><th>TÉCNICO</th><th>ACCIONES</th></tr>
               </thead>
               <tbody>
-                {filteredOTs.length === 0 && (
-                  <tr><td colSpan={8} className="empty-state">Sin órdenes en el período seleccionado</td></tr>
-                )}
-                {filteredOTs.map(ot => (
+                {filteredOTs.length===0&&<tr><td colSpan={8} className="empty-state">Sin órdenes en el período</td></tr>}
+                {filteredOTs.map(ot=>(
                   <tr key={ot.id}>
-                    <td style={{fontWeight:700}}>{String(ot.numero||0).padStart(6,'0')}</td>
-                    <td>{ot.empresa}</td>
-                    <td>{ot.fecha}</td>
-                    <td>{ot.cliente}</td>
-                    <td>{ot.placa}</td>
-                    <td>{ot.tipoServicio}</td>
-                    <td>{ot.imei}</td>
-                    <td>
-                      <div className="table-actions">
-                        <button className="btn btn-primary" style={{fontSize:'0.6em',padding:'3px 7px'}}
-                          onClick={() => downloadHistoryOT(ot)} disabled={downloading}>
-                          <Download size={11}/> PDF
-                        </button>
-                        <button className="action-btn delete" onClick={() => deleteOT(ot.id)} title="Eliminar">
-                          <Trash2 size={14}/>
-                        </button>
-                      </div>
-                    </td>
+                    <td style={{fontWeight:700}}>{ot.numero}</td><td>{ot.empresa}</td><td>{ot.fecha}</td>
+                    <td>{ot.cliente}</td><td>{ot.ppu}</td><td>{ot.tipoServicio}</td><td>{ot.tecnico}</td>
+                    <td><div className="table-actions">
+                      <button className="btn btn-primary" style={{fontSize:'0.6em',padding:'3px 7px'}} onClick={()=>downloadHistoryOT(ot)} disabled={downloading}><Download size={11}/> PDF</button>
+                      <button className="action-btn delete" onClick={()=>deleteOT(ot.id)}><Trash2 size={14}/></button>
+                    </div></td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <p style={{fontSize:'0.6em',color:'#9ca3af',marginTop:8,fontFamily:'quantico',textAlign:'center'}}>
-            Mostrando OTs de los últimos 3 meses
-          </p>
+          <p style={{fontSize:'0.6em',color:'#9ca3af',marginTop:8,fontFamily:'quantico',textAlign:'center'}}>Últimos 3 meses</p>
         </div>
       </div>
-
-      {/* Render oculto para descarga histórica */}
-      {historyOT && (
+      {historyOT&&(
         <div style={{position:'absolute',left:'-9999px',top:0,width:'794px',background:'#fff'}}>
           <div id="ot-history-render">
             <OTDoc ot={historyOT} numero={historyOT.numero} empresa={historyOT.empresa}
-              cliente={historyOT.cliente} firma={historyOT.firma}/>
+              cliente={historyOT.cliente} rut={historyOT.rutCliente} firma={historyOT.firma} aceptacion={historyOT.aceptacion}/>
           </div>
         </div>
       )}
     </div>
   );
 
-  // ── VISTA: Formulario OT ────────────────────────────────────────────────
-  if (step === 'form') return (
+  // ── FORM ──────────────────────────────────────────────────────────────────
+  if(step==='form') return (
     <div className="page-container">
       <div className="page-content">
         <div className="page-card">
           <div className="page-header">
-            <button className="btn btn-secondary" onClick={() => setStep('list')}><ChevronLeft size={14}/> Cancelar</button>
-            <h1 className="page-title">
-              Nueva OT — {sessionEmpresa} {sessionOTs.length > 0 && `(OT ${sessionOTs.length + 1})`}
-            </h1>
+            <button className="btn btn-secondary" onClick={()=>setStep('list')}><ChevronLeft size={14}/> Cancelar</button>
+            <h1 className="page-title">Nueva OT — {sessionEmpresa}{sessionOTs.length>0?` (${sessionOTs.length+1})`:''}</h1>
           </div>
 
-          {/* Empresa */}
-          <div className="form-container blue" style={{marginBottom:10}}>
+          <div className="form-container blue">
             <div className="form-grid">
-              <div>
-                <label className="filter-label">Empresa</label>
+              <div><label className="filter-label">Empresa</label>
                 <select className="form-select" value={sessionEmpresa} onChange={e=>setSessionEmpresa(e.target.value)}>
                   {empresas.map(e=><option key={e}>{e}</option>)}
                 </select>
               </div>
-              <div>
-                <label className="filter-label">Tipo de Servicio</label>
+              <div><label className="filter-label">Tipo de Servicio</label>
                 <select className="form-select" value={currentOT.tipoServicio} onChange={e=>setOTField('tipoServicio',e.target.value)}>
                   {SERVICIOS.map(s=><option key={s}>{s}</option>)}
                 </select>
@@ -536,163 +413,116 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada }) => {
             </div>
           </div>
 
-          {/* Datos del servicio */}
           <div className="form-container blue">
             <div className="form-title">Datos del Servicio</div>
             <div className="form-grid three-cols">
-              {[['fecha','Fecha','date'],['ciudad','Ciudad','text'],['tecnico','Técnico','text'],
-                ['linea','Línea','text'],['canal','Canal','text'],['tecnologia','Tecnología','text'],
-                ['empresaInstaladora','Empresa Instaladora','text']].map(([f,l,t]) => (
-                <div key={f}>
-                  <label className="filter-label">{l}</label>
-                  <input className="form-input" type={t} value={currentOT[f]} onChange={e=>setOTField(f,e.target.value)}/>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Vehículo */}
-          <div className="form-container">
-            <div className="form-title">Datos del Vehículo</div>
-            <div className="form-grid three-cols">
-              {[['placa','Placa *'],['marca','Marca'],['modelo','Modelo'],
-                ['color','Color'],['vin','VIN'],['kilometraje','Kilometraje']].map(([f,l]) => (
-                <div key={f}>
-                  <label className="filter-label">{l}</label>
-                  <input className="form-input" value={currentOT[f]} onChange={e=>setOTField(f,e.target.value)}/>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* GPS */}
-          <div className="form-container purple">
-            <div className="form-title">Datos GPS</div>
-            <div className="form-grid three-cols">
-              {[['imei','IMEI Nuevo *'],['imeiAnterior','IMEI Anterior'],['ubicacionEquipo','Ubicación Equipo']].map(([f,l]) => (
-                <div key={f}>
-                  <label className="filter-label">{l}</label>
-                  <input className="form-input" value={currentOT[f]} onChange={e=>setOTField(f,e.target.value)}/>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Accesorios */}
-          <div className="form-container">
-            <div className="form-title">Accesorios Instalados</div>
-            <div className="ot-acc-grid">
-              {ACCESORIOS.map(a => (
-                <label key={a.key} className="ot-acc-label">
-                  <input type="checkbox" checked={currentOT.accesorios[a.key]}
-                    onChange={e=>setAccesorio(a.key, e.target.checked)}/>
-                  {a.label}
-                </label>
-              ))}
-              <div style={{gridColumn:'span 2'}}>
-                <label className="filter-label">Otro accesorio</label>
-                <input className="form-input" value={currentOT.accesorios.otro}
-                  onChange={e=>setAccesorio('otro',e.target.value)} placeholder="Especificar..."/>
+              <div><label className="filter-label">Fecha</label>
+                <input type="date" className="form-input" value={currentOT.fecha} onChange={e=>setOTField('fecha',e.target.value)}/>
+              </div>
+              <div><label className="filter-label">Región</label>
+                <select className="form-select" value={currentOT.region}
+                  onChange={e=>setCurrentOT(p=>({...p,region:e.target.value,ciudad:'',comuna:''}))}>
+                  <option value="">Seleccionar...</option>
+                  {REGIONES.map(r=><option key={r}>{r}</option>)}
+                </select>
+              </div>
+              <div><label className="filter-label">Ciudad</label>
+                <select className="form-select" value={currentOT.ciudad}
+                  onChange={e=>setCurrentOT(p=>({...p,ciudad:e.target.value,comuna:''}))} disabled={!currentOT.region}>
+                  <option value="">Seleccionar...</option>
+                  {(CIUDADES[currentOT.region]||[]).map(c=><option key={c}>{c}</option>)}
+                </select>
+              </div>
+              <div><label className="filter-label">Comuna</label>
+                <select className="form-select" value={currentOT.comuna}
+                  onChange={e=>setOTField('comuna',e.target.value)} disabled={!currentOT.ciudad}>
+                  <option value="">Seleccionar...</option>
+                  {comunasDisp.map(c=><option key={c}>{c}</option>)}
+                </select>
+              </div>
+              <div><label className="filter-label">Técnico</label>
+                <select className="form-select" value={currentOT.tecnico} onChange={e=>setOTField('tecnico',e.target.value)}>
+                  {TECNICOS.map(t=><option key={t}>{t}</option>)}
+                </select>
+              </div>
+              <div><label className="filter-label">Empresa Instaladora</label>
+                <select className="form-select" value={currentOT.empresaInstaladora} onChange={e=>setOTField('empresaInstaladora',e.target.value)}>
+                  {EMPRESAS_INST.map(e=><option key={e}>{e}</option>)}
+                </select>
+              </div>
+              <div><label className="filter-label">PPU *</label>
+                <input className="form-input" value={currentOT.ppu} onChange={e=>setOTField('ppu',e.target.value.toUpperCase())} placeholder="Ej: ABCD12"/>
               </div>
             </div>
           </div>
 
-          {/* Inventario */}
-          <div className="form-container">
-            <div className="form-title">Inventario Inicial</div>
-            <div className="ot-inv-grid">
-              {INVENTARIO.map(item => (
-                <div key={item} className="ot-inv-row">
-                  <span className="ot-inv-label">{item}</span>
-                  <div className="ot-inv-btns">
-                    {['B','M','NA'].map(v => (
-                      <button key={v} type="button"
-                        className={`ot-inv-btn${currentOT.inventario[item]===v?' active':''}`}
-                        onClick={()=>setInventario(item,v)}>{v}</button>
-                    ))}
-                  </div>
+          {!isVF && <>
+            <div className="form-container">
+              <div className="form-title">Datos del Vehículo</div>
+              <div className="form-grid three-cols">
+                <div><label className="filter-label">Marca</label>
+                  <select className="form-select" value={currentOT.marca} onChange={e=>setOTField('marca',e.target.value)}>
+                    <option value="">Seleccionar...</option>{MARCAS.map(m=><option key={m}>{m}</option>)}
+                  </select>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Condiciones */}
-          <div className="form-container blue">
-            <div className="form-title">Condiciones del Vehículo</div>
-            <div className="form-grid">
-              <div>
-                <label className="filter-label">Combustible (0-8 segmentos)</label>
-                <div style={{display:'flex',alignItems:'center',gap:8,marginTop:4}}>
-                  <span style={{fontSize:'0.7em',fontFamily:'quantico'}}>E</span>
-                  <input type="range" min={0} max={8} value={currentOT.combustible}
-                    onChange={e=>setOTField('combustible',parseInt(e.target.value))} style={{flex:1}}/>
-                  <span style={{fontSize:'0.7em',fontFamily:'quantico'}}>F ({currentOT.combustible}/8)</span>
+                <div><label className="filter-label">Modelo</label>
+                  <input className="form-input" value={currentOT.modelo} onChange={e=>setOTField('modelo',e.target.value)}/>
                 </div>
-              </div>
-              <div>
-                <label className="filter-label">Estado de Pruebas</label>
-                <div style={{display:'flex',gap:12,marginTop:8}}>
-                  {['OK','NO OK'].map(v => (
-                    <label key={v} style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer',fontFamily:'quantico',fontSize:'0.7em'}}>
-                      <input type="radio" checked={currentOT.estadoPruebas===v}
-                        onChange={()=>setOTField('estadoPruebas',v)}/> {v}
-                    </label>
-                  ))}
+                <div><label className="filter-label">Año</label>
+                  <select className="form-select" value={currentOT.anio} onChange={e=>setOTField('anio',e.target.value)}>
+                    <option value="">Seleccionar...</option>{AÑOS.map(a=><option key={a}>{a}</option>)}
+                  </select>
+                </div>
+                <div><label className="filter-label">Color</label>
+                  <select className="form-select" value={currentOT.color} onChange={e=>setOTField('color',e.target.value)}>
+                    <option value="">Seleccionar...</option>{COLORES.map(c=><option key={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div><label className="filter-label">Kilometraje</label>
+                  <input type="number" className="form-input" value={currentOT.kilometraje}
+                    onChange={e=>setOTField('kilometraje',e.target.value)} placeholder="km" min={0}/>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Entradas / Salidas */}
-          <div className="form-container">
-            <div className="form-title">Entradas y Salidas</div>
-            <div className="form-grid" style={{gridTemplateColumns:'repeat(4,1fr)'}}>
-              {[1,2,3,4].map(n => (
-                <React.Fragment key={n}>
-                  <div>
-                    <label className="filter-label">IN {n}</label>
-                    <input className="form-input" value={currentOT[`in${n}`]} onChange={e=>setOTField(`in${n}`,e.target.value)}/>
+            <div className="form-container purple">
+              <div className="form-title">Datos GPS</div>
+              <div className="form-grid">
+                {showImeiIn(currentOT.tipoServicio)&&(
+                  <div><label className="filter-label">IMEI IN</label>
+                    <input className="form-input" value={currentOT.imeiIn} onChange={e=>setOTField('imeiIn',e.target.value)}/>
                   </div>
-                  <div>
-                    <label className="filter-label">OUT {n}</label>
-                    <input className="form-input" value={currentOT[`out${n}`]} onChange={e=>setOTField(`out${n}`,e.target.value)}/>
+                )}
+                {showImeiOut(currentOT.tipoServicio)&&(
+                  <div><label className="filter-label">IMEI OUT</label>
+                    <input className="form-input" value={currentOT.imeiOut} onChange={e=>setOTField('imeiOut',e.target.value)}/>
                   </div>
-                </React.Fragment>
-              ))}
-            </div>
-          </div>
-
-          {/* Trabajo */}
-          <div className="form-container purple">
-            <div className="form-title">Detalles del Trabajo</div>
-            <div className="form-grid">
-              {[['voltajeEncendido','Voltaje Encendido (V)'],['voltajeApagado','Voltaje Apagado (V)']].map(([f,l]) => (
-                <div key={f}>
-                  <label className="filter-label">{l}</label>
-                  <input className="form-input" value={currentOT[f]} onChange={e=>setOTField(f,e.target.value)}/>
+                )}
+                <div style={{gridColumn:'span 2'}}>
+                  <label className="filter-label">Accesorios Instalados</label>
+                  <AccesoriosDropdown selected={currentOT.accesoriosGPS} onChange={v=>setOTField('accesoriosGPS',v)}/>
                 </div>
-              ))}
-              {[['materiales','Materiales Utilizados'],['trabajoRealizado','Trabajo Realizado'],['observaciones','Observaciones']].map(([f,l]) => (
-                <div key={f} style={{gridColumn:'span 2'}}>
-                  <label className="filter-label">{l}</label>
-                  <textarea className="form-input" rows={2} value={currentOT[f]}
-                    onChange={e=>setOTField(f,e.target.value)} style={{resize:'vertical'}}/>
-                </div>
-              ))}
+              </div>
             </div>
-          </div>
 
-          {/* Responsable */}
+            <div className="form-container">
+              <div className="form-title">Check List del Vehículo</div>
+              <p style={{fontFamily:'quantico',fontSize:'0.6em',color:'#6b7280',marginBottom:8}}>Gris=N/A → Verde=Bueno → Rojo=Detalle</p>
+              <div className="cl-grid">
+                {CHECKLIST_ITEMS.map(item=>(
+                  <ChecklistRow key={item} item={item}
+                    estado={currentOT.checklist[item]?.estado||'NA'}
+                    nota={currentOT.checklist[item]?.nota||''}
+                    onChange={(e,n)=>setChecklist(item,e,n)}/>
+                ))}
+              </div>
+            </div>
+          </>}
+
           <div className="form-container">
-            <div className="form-title">Responsable Técnico</div>
-            <div className="form-grid three-cols">
-              {[['nombreResponsable','Nombre Responsable'],['ccResponsable','CC / RUT'],['cargoResponsable','Cargo']].map(([f,l]) => (
-                <div key={f}>
-                  <label className="filter-label">{l}</label>
-                  <input className="form-input" value={currentOT[f]} onChange={e=>setOTField(f,e.target.value)}/>
-                </div>
-              ))}
-            </div>
+            <div className="form-title">Observaciones</div>
+            <textarea className="form-input" rows={3} value={currentOT.observaciones}
+              onChange={e=>setOTField('observaciones',e.target.value)} style={{resize:'vertical'}}/>
           </div>
 
           <div className="form-actions">
@@ -705,31 +535,23 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada }) => {
     </div>
   );
 
-  // ── VISTA: Confirmar otra OT ────────────────────────────────────────────
-  if (step === 'confirm') return (
+  // ── CONFIRM ───────────────────────────────────────────────────────────────
+  if(step==='confirm') return (
     <div className="page-container" style={{display:'flex',alignItems:'center',justifyContent:'center'}}>
       <div className="ot-confirm-card">
-        <FileText size={40} color="#507cdd"/>
-        <h2 className="ot-confirm-title">OT guardada</h2>
-        <p className="ot-confirm-sub">
-          {sessionOTs.length} OT{sessionOTs.length!==1?'s':''} en esta sesión.<br/>
-          ¿Necesitas crear otra OT para este servicio?<br/>
-          <small>(Se copiarán los datos del técnico, no los del vehículo/GPS)</small>
-        </p>
+        <Check size={40} color="#16a34a"/>
+        <h2 className="ot-confirm-title">OT Guardada</h2>
+        <p className="ot-confirm-sub">{sessionOTs.length} OT{sessionOTs.length!==1?'s':''} en esta sesión.<br/>¿Necesitas crear otra OT?<br/><small>(Ubicación y técnico se copiarán)</small></p>
         <div className="ot-confirm-actions">
-          <button className="btn btn-primary" style={{fontSize:'0.85em',padding:'10px 20px'}} onClick={addAnotherOT}>
-            <Plus size={15}/> Agregar otra OT
-          </button>
-          <button className="btn btn-success" style={{fontSize:'0.85em',padding:'10px 20px'}} onClick={()=>setStep('cliente')}>
-            <Check size={15}/> Continuar con datos del cliente
-          </button>
+          <button className="btn btn-primary" style={{fontSize:'0.85em',padding:'10px 20px'}} onClick={addAnotherOT}><Plus size={15}/> Agregar otra OT</button>
+          <button className="btn btn-success" style={{fontSize:'0.85em',padding:'10px 20px'}} onClick={()=>setStep('cliente')}><Check size={15}/> Datos del cliente</button>
         </div>
       </div>
     </div>
   );
 
-  // ── VISTA: Datos del cliente + firma ────────────────────────────────────
-  if (step === 'cliente') return (
+  // ── CLIENTE ───────────────────────────────────────────────────────────────
+  if(step==='cliente') return (
     <div className="page-container">
       <div className="page-content">
         <div className="page-card">
@@ -737,84 +559,86 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada }) => {
             <button className="btn btn-secondary" onClick={()=>setStep('confirm')}><ChevronLeft size={14}/> Atrás</button>
             <h1 className="page-title">Datos del Cliente y Firma</h1>
           </div>
-          <p style={{fontFamily:'quantico',fontSize:'0.7em',textAlign:'center',marginBottom:16,color:'#6b7280'}}>
-            {sessionOTs.length} OT{sessionOTs.length!==1?'s':''} creada{sessionOTs.length!==1?'s':''} — {sessionEmpresa}
-          </p>
 
           <div className="form-container blue">
             <div className="form-title">Información del Cliente</div>
-            <div className="form-grid three-cols">
-              <div>
-                <label className="filter-label">Nombre / Empresa *</label>
+            <div className="form-grid">
+              <div><label className="filter-label">Nombre *</label>
                 <input className="form-input" value={clienteData.nombre}
-                  onChange={e=>setClienteData(p=>({...p,nombre:e.target.value}))} placeholder="Nombre del cliente"/>
+                  onChange={e=>setClienteData(p=>({...p,nombre:e.target.value}))} placeholder="Nombre o empresa"/>
               </div>
-              <div>
-                <label className="filter-label">RUT</label>
+              <div><label className="filter-label">RUT</label>
                 <input className="form-input" value={clienteData.rut}
-                  onChange={e=>setClienteData(p=>({...p,rut:e.target.value}))} placeholder="12.345.678-9"/>
+                  onChange={e=>setClienteData(p=>({...p,rut:formatRut(e.target.value)}))}
+                  placeholder="12345678-9" maxLength={10}/>
               </div>
-              <div>
-                <label className="filter-label">Correo electrónico</label>
-                <input className="form-input" type="email" value={clienteData.correo}
-                  onChange={e=>setClienteData(p=>({...p,correo:e.target.value}))} placeholder="cliente@email.com"/>
-              </div>
+            </div>
+          </div>
+
+          <div className="form-container" style={{borderColor:'#f59e0b',background:'#fffbeb'}}>
+            <div style={{display:'flex',alignItems:'flex-start',gap:12,padding:'4px 0'}}>
+              <button type="button" className="acept-btn" style={{background:aceptacion?'#16a34a':'white',borderColor:aceptacion?'#16a34a':'#d97706'}} onClick={()=>setAceptacion(!aceptacion)}>
+                {aceptacion&&<Check size={14} color="white"/>}
+              </button>
+              <p style={{fontFamily:'quantico',fontSize:'0.7em',color:'#374151',lineHeight:1.6,margin:0}}>
+                Declaro haber recibido el vehículo en las condiciones técnicas descritas en la presente orden, conforme a las actividades realizadas, sin observaciones ni reclamos respecto a la intervención efectuada.
+              </p>
             </div>
           </div>
 
           <div className="form-container">
             <div className="form-title">Firma del Cliente</div>
-            <p style={{fontFamily:'quantico',fontSize:'0.65em',textAlign:'center',marginBottom:8,color:'#6b7280'}}>
-              Firme en el recuadro a continuación
-            </p>
             <div style={{display:'flex',justifyContent:'center'}}>
               <div className="ot-canvas-wrapper">
-                <canvas ref={canvasRef} width={400} height={150} className="ot-canvas"
+                <canvas ref={canvasRef} width={400} height={130} className="ot-canvas"
                   onMouseDown={startDraw} onMouseMove={draw} onMouseUp={endDraw} onMouseLeave={endDraw}
                   onTouchStart={startDraw} onTouchMove={draw} onTouchEnd={endDraw}/>
               </div>
             </div>
             <div style={{display:'flex',justifyContent:'center',marginTop:8}}>
-              <button className="btn btn-secondary" onClick={clearFirma}><X size={12}/> Limpiar firma</button>
+              <button className="btn btn-secondary" onClick={clearFirma}><X size={12}/> Limpiar</button>
             </div>
           </div>
 
           <div className="form-actions">
             <button className="btn btn-success" style={{fontSize:'0.85em',padding:'10px 24px'}}
-              onClick={finalizeSession} disabled={!clienteData.nombre}>
-              <Check size={15}/> Finalizar y descargar OT{sessionOTs.length!==1?'s':''}
+              onClick={finalizeSession} disabled={!clienteData.nombre||!aceptacion}>
+              <Check size={15}/> Finalizar y Descargar OT
             </button>
           </div>
+          {(!clienteData.nombre||!aceptacion)&&(
+            <p style={{textAlign:'center',fontFamily:'quantico',fontSize:'0.6em',color:'#ef4444',marginTop:6}}>
+              {!clienteData.nombre?'* Ingresa el nombre':''}{!aceptacion?'  * Acepta las condiciones':''}
+            </p>
+          )}
         </div>
       </div>
     </div>
   );
 
-  // ── VISTA: Preview y descarga ────────────────────────────────────────────
-  if (step === 'preview') return (
+  // ── PREVIEW ───────────────────────────────────────────────────────────────
+  if(step==='preview') return (
     <div className="page-container">
       <div className="page-content">
         <div className="page-card">
-          <div className="page-header">
-            <h1 className="page-title">OT Generada — {sessionEmpresa}</h1>
-          </div>
+          <div className="page-header"><h1 className="page-title">Orden de Trabajo — {sessionEmpresa}</h1></div>
           <div style={{display:'flex',gap:10,justifyContent:'center',marginBottom:20,flexWrap:'wrap'}}>
             <button className="btn btn-primary" onClick={()=>downloadPDF('ot-preview-wrap',`OT-${sessionEmpresa}-${new Date().toISOString().split('T')[0]}`)}>
               <Download size={14}/> Descargar PDF
             </button>
             <button className="btn btn-secondary" style={{display:'flex',alignItems:'center',gap:6}}>
-              <Mail size={14}/> Enviar por correo <span style={{fontSize:'0.75em',background:'#f59e0b',color:'#fff',borderRadius:4,padding:'1px 5px'}}>Próximamente</span>
+              <Mail size={14}/> Enviar correo
+              <span style={{fontSize:'0.75em',background:'#f59e0b',color:'#fff',borderRadius:4,padding:'1px 5px'}}>Próximamente</span>
             </button>
-            <button className="btn btn-success" onClick={()=>setStep('list')}>
-              <Check size={14}/> Ir al historial
-            </button>
+            <button className="btn btn-success" onClick={()=>setStep('list')}><Check size={14}/> Historial</button>
+            <button className="btn btn-secondary" onClick={()=>setCurrentView('home')}><HomeIcon size={14}/> Inicio</button>
           </div>
-          <div id="ot-preview-wrap" style={{background:'#fff',padding:16}}>
-            {sessionOTs.map((ot, i) => (
-              <div key={i} style={{pageBreakAfter: i < sessionOTs.length - 1 ? 'always' : 'auto', marginBottom: i < sessionOTs.length - 1 ? 40 : 0}}>
+          <div id="ot-preview-wrap" style={{background:'#fff'}}>
+            {sessionOTs.map((ot,i)=>(
+              <div key={i} style={{pageBreakAfter:i<sessionOTs.length-1?'always':'auto',marginBottom:i<sessionOTs.length-1?40:0}}>
                 <OTDoc ot={ot} numero={ot.numero} empresa={sessionEmpresa}
-                  cliente={clienteData.nombre} firma={firma}/>
-                {i < sessionOTs.length - 1 && <hr style={{margin:'30px 0',border:'2px dashed #ccc'}}/>}
+                  cliente={clienteData.nombre} rut={clienteData.rut} firma={firma} aceptacion={aceptacion}/>
+                {i<sessionOTs.length-1&&<hr style={{margin:'30px 0',border:'2px dashed #ccc'}}/>}
               </div>
             ))}
           </div>
