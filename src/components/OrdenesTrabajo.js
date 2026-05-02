@@ -26,24 +26,53 @@ const CIUDADES = {
   'Magallanes':['Punta Arenas','Puerto Natales'],
 };
 const COMUNAS = {
-  'Santiago':['Santiago Centro','Estación Central','Independencia','Recoleta','Quinta Normal','Peñalolén','La Cisterna'],
+  // Región Metropolitana — todas las 52 comunas bajo "Santiago"
+  'Santiago':[
+    'Alhué','Buin','Calera de Tango','Cerrillos','Cerro Navia','Colina','Conchalí',
+    'Curacaví','El Bosque','El Monte','Estación Central','Huechuraba','Independencia',
+    'Isla de Maipo','La Cisterna','La Florida','La Granja','La Pintana','La Reina',
+    'Lampa','Las Condes','Lo Barnechea','Lo Espejo','Lo Prado','Macul','Maipú',
+    'María Pinto','Melipilla','Ñuñoa','Padre Hurtado','Paine','Pedro Aguirre Cerda',
+    'Peñaflor','Peñalolén','Pirque','Providencia','Pudahuel','Puente Alto','Quilicura',
+    'Quinta Normal','Recoleta','Renca','San Bernardo','San José de Maipo','San Miguel',
+    'San Pedro','Santiago Centro','Talagante','Tiltil','Vitacura'
+  ],
   'Puente Alto':['Puente Alto'],'Maipú':['Maipú'],'La Florida':['La Florida'],
   'Las Condes':['Las Condes'],'Providencia':['Providencia'],'Ñuñoa':['Ñuñoa'],
   'San Bernardo':['San Bernardo'],'Pudahuel':['Pudahuel'],'Vitacura':['Vitacura'],
-  'Valparaíso':['Valparaíso'],'Viña del Mar':['Viña del Mar'],'Quilpué':['Quilpué'],
-  'Villa Alemana':['Villa Alemana'],'Concepción':['Concepción'],
-  'Temuco':['Temuco','Padre Las Casas'],'Antofagasta':['Antofagasta'],
-  'La Serena':['La Serena'],'Coquimbo':['Coquimbo'],'Iquique':['Iquique','Alto Hospicio'],
-  'Rancagua':['Rancagua'],'Talca':['Talca'],'Chillán':['Chillán'],
-  'Puerto Montt':['Puerto Montt'],'Osorno':['Osorno'],'Valdivia':['Valdivia'],
-  'Punta Arenas':['Punta Arenas'],'Coyhaique':['Coyhaique'],
+  'Valparaíso':['Valparaíso','Casablanca','Quintero','Puchuncaví'],
+  'Viña del Mar':['Viña del Mar','Concón'],'Quilpué':['Quilpué'],'Villa Alemana':['Villa Alemana'],
+  'San Antonio':['San Antonio','Cartagena','El Tabo','El Quisco','Algarrobo','Santo Domingo'],
+  'Quillota':['Quillota','La Cruz','La Calera','Hijuelas','Nogales'],
+  'Concepción':['Concepción','Chiguayante','Penco','Hualqui','Santa Juana','Florida'],
+  'Talcahuano':['Talcahuano','Hualpén'],'Los Ángeles':['Los Ángeles','Mulchén','Nacimiento'],
+  'Temuco':['Temuco','Padre Las Casas','Vilcún','Lautaro'],
+  'Villarrica':['Villarrica'],'Pucón':['Pucón'],'Angol':['Angol'],
+  'Antofagasta':['Antofagasta'],'Calama':['Calama','Ollagüe'],'Tocopilla':['Tocopilla'],
+  'La Serena':['La Serena','Vicuña'],'Coquimbo':['Coquimbo'],'Ovalle':['Ovalle','Monte Patria'],
+  'Iquique':['Iquique','Alto Hospicio'],'Alto Hospicio':['Alto Hospicio'],'Pozo Almonte':['Pozo Almonte'],
+  'Arica':['Arica','Camarones','General Lagos','Putre'],
+  'Rancagua':['Rancagua','Machalí','Graneros','Codegua'],
+  'San Fernando':['San Fernando','Chimbarongo'],'Rengo':['Rengo','Olivar'],
+  'Talca':['Talca','Maule','San Clemente','Pelarco'],
+  'Curicó':['Curicó','Teno','Romeral'],'Linares':['Linares','Longaví'],
+  'Chillán':['Chillán','Chillán Viejo','Bulnes','San Carlos'],
+  'Valdivia':['Valdivia','Mariquina','Lanco'],'La Unión':['La Unión'],
+  'Puerto Montt':['Puerto Montt','Puerto Varas','Calbuco','Maullín'],
+  'Osorno':['Osorno','Puerto Octay','San Pablo'],
+  'Castro':['Castro','Ancud','Quellón','Quemchi'],
+  'Copiapó':['Copiapó','Caldera','Tierra Amarilla'],
+  'Vallenar':['Vallenar','Alto del Carmen'],
+  'Coyhaique':['Coyhaique'],'Puerto Aysén':['Puerto Aysén'],
+  'Punta Arenas':['Punta Arenas','Natales','Puerto Natales'],
 };
 
 const MARCAS = [
-  'Toyota','Chevrolet','Ford','Hyundai','Kia','Mazda','Nissan','Volkswagen','Honda',
-  'Suzuki','Mitsubishi','Subaru','Mercedes-Benz','BMW','Audi','Jeep','Fiat','Peugeot',
-  'Citroën','Renault','Volvo','Land Rover','JAC','Chery','BAIC','Haval','BYD','MG',
-  'Isuzu','Ssangyong','Geely','Foton','Great Wall','Ram','Dodge','Otros'
+  'Alfa Romeo','Audi','BAIC','BMW','BYD','Chery','Chevrolet','Citroën','Dodge',
+  'Dongfeng','Fiat','Ford','Foton','Geely','Great Wall','Haval','Honda','Hyundai',
+  'Isuzu','JAC','Jeep','Kia','Land Rover','Mazda','Mercedes-Benz','MG','Mitsubishi',
+  'Nissan','Opel','Peugeot','Ram','Renault','Ssangyong','Subaru','Suzuki',
+  'Toyota','Volkswagen','Volvo','Otros'
 ];
 const COLORES = ['Blanco','Negro','Gris','Plata','Rojo','Azul','Verde','Amarillo','Naranja','Café/Marrón','Beige','Celeste','Morado','Otro'];
 const AÑOS = Array.from({length:37},(_,i)=>String(2026-i));
@@ -51,7 +80,7 @@ const TECNICOS = ['Sebastian Parra'];
 const EMPRESAS_INST = ['Sebastian Parra'];
 const ACCESORIOS_GPS = ['Inmovilización','SOS','Dallas','Buzzer','Edata','Sensor T°','Sensor Puerta'];
 const SERVICIOS = ['Instalación','Desinstalación','Mantención','Reinstalación','Visita Fallida'];
-const CHECKLIST_ITEMS = ['Carrocería','Parabrisas/Vidrios','Luces','Neumáticos','Interior','Batería'];
+const CHECKLIST_ITEMS = ['Batería','Check Engine','Error tablero inst.','A/C','Radio','Intermitentes'];
 
 const makeOT = () => ({
   fecha: new Date().toISOString().split('T')[0],
@@ -133,85 +162,116 @@ const OTDoc = ({ ot, numero, empresa, cliente, rut, firma, aceptacion }) => {
   const accSpan = inIn&&inOut?'ot-span2':inIn||inOut?'ot-span3':'ot-span4';
   return (
     <div className="ot-doc">
+      {/* ── Header ── */}
       <div className="ot-doc-header">
         <EmpresaLogos empresa={empresa}/>
-        <div className="ot-doc-title">ORDEN DE TRABAJO</div>
-        <div className="ot-doc-num">{numero}</div>
-      </div>
-
-      <div className="ot-section">
-        <div className="ot-section-title">DATOS DEL SERVICIO</div>
-        <div className="ot-grid-4">
-          {[['TIPO',ot.tipoServicio],['FECHA',ot.fecha],['TÉCNICO',ot.tecnico],['EMP. INSTALADORA',ot.empresaInstaladora],
-            ['REGIÓN',ot.region],['CIUDAD',ot.ciudad],['COMUNA',ot.comuna],['PPU',ot.ppu]].map(([l,v])=>(
-            <div key={l} className="ot-field"><span className="ot-fl">{l}</span><span className="ot-fv" style={l==='PPU'?{fontWeight:'bold'}:{}}>{v}</span></div>
-          ))}
+        <div style={{textAlign:'center',flex:1}}>
+          <div className="ot-doc-title">ORDEN DE TRABAJO</div>
+          <div className="ot-doc-empresa-sub">{empresa}</div>
+        </div>
+        <div className="ot-doc-num-wrap">
+          <div className="ot-doc-num-label">N°</div>
+          <div className="ot-doc-num">{numero}</div>
         </div>
       </div>
 
-      {!esVF && <>
-        <div className="ot-section">
-          <div className="ot-section-title">DATOS DEL VEHÍCULO</div>
-          <div className="ot-grid-4">
-            {[['MARCA',ot.marca],['MODELO',ot.modelo],['AÑO',ot.anio],['COLOR',ot.color],['KILOMETRAJE',ot.kilometraje?`${ot.kilometraje} km`:'']].map(([l,v])=>(
+      {/* ── Servicio + Ubicación en una fila ── */}
+      <div className="ot-row-2col" style={{marginBottom:3}}>
+        <div className="ot-section" style={{flex:'0 0 42%'}}>
+          <div className="ot-section-title">SERVICIO</div>
+          <div className="ot-grid-2p">
+            {[['TIPO',ot.tipoServicio],['FECHA',ot.fecha],['TÉCNICO',ot.tecnico],['INSTALADORA',ot.empresaInstaladora]].map(([l,v])=>(
               <div key={l} className="ot-field"><span className="ot-fl">{l}</span><span className="ot-fv">{v}</span></div>
             ))}
           </div>
         </div>
-
-        <div className="ot-section">
-          <div className="ot-section-title">DATOS GPS</div>
-          <div className="ot-grid-4">
-            {inIn && <div className="ot-field"><span className="ot-fl">IMEI IN</span><span className="ot-fv">{ot.imeiIn}</span></div>}
-            {inOut && <div className="ot-field"><span className="ot-fl">IMEI OUT</span><span className="ot-fv">{ot.imeiOut}</span></div>}
-            <div className={`ot-field ${accSpan}`}><span className="ot-fl">ACCESORIOS</span><span className="ot-fv">{ot.accesoriosGPS?.join(', ')||'-'}</span></div>
+        <div className="ot-section" style={{flex:'0 0 57%'}}>
+          <div className="ot-section-title">UBICACIÓN</div>
+          <div className="ot-grid-3p">
+            {[['REGIÓN',ot.region],['CIUDAD',ot.ciudad],['COMUNA',ot.comuna]].map(([l,v])=>(
+              <div key={l} className="ot-field"><span className="ot-fl">{l}</span><span className="ot-fv">{v}</span></div>
+            ))}
           </div>
         </div>
-
-        <div className="ot-section">
-          <div className="ot-section-title">CHECK LIST</div>
-          <div className="ot-cl-grid">
-            {CHECKLIST_ITEMS.map(item=>{
-              const d=cl[item]||{estado:'NA',nota:''};
-              return (
-                <div key={item} className="ot-cl-item">
-                  <span className="ot-cl-box" style={{background:clBg[d.estado]||'#d1d5db'}}>
-                    {d.estado==='OK'&&'✓'}{d.estado==='DETALLE'&&'!'}
-                  </span>
-                  <span className="ot-cl-label">{item}</span>
-                  {d.estado==='DETALLE'&&d.nota&&<span className="ot-cl-nota">({d.nota})</span>}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </>}
-
-      <div className="ot-section">
-        <div className="ot-section-title">OBSERVACIONES</div>
-        <div style={{padding:'5px 8px',minHeight:'28px',fontSize:'9px'}}>{ot.observaciones}</div>
       </div>
 
+      {/* ── Vehículo (con PPU) ── */}
+      {!esVF ? (
+        <div className="ot-section">
+          <div className="ot-section-title">DATOS DEL VEHÍCULO</div>
+          <div className="ot-grid-5">
+            {[['PPU',ot.ppu],['MARCA',ot.marca],['MODELO',ot.modelo],['AÑO',ot.anio],['COLOR',ot.color],['KM',ot.kilometraje?`${ot.kilometraje} km`:'']].map(([l,v])=>(
+              <div key={l} className="ot-field"><span className="ot-fl">{l}</span><span className="ot-fv" style={l==='PPU'?{fontWeight:'bold'}:{}}>{v}</span></div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="ot-section">
+          <div className="ot-section-title">VEHÍCULO</div>
+          <div className="ot-grid-4">
+            <div className="ot-field"><span className="ot-fl">PPU</span><span className="ot-fv" style={{fontWeight:'bold'}}>{ot.ppu}</span></div>
+          </div>
+        </div>
+      )}
+
+      {/* ── GPS + Check List lado a lado ── */}
+      {!esVF && (
+        <div className="ot-row-2col" style={{marginBottom:3}}>
+          <div className="ot-section" style={{flex:'0 0 42%'}}>
+            <div className="ot-section-title">DATOS GPS</div>
+            <div className="ot-grid-2p">
+              {inIn && <div className="ot-field"><span className="ot-fl">IMEI IN</span><span className="ot-fv">{ot.imeiIn}</span></div>}
+              {inOut && <div className="ot-field"><span className="ot-fl">IMEI OUT</span><span className="ot-fv">{ot.imeiOut}</span></div>}
+              <div className={`ot-field ${inIn&&inOut?'':'ot-span2'}`}><span className="ot-fl">ACCESORIOS</span><span className="ot-fv">{ot.accesoriosGPS?.join(', ')||'-'}</span></div>
+            </div>
+          </div>
+          <div className="ot-section" style={{flex:'0 0 57%'}}>
+            <div className="ot-section-title">CHECK LIST</div>
+            <div className="ot-cl-grid">
+              {CHECKLIST_ITEMS.map(item=>{
+                const d=cl[item]||{estado:'NA',nota:''};
+                return (
+                  <div key={item} className="ot-cl-item">
+                    <span className="ot-cl-box" style={{background:clBg[d.estado]||'#d1d5db'}}>
+                      {d.estado==='OK'&&'✓'}{d.estado==='DETALLE'&&'!'}
+                    </span>
+                    <span className="ot-cl-label">{item}</span>
+                    {d.estado==='DETALLE'&&d.nota&&<span className="ot-cl-nota"> ({d.nota})</span>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Observaciones ── */}
+      <div className="ot-section">
+        <div className="ot-section-title">OBSERVACIONES</div>
+        <div style={{padding:'4px 7px',minHeight:'22px',fontSize:'8px'}}>{ot.observaciones}</div>
+      </div>
+
+      {/* ── Recepción ── */}
       <div className="ot-section">
         <div className="ot-section-title">RECEPCIÓN DEL VEHÍCULO</div>
         <div className="ot-grid-4" style={{paddingBottom:2}}>
           <div className="ot-field ot-span2"><span className="ot-fl">NOMBRE</span><span className="ot-fv">{cliente}</span></div>
           <div className="ot-field ot-span2"><span className="ot-fl">RUT</span><span className="ot-fv">{rut}</span></div>
         </div>
-        <div style={{padding:'4px 8px',fontSize:'7.5px',display:'flex',alignItems:'flex-start',gap:6,borderTop:'1px solid #eee'}}>
+        <div style={{padding:'3px 7px',fontSize:'7px',display:'flex',alignItems:'flex-start',gap:5,borderTop:'1px solid #eee'}}>
           <span className="ot-cl-box" style={{background:aceptacion?'#16a34a':'#d1d5db',flexShrink:0,marginTop:1}}>
             {aceptacion&&'✓'}
           </span>
-          <span>Declaro haber recibido el vehículo en las condiciones técnicas descritas en la presente orden, conforme a las actividades realizadas, sin observaciones ni reclamos respecto a la intervención efectuada.</span>
+          <span>Declaro haber recibido el vehículo en las condiciones técnicas descritas, conforme a las actividades realizadas, sin observaciones ni reclamos respecto a la intervención efectuada.</span>
         </div>
         <div className="ot-firma-box">
           {firma?<img src={firma} alt="Firma" className="ot-firma-img"/>:<span className="ot-firma-empty">_________________</span>}
-          <div style={{fontSize:'7px',textAlign:'center',marginTop:2,color:'#666'}}>Firma del cliente</div>
+          <div style={{fontSize:'6.5px',textAlign:'center',marginTop:1,color:'#888'}}>Firma del cliente</div>
         </div>
       </div>
 
       <div className="ot-disclaimer">
-        Con la firma del presente documento el cliente manifiesta que la intervención fue autorizada y recibida a satisfacción, sin reclamos al respecto. | {empresa} | {ot.fecha}
+        La firma del presente documento acredita que la intervención fue autorizada y recibida conforme. | {empresa} | {ot.fecha}
       </div>
     </div>
   );
@@ -287,7 +347,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada }) => {
   const startSession=()=>{setSessionOTs([]);setCurrentOT(makeOT());setClienteData({nombre:'',rut:''});setAceptacion(false);setFirma(null);setStep('form');};
 
   const saveCurrentOT=()=>{
-    if (!currentOT.ppu){alert('Ingresa la PPU del vehículo.');return;}
+    if (!isVF&&!currentOT.ppu){alert('Ingresa la PPU del vehículo.');return;}
     setSessionOTs(prev=>[...prev,{...currentOT,_tmp:Date.now()}]);
     setStep('confirm');
   };
@@ -450,16 +510,27 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada }) => {
                   {EMPRESAS_INST.map(e=><option key={e}>{e}</option>)}
                 </select>
               </div>
-              <div><label className="filter-label">PPU *</label>
-                <input className="form-input" value={currentOT.ppu} onChange={e=>setOTField('ppu',e.target.value.toUpperCase())} placeholder="Ej: ABCD12"/>
-              </div>
             </div>
           </div>
+
+          {isVF && (
+            <div className="form-container">
+              <div className="form-title">Datos del Vehículo</div>
+              <div className="form-grid">
+                <div><label className="filter-label">PPU</label>
+                  <input className="form-input" value={currentOT.ppu} onChange={e=>setOTField('ppu',e.target.value.toUpperCase())} placeholder="Ej: ABCD12"/>
+                </div>
+              </div>
+            </div>
+          )}
 
           {!isVF && <>
             <div className="form-container">
               <div className="form-title">Datos del Vehículo</div>
               <div className="form-grid three-cols">
+                <div><label className="filter-label">PPU *</label>
+                  <input className="form-input" value={currentOT.ppu} onChange={e=>setOTField('ppu',e.target.value.toUpperCase())} placeholder="Ej: ABCD12"/>
+                </div>
                 <div><label className="filter-label">Marca</label>
                   <select className="form-select" value={currentOT.marca} onChange={e=>setOTField('marca',e.target.value)}>
                     <option value="">Seleccionar...</option>{MARCAS.map(m=><option key={m}>{m}</option>)}
@@ -490,7 +561,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada }) => {
               <div className="form-grid">
                 {showImeiIn(currentOT.tipoServicio)&&(
                   <div><label className="filter-label">IMEI IN</label>
-                    <input className="form-input" value={currentOT.imeiIn} onChange={e=>setOTField('imeiIn',e.target.value)}/>
+                    <input type="number" className="form-input" value={currentOT.imeiIn} onChange={e=>setOTField('imeiIn',e.target.value)}/>
                   </div>
                 )}
                 {showImeiOut(currentOT.tipoServicio)&&(
