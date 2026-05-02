@@ -42,14 +42,13 @@ const makeOT = () => ({
 const EmpresaLogos = ({ empresa }) => {
   if (empresa === 'UGPS') return (
     <div className="ot-logos-wrap">
-      <img src="/logos/ugps.svg" alt="UGPS" className="ot-logo-img" />
+      <img src="/logos/ugps.png" alt="UGPS" className="ot-logo-img" />
     </div>
   );
-  // Entel → muestra Onway + Entel
   return (
     <div className="ot-logos-wrap">
-      <img src="/logos/onway.svg" alt="Onway" className="ot-logo-img" />
-      <img src="/logos/entel.svg" alt="Entel" className="ot-logo-img" />
+      <img src="/logos/onway.png" alt="Onway" className="ot-logo-img" />
+      <img src="/logos/entel.png" alt="Entel" className="ot-logo-img" />
     </div>
   );
 };
