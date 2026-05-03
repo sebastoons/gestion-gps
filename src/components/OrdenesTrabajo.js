@@ -132,8 +132,8 @@ const AccesoriosDropdown = ({ selected, onChange }) => {
 };
 
 // ── ChecklistRow (formulario) ─────────────────────────────────────────────────
-const ChecklistRow = ({ item, estado, nota, onChange }) => {
-  const cycle = () => { const n=estado==='NA'?'OK':estado==='OK'?'DETALLE':'NA'; onChange(n,n==='NA'?'':nota); };
+const ChecklistRow = ({ item, estado, onChange }) => {
+  const cycle = () => onChange(estado==='NA'?'OK':estado==='OK'?'DETALLE':'NA');
   const bg={NA:'#d1d5db',OK:'#16a34a',DETALLE:'#dc2626'}[estado];
   return (
     <div className="cl-item">
@@ -141,10 +141,6 @@ const ChecklistRow = ({ item, estado, nota, onChange }) => {
         {estado==='OK'&&'✓'}{estado==='DETALLE'&&'!'}
       </button>
       <span className="cl-label">{item}</span>
-      {estado==='DETALLE' && (
-        <input className="form-input cl-nota" placeholder="Detalle..."
-          value={nota} onChange={e=>onChange('DETALLE',e.target.value)}/>
-      )}
     </div>
   );
 };
@@ -236,7 +232,6 @@ const OTDoc = ({ ot, numero, empresa, cliente, rut, firma, aceptacion }) => {
                       {d.estado==='OK'&&'✓'}{d.estado==='DETALLE'&&'!'}
                     </span>
                     <span className="ot-cl-label">{item}</span>
-                    {d.estado==='DETALLE'&&d.nota&&<span className="ot-cl-nota"> ({d.nota})</span>}
                   </div>
                 );
               })}
@@ -388,7 +383,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada }) => {
   const downloadHistoryOT=async ot=>{setHistoryOT(ot);setDownloading(true);await new Promise(r=>setTimeout(r,600));await downloadPDF('ot-history-render',`OT-${ot.numero}`);setDownloading(false);setHistoryOT(null);};
   const deleteOT=id=>{if(!window.confirm('¿Eliminar esta OT?'))return;saveOTs(otsList.filter(o=>o.id!==id));};
   const setOTField=(f,v)=>setCurrentOT(p=>({...p,[f]:v}));
-  const setChecklist=(item,estado,nota)=>setCurrentOT(p=>({...p,checklist:{...p.checklist,[item]:{estado,nota}}}));
+  const setChecklist=(item,estado)=>setCurrentOT(p=>({...p,checklist:{...p.checklist,[item]:{estado,nota:''}}}));
 
   const threeAgo=new Date(); threeAgo.setMonth(threeAgo.getMonth()-3);
   const filteredOTs=otsList.filter(ot=>{
@@ -594,7 +589,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada }) => {
                   <ChecklistRow key={item} item={item}
                     estado={currentOT.checklist[item]?.estado||'NA'}
                     nota={currentOT.checklist[item]?.nota||''}
-                    onChange={(e,n)=>setChecklist(item,e,n)}/>
+                    onChange={(e)=>setChecklist(item,e)}/>
                 ))}
               </div>
             </div>
@@ -714,7 +709,8 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada }) => {
             <button className="btn btn-success" onClick={()=>setStep('list')}><Check size={14}/> Historial</button>
             <button className="btn btn-secondary" onClick={()=>setCurrentView('home')}><HomeIcon size={14}/> Inicio</button>
           </div>
-          <div id="ot-preview-wrap" style={{background:'#fff'}}>
+          <div style={{overflowX:'auto',WebkitOverflowScrolling:'touch'}}>
+          <div id="ot-preview-wrap" style={{background:'#fff',minWidth:640}}>
             {sessionOTs.map((ot,i)=>(
               <div key={i} style={{pageBreakAfter:i<sessionOTs.length-1?'always':'auto',marginBottom:i<sessionOTs.length-1?40:0}}>
                 <OTDoc ot={ot} numero={ot.numero} empresa={sessionEmpresa}
@@ -722,6 +718,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada }) => {
                 {i<sessionOTs.length-1&&<hr style={{margin:'30px 0',border:'2px dashed #ccc'}}/>}
               </div>
             ))}
+          </div>
           </div>
         </div>
       </div>
