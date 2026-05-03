@@ -150,6 +150,14 @@ const EmpresaLogos = ({ empresa }) => empresa==='UGPS'
   ? <div className="ot-logos-wrap"><img src="/logos/ugps.png" alt="UGPS" className="ot-logo-img"/></div>
   : <div className="ot-logos-wrap"><img src="/logos/onway.png" alt="Onway" className="ot-logo-img"/><img src="/logos/entel.png" alt="Entel" className="ot-logo-img"/></div>;
 
+// ── OTField ───────────────────────────────────────────────────────────────────
+const OTField = ({ l, v, full }) => (
+  <div className={`otd-field${full?' full':''}`}>
+    <span className="otd-k">{l}</span>
+    <span className="otd-v">{v||'—'}</span>
+  </div>
+);
+
 // ── OTDoc ─────────────────────────────────────────────────────────────────────
 const OTDoc = ({ ot, numero, empresa, cliente, rut, firma, aceptacion }) => {
   const esVF = ot.tipoServicio==='Visita Fallida';
@@ -157,116 +165,109 @@ const OTDoc = ({ ot, numero, empresa, cliente, rut, firma, aceptacion }) => {
   const clBg = {NA:'#d1d5db',OK:'#16a34a',DETALLE:'#dc2626'};
   const inIn=showImeiIn(ot.tipoServicio), inOut=showImeiOut(ot.tipoServicio);
   return (
-    <div className="ot-doc">
-      {/* ── Header ── */}
-      <div className="ot-doc-header">
+    <div className="otd">
+      <div className="otd-hdr">
         <EmpresaLogos empresa={empresa}/>
-        <div className="ot-doc-title-wrap">
-          <span className="ot-doc-title">ORDEN DE TRABAJO</span>
-          <span className="ot-doc-empresa-sub">{empresa}</span>
+        <div className="otd-hdr-mid">
+          <span className="otd-title">ORDEN DE TRABAJO</span>
+          <span className="otd-sub">{empresa}</span>
         </div>
-        <div className="ot-doc-num-wrap">
-          <span className="ot-doc-num-label">N°</span>
-          <span className="ot-doc-num">{numero}</span>
-        </div>
-      </div>
-
-      {/* ── Servicio + Ubicación en una fila ── */}
-      <div className="ot-row-2col" style={{marginBottom:4}}>
-        <div className="ot-section">
-          <div className="ot-section-title">SERVICIO</div>
-          <div className="ot-grid-2p">
-            {[['TIPO',ot.tipoServicio],['FECHA',ot.fecha],['TÉCNICO',ot.tecnico],['INSTALADORA',ot.empresaInstaladora]].map(([l,v])=>(
-              <div key={l} className="ot-field"><span className="ot-fl">{l}</span><span className="ot-fv">{v}</span></div>
-            ))}
-          </div>
-        </div>
-        <div className="ot-section">
-          <div className="ot-section-title">UBICACIÓN</div>
-          <div className="ot-grid-3p">
-            {[['REGIÓN',ot.region],['CIUDAD',ot.ciudad],['COMUNA',ot.comuna]].map(([l,v])=>(
-              <div key={l} className="ot-field"><span className="ot-fl">{l}</span><span className="ot-fv">{v}</span></div>
-            ))}
-          </div>
+        <div className="otd-num-wrap">
+          <span className="otd-num-lbl">N°</span>
+          <span className="otd-num">{numero}</span>
         </div>
       </div>
 
-      {/* ── Vehículo (con PPU) ── */}
-      {!esVF ? (
-        <div className="ot-section">
-          <div className="ot-section-title">DATOS DEL VEHÍCULO</div>
-          <div className="ot-grid-6">
-            {[['PPU',ot.ppu],['MARCA',ot.marca],['MODELO',ot.modelo],['AÑO',ot.anio],['COLOR',ot.color],['KM',ot.kilometraje?`${ot.kilometraje} km`:'']].map(([l,v])=>(
-              <div key={l} className="ot-field"><span className="ot-fl">{l}</span><span className="ot-fv" style={l==='PPU'?{fontWeight:'bold'}:{}}>{v}</span></div>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="ot-section">
-          <div className="ot-section-title">VEHÍCULO</div>
-          <div className="ot-grid-4">
-            <div className="ot-field"><span className="ot-fl">PPU</span><span className="ot-fv" style={{fontWeight:'bold'}}>{ot.ppu}</span></div>
-          </div>
+      {ot.ppu&&(
+        <div className="otd-ppu-bar">
+          <span className="otd-ppu-lbl">PPU</span>
+          <span className="otd-ppu">{ot.ppu}</span>
+          {!esVF&&<span className="otd-ppu-detail">{[ot.marca,ot.modelo,ot.anio].filter(Boolean).join(' · ')}</span>}
         </div>
       )}
 
-      {/* ── GPS + Check List lado a lado ── */}
-      {!esVF && (
-        <div className="ot-row-2col" style={{marginBottom:4}}>
-          <div className="ot-section">
-            <div className="ot-section-title">DATOS GPS</div>
-            <div className="ot-grid-2p">
-              {inIn && <div className="ot-field"><span className="ot-fl">IMEI IN</span><span className="ot-fv">{ot.imeiIn}</span></div>}
-              {inOut && <div className="ot-field"><span className="ot-fl">IMEI OUT</span><span className="ot-fv">{ot.imeiOut}</span></div>}
-              <div className={`ot-field ${inIn&&inOut?'':'ot-span2'}`}><span className="ot-fl">ACCESORIOS</span><span className="ot-fv">{ot.accesoriosGPS?.join(', ')||'-'}</span></div>
+      <div className="otd-body">
+        <div className="otd-sec">
+          <div className="otd-sec-ttl">SERVICIO</div>
+          <div className="otd-rows">
+            <OTField l="TIPO" v={ot.tipoServicio}/>
+            <OTField l="FECHA" v={ot.fecha}/>
+            <OTField l="TÉCNICO" v={ot.tecnico}/>
+            <OTField l="INSTALADORA" v={ot.empresaInstaladora}/>
+          </div>
+        </div>
+
+        <div className="otd-sec">
+          <div className="otd-sec-ttl">UBICACIÓN</div>
+          <div className="otd-rows">
+            <OTField l="REGIÓN" v={ot.region}/>
+            <OTField l="CIUDAD" v={ot.ciudad}/>
+            <OTField l="COMUNA" v={ot.comuna}/>
+          </div>
+        </div>
+
+        {!esVF&&<>
+          <div className="otd-sec">
+            <div className="otd-sec-ttl">VEHÍCULO</div>
+            <div className="otd-rows">
+              <OTField l="COLOR" v={ot.color}/>
+              <OTField l="KM" v={ot.kilometraje?`${ot.kilometraje} km`:''}/>
             </div>
           </div>
-          <div className="ot-section">
-            <div className="ot-section-title">CHECK LIST</div>
-            <div className="ot-cl-grid">
+
+          <div className="otd-sec">
+            <div className="otd-sec-ttl">GPS</div>
+            <div className="otd-rows">
+              {inIn&&<OTField l="IMEI IN" v={ot.imeiIn}/>}
+              {inOut&&<OTField l="IMEI OUT" v={ot.imeiOut}/>}
+              <OTField l="ACCESORIOS" v={ot.accesoriosGPS?.join(', ')||'—'} full/>
+            </div>
+          </div>
+
+          <div className="otd-sec">
+            <div className="otd-sec-ttl">CHECK LIST</div>
+            <div className="otd-cl-grid">
               {CHECKLIST_ITEMS.map(item=>{
-                const d=cl[item]||{estado:'NA',nota:''};
-                return (
-                  <div key={item} className="ot-cl-item">
-                    <span className="ot-cl-box" style={{background:clBg[d.estado]||'#d1d5db'}}>
+                const d=cl[item]||{estado:'NA'};
+                return(
+                  <div key={item} className="otd-cl-item">
+                    <span className="otd-cl-box" style={{background:clBg[d.estado]||'#d1d5db'}}>
                       {d.estado==='OK'&&'✓'}{d.estado==='DETALLE'&&'!'}
                     </span>
-                    <span className="ot-cl-label">{item}</span>
+                    <span className="otd-cl-lbl">{item}</span>
                   </div>
                 );
               })}
             </div>
           </div>
-        </div>
-      )}
+        </>}
 
-      {/* ── Observaciones ── */}
-      <div className="ot-section">
-        <div className="ot-section-title">OBSERVACIONES</div>
-        <div style={{padding:'4px 7px',minHeight:'22px',fontSize:'8px'}}>{ot.observaciones}</div>
+        <div className="otd-sec">
+          <div className="otd-sec-ttl">OBSERVACIONES</div>
+          <div className="otd-obs">{ot.observaciones||'—'}</div>
+        </div>
+
+        <div className="otd-sec">
+          <div className="otd-sec-ttl">RECEPCIÓN</div>
+          <div className="otd-rows">
+            <OTField l="NOMBRE" v={cliente} full/>
+            <OTField l="RUT" v={rut}/>
+          </div>
+          <div className="otd-acept">
+            <span className="otd-cl-box" style={{background:aceptacion?'#16a34a':'#d1d5db',flexShrink:0,marginTop:1}}>
+              {aceptacion&&'✓'}
+            </span>
+            <span className="otd-acept-txt">Declaro haber recibido el vehículo en las condiciones técnicas descritas, conforme a las actividades realizadas, sin observaciones ni reclamos.</span>
+          </div>
+          <div className="otd-firma-box">
+            {firma?<img src={firma} alt="Firma" className="otd-firma-img"/>:<span className="otd-firma-empty">_______________</span>}
+            <div className="otd-firma-lbl">Firma del cliente</div>
+          </div>
+        </div>
       </div>
 
-      {/* ── Recepción ── */}
-      <div className="ot-section">
-        <div className="ot-section-title">RECEPCIÓN DEL VEHÍCULO</div>
-        <div className="ot-grid-4" style={{paddingBottom:2}}>
-          <div className="ot-field ot-span2"><span className="ot-fl">NOMBRE</span><span className="ot-fv">{cliente}</span></div>
-          <div className="ot-field ot-span2"><span className="ot-fl">RUT</span><span className="ot-fv">{rut}</span></div>
-        </div>
-        <div style={{padding:'3px 7px',fontSize:'7px',display:'flex',alignItems:'flex-start',gap:5,borderTop:'1px solid #eee'}}>
-          <span className="ot-cl-box" style={{background:aceptacion?'#16a34a':'#d1d5db',flexShrink:0,marginTop:1}}>
-            {aceptacion&&'✓'}
-          </span>
-          <span>Declaro haber recibido el vehículo en las condiciones técnicas descritas, conforme a las actividades realizadas, sin observaciones ni reclamos respecto a la intervención efectuada.</span>
-        </div>
-        <div className="ot-firma-box">
-          {firma?<img src={firma} alt="Firma" className="ot-firma-img"/>:<span className="ot-firma-empty">_________________</span>}
-          <div style={{fontSize:'6.5px',textAlign:'center',marginTop:1,color:'#888'}}>Firma del cliente</div>
-        </div>
-      </div>
-
-      <div className="ot-disclaimer">
-        La firma del presente documento acredita que la intervención fue autorizada y recibida conforme. | {empresa} | {ot.fecha}
+      <div className="otd-footer">
+        {empresa} · {ot.fecha} · La firma acredita autorización y conformidad.
       </div>
     </div>
   );
@@ -301,10 +302,8 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada }) => {
   const [counters,setCounters] = useState({Entel:1,UGPS:1});
   const [historyOT,setHistoryOT] = useState(null);
   const [downloading,setDownloading] = useState(false);
-  const [previewZoom,setPreviewZoom] = useState(1);
   const canvasRef = useRef(null);
   const isDrawing = useRef(false);
-  const previewRef = useRef(null);
 
   useEffect(()=>{
     const load = async () => {
@@ -326,19 +325,6 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada }) => {
     setOtsList(list);
     await syncTable('ordenes_trabajo', list);
   };
-
-  // Zoom del preview para mobile
-  useEffect(()=>{
-    if(step!=='preview') return;
-    const update=()=>{
-      if(!previewRef.current) return;
-      const w=previewRef.current.clientWidth;
-      setPreviewZoom(w>=794?1:w/794);
-    };
-    const t=setTimeout(update,50);
-    window.addEventListener('resize',update);
-    return()=>{clearTimeout(t);window.removeEventListener('resize',update);};
-  },[step]);
 
   // Canvas firma
   useEffect(()=>{
@@ -447,7 +433,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada }) => {
         </div>
       </div>
       {historyOT&&(
-        <div style={{position:'absolute',left:'-9999px',top:0,width:'794px',background:'#fff'}}>
+        <div style={{position:'absolute',left:'-9999px',top:0,width:'420px',background:'#f8fafc'}}>
           <div id="ot-history-render">
             <OTDoc ot={historyOT} numero={historyOT.numero} empresa={historyOT.empresa}
               cliente={historyOT.cliente} rut={historyOT.rutCliente} firma={historyOT.firma} aceptacion={historyOT.aceptacion}/>
@@ -711,27 +697,25 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada }) => {
             <button className="btn btn-secondary" onClick={()=>setCurrentView('home')}><HomeIcon size={14}/> Inicio</button>
           </div>
 
-          {/* Vista escalada para pantalla — se adapta al ancho disponible */}
-          <div ref={previewRef} style={{width:'100%',overflow:'hidden'}}>
-            <div style={{width:794,zoom:previewZoom,background:'#fff'}}>
-              {sessionOTs.map((ot,i)=>(
-                <div key={i} style={{marginBottom:i<sessionOTs.length-1?32:0}}>
-                  <OTDoc {...otDocProps(ot)}/>
-                  {i<sessionOTs.length-1&&<hr style={{margin:'20px 0',border:'2px dashed #ccc'}}/>}
-                </div>
-              ))}
-            </div>
+          {/* Preview — naturally responsive */}
+          <div style={{width:'100%',background:'#f8fafc'}}>
+            {sessionOTs.map((ot,i)=>(
+              <div key={i} style={{marginBottom:i<sessionOTs.length-1?24:0}}>
+                <OTDoc {...otDocProps(ot)}/>
+                {i<sessionOTs.length-1&&<hr style={{margin:'16px 0',border:'2px dashed #d1d5db'}}/>}
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Div oculto tamaño A4 completo — solo para captura PDF */}
-      <div style={{position:'fixed',left:'-9999px',top:0,width:'794px',background:'#fff'}}>
+      {/* Hidden div for PDF capture at 420px */}
+      <div style={{position:'fixed',left:'-9999px',top:0,width:'420px',background:'#f8fafc'}}>
         <div id="ot-preview-wrap">
           {sessionOTs.map((ot,i)=>(
-            <div key={i} style={{pageBreakAfter:i<sessionOTs.length-1?'always':'auto',marginBottom:i<sessionOTs.length-1?40:0}}>
+            <div key={i} style={{marginBottom:i<sessionOTs.length-1?24:0}}>
               <OTDoc {...otDocProps(ot)}/>
-              {i<sessionOTs.length-1&&<hr style={{margin:'30px 0',border:'2px dashed #ccc'}}/>}
+              {i<sessionOTs.length-1&&<hr style={{margin:'16px 0',border:'2px dashed #d1d5db'}}/>}
             </div>
           ))}
         </div>
