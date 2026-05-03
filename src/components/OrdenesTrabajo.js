@@ -164,19 +164,19 @@ const OTDoc = ({ ot, numero, empresa, cliente, rut, firma, aceptacion }) => {
       {/* ── Header ── */}
       <div className="ot-doc-header">
         <EmpresaLogos empresa={empresa}/>
-        <div style={{textAlign:'center',flex:1}}>
-          <div className="ot-doc-title">ORDEN DE TRABAJO</div>
-          <div className="ot-doc-empresa-sub">{empresa}</div>
+        <div className="ot-doc-title-wrap">
+          <span className="ot-doc-title">ORDEN DE TRABAJO</span>
+          <span className="ot-doc-empresa-sub">{empresa}</span>
         </div>
         <div className="ot-doc-num-wrap">
-          <div className="ot-doc-num-label">N°</div>
-          <div className="ot-doc-num">{numero}</div>
+          <span className="ot-doc-num-label">N°</span>
+          <span className="ot-doc-num">{numero}</span>
         </div>
       </div>
 
       {/* ── Servicio + Ubicación en una fila ── */}
-      <div className="ot-row-2col" style={{marginBottom:3}}>
-        <div className="ot-section" style={{flex:'0 0 42%'}}>
+      <div className="ot-row-2col" style={{marginBottom:4}}>
+        <div className="ot-section">
           <div className="ot-section-title">SERVICIO</div>
           <div className="ot-grid-2p">
             {[['TIPO',ot.tipoServicio],['FECHA',ot.fecha],['TÉCNICO',ot.tecnico],['INSTALADORA',ot.empresaInstaladora]].map(([l,v])=>(
@@ -184,7 +184,7 @@ const OTDoc = ({ ot, numero, empresa, cliente, rut, firma, aceptacion }) => {
             ))}
           </div>
         </div>
-        <div className="ot-section" style={{flex:'0 0 57%'}}>
+        <div className="ot-section">
           <div className="ot-section-title">UBICACIÓN</div>
           <div className="ot-grid-3p">
             {[['REGIÓN',ot.region],['CIUDAD',ot.ciudad],['COMUNA',ot.comuna]].map(([l,v])=>(
@@ -198,7 +198,7 @@ const OTDoc = ({ ot, numero, empresa, cliente, rut, firma, aceptacion }) => {
       {!esVF ? (
         <div className="ot-section">
           <div className="ot-section-title">DATOS DEL VEHÍCULO</div>
-          <div className="ot-grid-5">
+          <div className="ot-grid-6">
             {[['PPU',ot.ppu],['MARCA',ot.marca],['MODELO',ot.modelo],['AÑO',ot.anio],['COLOR',ot.color],['KM',ot.kilometraje?`${ot.kilometraje} km`:'']].map(([l,v])=>(
               <div key={l} className="ot-field"><span className="ot-fl">{l}</span><span className="ot-fv" style={l==='PPU'?{fontWeight:'bold'}:{}}>{v}</span></div>
             ))}
@@ -215,8 +215,8 @@ const OTDoc = ({ ot, numero, empresa, cliente, rut, firma, aceptacion }) => {
 
       {/* ── GPS + Check List lado a lado ── */}
       {!esVF && (
-        <div className="ot-row-2col" style={{marginBottom:3}}>
-          <div className="ot-section" style={{flex:'0 0 42%'}}>
+        <div className="ot-row-2col" style={{marginBottom:4}}>
+          <div className="ot-section">
             <div className="ot-section-title">DATOS GPS</div>
             <div className="ot-grid-2p">
               {inIn && <div className="ot-field"><span className="ot-fl">IMEI IN</span><span className="ot-fv">{ot.imeiIn}</span></div>}
@@ -224,7 +224,7 @@ const OTDoc = ({ ot, numero, empresa, cliente, rut, firma, aceptacion }) => {
               <div className={`ot-field ${inIn&&inOut?'':'ot-span2'}`}><span className="ot-fl">ACCESORIOS</span><span className="ot-fv">{ot.accesoriosGPS?.join(', ')||'-'}</span></div>
             </div>
           </div>
-          <div className="ot-section" style={{flex:'0 0 57%'}}>
+          <div className="ot-section">
             <div className="ot-section-title">CHECK LIST</div>
             <div className="ot-cl-grid">
               {CHECKLIST_ITEMS.map(item=>{
