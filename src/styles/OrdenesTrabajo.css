@@ -76,11 +76,11 @@
   border-radius:6px;
   margin-bottom:5px;
 }
-.ot-logos-wrap   { display:flex; align-items:center; gap:6px; }
-.ot-logo-img     { height:28px; width:auto; object-fit:contain; }
+.ot-logos-wrap   { display:flex; align-items:center; gap:4px; }
+.ot-logo-img     { height:24px; width:auto; object-fit:contain; max-width:70px; }
 .ot-doc-title-wrap { text-align:center; }
-.ot-doc-title    { display:block; font-size:11px; font-weight:bold; color:#1a3a6b; letter-spacing:0.5px; line-height:1.3; }
-.ot-doc-empresa-sub { display:block; font-size:7px; color:#4b5563; letter-spacing:0.3px; margin-top:1px; }
+.ot-doc-title    { display:block; font-size:10px; font-weight:bold; color:#1a3a6b; letter-spacing:0.5px; white-space:nowrap; }
+.ot-doc-empresa-sub { display:block; font-size:7px; color:#4b5563; letter-spacing:0.3px; margin-top:1px; white-space:nowrap; }
 .ot-doc-num-wrap { text-align:right; }
 .ot-doc-num-label { display:block; font-size:6px; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; }
 .ot-doc-num      { display:block; font-size:15px; font-weight:bold; color:#dc2626; white-space:nowrap; line-height:1.1; }
