@@ -182,7 +182,6 @@ const OTDoc = ({ ot, numero, empresa, cliente, rut, firma, aceptacion }) => {
         <div className="otd-ppu-bar">
           <span className="otd-ppu-lbl">PPU</span>
           <span className="otd-ppu">{ot.ppu}</span>
-          {!esVF&&<span className="otd-ppu-detail">{[ot.marca,ot.modelo,ot.anio].filter(Boolean).join(' · ')}</span>}
         </div>
       )}
 
@@ -208,8 +207,12 @@ const OTDoc = ({ ot, numero, empresa, cliente, rut, firma, aceptacion }) => {
 
         {!esVF&&<>
           <div className="otd-sec">
-            <div className="otd-sec-ttl">VEHÍCULO</div>
+            <div className="otd-sec-ttl">DATOS DEL VEHÍCULO</div>
             <div className="otd-rows">
+              <OTField l="PPU" v={ot.ppu}/>
+              <OTField l="MARCA" v={ot.marca}/>
+              <OTField l="MODELO" v={ot.modelo}/>
+              <OTField l="AÑO" v={ot.anio}/>
               <OTField l="COLOR" v={ot.color}/>
               <OTField l="KM" v={ot.kilometraje?`${ot.kilometraje} km`:''}/>
             </div>
