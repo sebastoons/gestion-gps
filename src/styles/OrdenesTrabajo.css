@@ -64,53 +64,75 @@
   background:#fff; padding:10px; width:100%; box-sizing:border-box;
 }
 
-/* Header: fondo claro para que los logos sean visibles */
+/* Header — 3 columnas fijas: logos | título | número */
 .ot-doc-header {
-  display:flex; align-items:center; justify-content:space-between;
-  background:#f0f4ff; border:2px solid #1a3a6b;
-  padding:6px 12px; border-radius:6px; margin-bottom:6px;
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  align-items:center;
+  gap:10px;
+  background:#f0f4ff;
+  border:2px solid #1a3a6b;
+  padding:7px 12px;
+  border-radius:6px;
+  margin-bottom:5px;
 }
-.ot-doc-title { font-size:13px; font-weight:bold; color:#1a3a6b; letter-spacing:0.5px; text-align:center; }
-.ot-doc-num { font-size:14px; font-weight:bold; color:#dc2626; white-space:nowrap; }
-
-/* Logos */
-.ot-logos-wrap { display:flex; align-items:center; gap:6px; flex-shrink:0; }
-.ot-logo-img { height:34px; width:auto; object-fit:contain; border-radius:3px; }
+.ot-logos-wrap   { display:flex; align-items:center; gap:6px; }
+.ot-logo-img     { height:28px; width:auto; object-fit:contain; }
+.ot-doc-title-wrap { text-align:center; }
+.ot-doc-title    { display:block; font-size:11px; font-weight:bold; color:#1a3a6b; letter-spacing:0.5px; line-height:1.3; }
+.ot-doc-empresa-sub { display:block; font-size:7px; color:#4b5563; letter-spacing:0.3px; margin-top:1px; }
+.ot-doc-num-wrap { text-align:right; }
+.ot-doc-num-label { display:block; font-size:6px; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; }
+.ot-doc-num      { display:block; font-size:15px; font-weight:bold; color:#dc2626; white-space:nowrap; line-height:1.1; }
 
 /* Secciones */
 .ot-section { border:1px solid #ccc; border-radius:4px; margin-bottom:4px; overflow:hidden; }
-.ot-section-title { background:#e8ecf4; padding:2px 8px; font-size:7.5px; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; border-bottom:1px solid #ccc; }
+.ot-section-title {
+  background:#e8ecf4; padding:2px 8px;
+  font-size:7px; font-weight:bold; text-transform:uppercase;
+  letter-spacing:0.5px; border-bottom:1px solid #ccc; color:#1a3a6b;
+}
 
 /* Grids de campos */
-.ot-grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:3px; padding:5px; }
-.ot-grid-2 { display:grid; grid-template-columns:repeat(2,1fr); gap:3px; padding:5px; }
-.ot-field { display:flex; flex-direction:column; }
-.ot-span2 { grid-column:span 2; }
-.ot-span3 { grid-column:span 3; }
-.ot-span4 { grid-column:span 4; }
-.ot-fl { font-size:6.5px; color:#666; text-transform:uppercase; margin-bottom:1px; }
-.ot-fv { border-bottom:1px solid #333; min-height:13px; padding:1px 2px; font-size:8.5px; text-transform:uppercase; word-break:break-all; }
+.ot-grid-4  { display:grid; grid-template-columns:repeat(4,1fr); gap:2px; padding:4px 6px; }
+.ot-grid-6  { display:grid; grid-template-columns:repeat(6,1fr); gap:2px; padding:4px 6px; }
+.ot-grid-2p { display:grid; grid-template-columns:repeat(2,1fr); gap:2px; padding:4px 6px; }
+.ot-grid-3p { display:grid; grid-template-columns:repeat(3,1fr); gap:2px; padding:4px 6px; }
+.ot-field   { display:flex; flex-direction:column; min-width:0; }
+.ot-span2   { grid-column:span 2; }
+.ot-span3   { grid-column:span 3; }
+.ot-span4   { grid-column:span 4; }
+
+.ot-fl {
+  font-size:6px; color:#888; text-transform:uppercase; margin-bottom:1px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.ot-fv {
+  border-bottom:1px solid #bbb; min-height:12px; padding:1px 2px;
+  font-size:8px; text-transform:uppercase;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+
+/* Fila de 2 secciones lado a lado */
+.ot-row-2col { display:flex; gap:4px; }
+.ot-row-2col > .ot-section          { margin-bottom:0; min-width:0; }
+.ot-row-2col > .ot-section:first-child { flex:0 0 39%; }
+.ot-row-2col > .ot-section:last-child  { flex:1; }
 
 /* Check list en documento */
-.ot-cl-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:3px; padding:5px; }
-.ot-cl-item { display:flex; align-items:center; gap:4px; }
-.ot-cl-box { width:12px; height:12px; border-radius:2px; display:inline-flex; align-items:center; justify-content:center; font-size:9px; color:white; font-weight:bold; flex-shrink:0; }
-.ot-cl-label { font-size:7.5px; text-transform:uppercase; }
-.ot-cl-nota { font-size:7px; color:#dc2626; }
+.ot-cl-grid  { display:grid; grid-template-columns:repeat(3,1fr); gap:3px; padding:4px 6px; }
+.ot-cl-item  { display:flex; align-items:center; gap:3px; min-width:0; }
+.ot-cl-box   {
+  width:11px; height:11px; border-radius:2px;
+  display:inline-flex; align-items:center; justify-content:center;
+  font-size:8px; color:white; font-weight:bold; flex-shrink:0;
+}
+.ot-cl-label { font-size:7px; text-transform:uppercase; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ot-cl-nota  { font-size:6.5px; color:#dc2626; flex-shrink:0; }
 
 /* Firma */
-.ot-firma-box { min-height:55px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4px; border-top:1px solid #eee; }
-.ot-firma-img { max-height:48px; max-width:160px; }
-.ot-firma-empty { font-size:14px; color:#ccc; letter-spacing:2px; }
+.ot-firma-box   { min-height:48px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4px; border-top:1px solid #eee; }
+.ot-firma-img   { max-height:42px; max-width:150px; }
+.ot-firma-empty { font-size:12px; color:#ccc; letter-spacing:2px; }
 
-.ot-disclaimer { font-size:6.5px; color:#555; line-height:1.3; padding:3px 6px; border-top:1px solid #eee; margin-top:3px; }
-
-/* ── OTDoc layout helpers ── */
-.ot-row-2col { display:flex; gap:3px; }
-.ot-grid-2p { display:grid; grid-template-columns:repeat(2,1fr); gap:3px; padding:4px 5px; }
-.ot-grid-3p { display:grid; grid-template-columns:repeat(3,1fr); gap:3px; padding:4px 5px; }
-.ot-grid-5  { display:grid; grid-template-columns:repeat(5,1fr); gap:3px; padding:4px 5px; }
-.ot-doc-empresa-sub { font-size:7.5px; color:#4b5563; font-weight:normal; letter-spacing:0.3px; }
-.ot-doc-num-wrap { display:flex; flex-direction:column; align-items:flex-end; flex-shrink:0; }
-.ot-doc-num-label { font-size:6.5px; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; }
-.ot-doc-num { font-size:13px; font-weight:bold; color:#dc2626; white-space:nowrap; }
+.ot-disclaimer { font-size:6px; color:#888; line-height:1.3; padding:3px 6px; border-top:1px solid #eee; margin-top:2px; text-align:center; }
