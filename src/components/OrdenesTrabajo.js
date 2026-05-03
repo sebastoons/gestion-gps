@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Download, Search, ChevronLeft, X, Trash2, Mail, Check, Home as HomeIcon, ChevronDown } from 'lucide-react';
+import { Plus, Download, Search, ChevronLeft, X, Trash2, Check, Home as HomeIcon, ChevronDown } from 'lucide-react';
 import { supabase, loadTable, syncTable } from '../lib/supabase';
 import '../styles/OrdenesTrabajo.css';
 
@@ -312,8 +312,10 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada }) => {
   const [counters,setCounters] = useState({Entel:1,UGPS:1});
   const [historyOT,setHistoryOT] = useState(null);
   const [downloading,setDownloading] = useState(false);
+  const [previewZoom,setPreviewZoom] = useState(1);
   const canvasRef = useRef(null);
   const isDrawing = useRef(false);
+  const previewRef = useRef(null);
 
   useEffect(()=>{
     const load = async () => {
@@ -335,6 +337,19 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada }) => {
     setOtsList(list);
     await syncTable('ordenes_trabajo', list);
   };
+
+  // Zoom del preview para mobile
+  useEffect(()=>{
+    if(step!=='preview') return;
+    const update=()=>{
+      if(!previewRef.current) return;
+      const w=previewRef.current.clientWidth;
+      setPreviewZoom(w>=794?1:w/794);
+    };
+    const t=setTimeout(update,50);
+    window.addEventListener('resize',update);
+    return()=>{clearTimeout(t);window.removeEventListener('resize',update);};
+  },[step]);
 
   // Canvas firma
   useEffect(()=>{
@@ -693,33 +708,43 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada }) => {
   );
 
   // ── PREVIEW ───────────────────────────────────────────────────────────────
+  const otDocProps = (ot) => ({ot, numero:ot.numero, empresa:sessionEmpresa,
+    cliente:clienteData.nombre, rut:clienteData.rut, firma, aceptacion});
+
   if(step==='preview') return (
     <div className="page-container">
       <div className="page-content">
         <div className="page-card">
-          <div className="page-header"><h1 className="page-title">Orden de Trabajo — {sessionEmpresa}</h1></div>
-          <div style={{display:'flex',gap:10,justifyContent:'center',marginBottom:20,flexWrap:'wrap'}}>
-            <button className="btn btn-primary" onClick={()=>downloadPDF('ot-preview-wrap',`OT-${sessionEmpresa}-${new Date().toISOString().split('T')[0]}`)}>
-              <Download size={14}/> Descargar PDF
-            </button>
-            <button className="btn btn-secondary" style={{display:'flex',alignItems:'center',gap:6}}>
-              <Mail size={14}/> Enviar correo
-              <span style={{fontSize:'0.75em',background:'#f59e0b',color:'#fff',borderRadius:4,padding:'1px 5px'}}>Próximamente</span>
-            </button>
+          <div className="page-header"><h1 className="page-title">OT — {sessionEmpresa}</h1></div>
+          <div style={{display:'flex',gap:8,justifyContent:'center',marginBottom:14,flexWrap:'wrap'}}>
+            <button className="btn btn-primary" onClick={()=>downloadPDF('ot-preview-wrap',`OT-${sessionEmpresa}-${new Date().toISOString().split('T')[0]}`)}><Download size={14}/> PDF</button>
             <button className="btn btn-success" onClick={()=>setStep('list')}><Check size={14}/> Historial</button>
             <button className="btn btn-secondary" onClick={()=>setCurrentView('home')}><HomeIcon size={14}/> Inicio</button>
           </div>
-          <div style={{overflowX:'auto',WebkitOverflowScrolling:'touch'}}>
-          <div id="ot-preview-wrap" style={{background:'#fff',minWidth:640}}>
-            {sessionOTs.map((ot,i)=>(
-              <div key={i} style={{pageBreakAfter:i<sessionOTs.length-1?'always':'auto',marginBottom:i<sessionOTs.length-1?40:0}}>
-                <OTDoc ot={ot} numero={ot.numero} empresa={sessionEmpresa}
-                  cliente={clienteData.nombre} rut={clienteData.rut} firma={firma} aceptacion={aceptacion}/>
-                {i<sessionOTs.length-1&&<hr style={{margin:'30px 0',border:'2px dashed #ccc'}}/>}
-              </div>
-            ))}
+
+          {/* Vista escalada para pantalla — se adapta al ancho disponible */}
+          <div ref={previewRef} style={{width:'100%',overflow:'hidden'}}>
+            <div style={{width:794,zoom:previewZoom,background:'#fff'}}>
+              {sessionOTs.map((ot,i)=>(
+                <div key={i} style={{marginBottom:i<sessionOTs.length-1?32:0}}>
+                  <OTDoc {...otDocProps(ot)}/>
+                  {i<sessionOTs.length-1&&<hr style={{margin:'20px 0',border:'2px dashed #ccc'}}/>}
+                </div>
+              ))}
+            </div>
           </div>
-          </div>
+        </div>
+      </div>
+
+      {/* Div oculto tamaño A4 completo — solo para captura PDF */}
+      <div style={{position:'fixed',left:'-9999px',top:0,width:'794px',background:'#fff'}}>
+        <div id="ot-preview-wrap">
+          {sessionOTs.map((ot,i)=>(
+            <div key={i} style={{pageBreakAfter:i<sessionOTs.length-1?'always':'auto',marginBottom:i<sessionOTs.length-1?40:0}}>
+              <OTDoc {...otDocProps(ot)}/>
+              {i<sessionOTs.length-1&&<hr style={{margin:'30px 0',border:'2px dashed #ccc'}}/>}
+            </div>
+          ))}
         </div>
       </div>
     </div>
