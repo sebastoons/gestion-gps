@@ -8,7 +8,7 @@ const ValoresTrabajos = ({ setCurrentView }) => {
   const exportRef = useRef(null);
 
   const serviciosIniciales = [
-    { detalle: 'INSTALACION ON BATT - OBD', uf: 0.4 },
+    { detalle: 'INSTALACION ON BATT - OBD', uf: 0.6 },
     { detalle: 'INSTALACION BASICA', uf: 0.8 },
     { detalle: 'MANTENIMIENTO', uf: 0.7 },
     { detalle: 'MIGRACION', uf: 1.1 },
@@ -16,12 +16,14 @@ const ValoresTrabajos = ({ setCurrentView }) => {
     { detalle: 'DESINSTALACION GPS EXTERNO', uf: 0.3 },
     { detalle: 'VISITA FALLIDA (45 MIN)', uf: 0.5 },
     { detalle: 'INSTALACION CANBUS', uf: 0.6 },
-    { detalle: 'ACCESORIOS (SOS, IBUTTON, BUZZER, BLOQUEO)', uf: 0.4 }
+    { detalle: 'ACCESORIOS (SOS, IBUTTON, BUZZER, BLOQUEO)', uf: 0.4 },
+    { detalle: 'SENSOR TEMPERATURA', uf: 0.4 },
+    { detalle: 'SENSOR PUERTA', uf: 0.6 }
   ];
 
   const infoIniciales = {
     valorKm: 250,
-    detallesServicios: 'Incluye instalación, configuración y prueba del equipo GPS. Garantía de 6 meses en mano de obra.',
+    detallesServicios: 'Incluye instalación, configuración y prueba del equipo GPS.',
     tipoBoleta: 'Factura o Boleta de Honorarios',
     usarLogo: true, // Nueva opción para usar logo
     //rutEmpresa: '12.345.678-9',

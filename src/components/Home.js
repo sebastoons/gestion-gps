@@ -12,7 +12,7 @@ const Home = ({ setCurrentView }) => {
         </div>
         
         <h1 className="home-title">Sistema de Gestión GPS</h1>
-        <p className="home-subtitle">Gestiona tus trabajos, equipos y clientes</p>
+        <p className="home-subtitle">Gestiona tus trabajos, equipos y OT</p>
         
         <div className="home-grid">
           <button
@@ -38,8 +38,8 @@ const Home = ({ setCurrentView }) => {
             className="home-card"
           >
             <DollarSign className="card-icon orange" />
-            <h2 className="card-title">Valores de Trabajos</h2>
-            <p className="card-description">Tabla de precios y exportación</p>
+            <h2 className="card-title">Valor de Trabajos</h2>
+            <p className="card-description">Tabla de precios y servicios</p>
           </button>
 
           <button
