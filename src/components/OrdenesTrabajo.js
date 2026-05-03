@@ -278,21 +278,10 @@ const downloadPDF = async (elementId, filename) => {
   if (!el) return;
   try {
     const canvas = await window.html2canvas(el,{scale:2,backgroundColor:'#fff',useCORS:true,logging:false});
-    const pdf = new window.jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-    const m=8, pw=pdf.internal.pageSize.getWidth(), ph=pdf.internal.pageSize.getHeight();
-    const iw=pw-m*2, ih=(canvas.height*iw)/canvas.width;
-    if (ih<=ph-m*2) {
-      pdf.addImage(canvas.toDataURL('image/png',1.0),'PNG',m,m,iw,ih);
-    } else {
-      const pch=ph-m*2, pages=Math.ceil(ih/pch);
-      for (let i=0;i<pages;i++) {
-        if (i>0) pdf.addPage();
-        const sy=(i*pch*canvas.width)/iw, sh=Math.min((pch*canvas.width)/iw,canvas.height-sy);
-        const pc=document.createElement('canvas'); pc.width=canvas.width; pc.height=sh;
-        pc.getContext('2d').drawImage(canvas,0,sy,canvas.width,sh,0,0,canvas.width,sh);
-        pdf.addImage(pc.toDataURL('image/png'),'PNG',m,m,iw,(sh*iw)/canvas.width);
-      }
-    }
+    const m=6, pageW=210;
+    const contentW=pageW-m*2, contentH=(canvas.height*contentW)/canvas.width;
+    const pdf = new window.jspdf.jsPDF({orientation:'portrait',unit:'mm',format:[pageW, contentH+m*2]});
+    pdf.addImage(canvas.toDataURL('image/png',1.0),'PNG',m,m,contentW,contentH);
     pdf.save(`${filename}.pdf`);
   } catch(e){ console.error(e); alert('Error al generar PDF.'); }
 };
