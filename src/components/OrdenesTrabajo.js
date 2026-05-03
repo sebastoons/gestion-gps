@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Download, Search, ChevronLeft, X, Trash2, Mail, Check, Home as HomeIcon, ChevronDown } from 'lucide-react';
+import { supabase, loadTable, syncTable } from '../lib/supabase';
 import '../styles/OrdenesTrabajo.css';
 
 const REGIONES = [
@@ -320,15 +321,25 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada }) => {
   const isDrawing = useRef(false);
 
   useEffect(()=>{
-    const s=localStorage.getItem('ordenesTrabajo');
-    if (s) setOtsList(JSON.parse(s));
-    setCounters({
-      Entel:parseInt(localStorage.getItem('otCounterEntel')||'1'),
-      UGPS:parseInt(localStorage.getItem('otCounterUGPS')||'1'),
-    });
+    const load = async () => {
+      const [ots, entel, ugps] = await Promise.all([
+        loadTable('ordenes_trabajo'),
+        supabase.from('ot_counters').select('counter').eq('empresa','Entel').single(),
+        supabase.from('ot_counters').select('counter').eq('empresa','UGPS').single(),
+      ]);
+      setOtsList(ots);
+      setCounters({
+        Entel: entel.data?.counter || 1,
+        UGPS: ugps.data?.counter || 1,
+      });
+    };
+    load();
   },[]);
 
-  const saveOTs = list => { setOtsList(list); localStorage.setItem('ordenesTrabajo',JSON.stringify(list)); };
+  const saveOTs = async (list) => {
+    setOtsList(list);
+    await syncTable('ordenes_trabajo', list);
+  };
 
   // Canvas firma
   useEffect(()=>{
@@ -360,13 +371,13 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada }) => {
 
   const finalizeSession=async()=>{
     const emp=sessionEmpresa,prefix=emp==='UGPS'?'U':'E';
-    const key=emp==='UGPS'?'otCounterUGPS':'otCounterEntel',start=counters[emp];
+    const start=counters[emp];
     const sid=Date.now().toString();
     const newOTs=sessionOTs.map((ot,i)=>({...ot,id:`${sid}-${i}`,numero:`${prefix}${start+i}`,
       sessionId:sid,empresa:emp,cliente:clienteData.nombre,rutCliente:clienteData.rut,
       firma,aceptacion,createdAt:new Date().toISOString(),emailEnviado:false}));
     const nn=start+sessionOTs.length;
-    localStorage.setItem(key,String(nn));
+    await supabase.from('ot_counters').upsert({ empresa: emp, counter: nn });
     setCounters(p=>({...p,[emp]:nn}));
     saveOTs([...otsList,...newOTs]);
     setSessionOTs(newOTs);

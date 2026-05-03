@@ -6,7 +6,14 @@ import ValoresTrabajos from './components/ValoresTrabajos';
 import ValidacionWhatsapp from './components/ValidacionWhatsapp';
 import OrdenesTrabajo from './components/OrdenesTrabajo';
 import { Download, Upload } from 'lucide-react';
+import { loadTable, syncTable } from './lib/supabase';
 import './styles/Common.css';
+
+const normalizeEmpresa = (e) => {
+  if (!e || e === 'Location World' || e === 'LW' || e === 'LW ENTEL') return 'Entel';
+  return e;
+};
+const norm = item => ({ ...item, empresa: normalizeEmpresa(item.empresa) });
 
 const App = () => {
   const [currentView, setCurrentView] = useState('home');
@@ -15,291 +22,155 @@ const App = () => {
   const [equiposRetirados, setEquiposRetirados] = useState([]);
   const [equiposMalos, setEquiposMalos] = useState([]);
   const [clientes, setClientes] = useState([]);
-  
-  // Lista actualizada de empresas - NO se sobrescribirá con el backup
-  const [empresas] = useState(['Entel', 'UGPS']);
+  const [loaded, setLoaded] = useState(false);
 
+  const [empresas] = useState(['Entel', 'UGPS']);
   const [empresaSeleccionada, setEmpresaSeleccionada] = useState('Entel');
   const [mesSeleccionado, setMesSeleccionado] = useState('Octubre 2025');
 
-  // Cargar datos del localStorage con migración
+  // Cargar desde Supabase al iniciar
   useEffect(() => {
-    const loadData = () => {
-      const storedTrabajos = localStorage.getItem('trabajos');
-      const storedEquiposNuevos = localStorage.getItem('equiposNuevos');
-      const storedEquiposRetirados = localStorage.getItem('equiposRetirados');
-      const storedEquiposMalos = localStorage.getItem('equiposMalos');
+    const loadData = async () => {
+      const [t, en, er, em] = await Promise.all([
+        loadTable('trabajos'),
+        loadTable('equipos_nuevos'),
+        loadTable('equipos_retirados'),
+        loadTable('equipos_malos'),
+      ]);
+      setTrabajos(t.map(norm));
+      setEquiposNuevos(en.map(norm));
+      setEquiposRetirados(er.map(norm));
+      setEquiposMalos(em.map(norm));
       const storedClientes = localStorage.getItem('clientes');
-
-      // MIGRACIÓN: normalizar empresa (Location World / LW → Entel)
-      const normalizeEmpresa = (e) => {
-        if (!e || e === 'Location World' || e === 'LW' || e === 'LW ENTEL') return 'Entel';
-        return e;
-      };
-      const migrateEquipos = (equipos) => {
-        if (!equipos) return [];
-        return equipos.map(equipo => ({
-          ...equipo,
-          empresa: normalizeEmpresa(equipo.empresa)
-        }));
-      };
-
-      if (storedTrabajos)        setTrabajos(migrateEquipos(JSON.parse(storedTrabajos)));
-      if (storedEquiposNuevos)   setEquiposNuevos(migrateEquipos(JSON.parse(storedEquiposNuevos)));
-      if (storedEquiposRetirados) setEquiposRetirados(migrateEquipos(JSON.parse(storedEquiposRetirados)));
-      if (storedEquiposMalos)    setEquiposMalos(migrateEquipos(JSON.parse(storedEquiposMalos)));
-      
       if (storedClientes) setClientes(JSON.parse(storedClientes));
+      setLoaded(true);
     };
     loadData();
   }, []);
 
-  // Guardar datos en localStorage
+  // Sincronizar a Supabase con debounce (1.5s tras último cambio)
   useEffect(() => {
-    localStorage.setItem('trabajos', JSON.stringify(trabajos));
-  }, [trabajos]);
+    if (!loaded) return;
+    const t = setTimeout(() => syncTable('trabajos', trabajos), 1500);
+    return () => clearTimeout(t);
+  }, [trabajos, loaded]);
 
   useEffect(() => {
-    localStorage.setItem('equiposNuevos', JSON.stringify(equiposNuevos));
-  }, [equiposNuevos]);
+    if (!loaded) return;
+    const t = setTimeout(() => syncTable('equipos_nuevos', equiposNuevos), 1500);
+    return () => clearTimeout(t);
+  }, [equiposNuevos, loaded]);
 
   useEffect(() => {
-    localStorage.setItem('equiposRetirados', JSON.stringify(equiposRetirados));
-  }, [equiposRetirados]);
+    if (!loaded) return;
+    const t = setTimeout(() => syncTable('equipos_retirados', equiposRetirados), 1500);
+    return () => clearTimeout(t);
+  }, [equiposRetirados, loaded]);
 
   useEffect(() => {
-    localStorage.setItem('equiposMalos', JSON.stringify(equiposMalos));
-  }, [equiposMalos]);
+    if (!loaded) return;
+    const t = setTimeout(() => syncTable('equipos_malos', equiposMalos), 1500);
+    return () => clearTimeout(t);
+  }, [equiposMalos, loaded]);
 
   useEffect(() => {
     localStorage.setItem('clientes', JSON.stringify(clientes));
   }, [clientes]);
 
-  // ========== SISTEMA DE BACKUP MEJORADO ==========
-  
-  // Exportar solo los datos del usuario (NO las configuraciones del sistema)
+  // ── Backup ──────────────────────────────────────────────────────────────────
   const exportarBackup = () => {
     const backup = {
-      version: '2.0',
-      fecha: new Date().toISOString(),
-      datos: {
-        trabajos,
-        equiposNuevos,
-        equiposRetirados,
-        equiposMalos,
-        clientes,
-        empresaSeleccionada,
-        mesSeleccionado
-      }
+      version: '2.0', fecha: new Date().toISOString(),
+      datos: { trabajos, equiposNuevos, equiposRetirados, equiposMalos, clientes, empresaSeleccionada, mesSeleccionado }
     };
-
-    const dataStr = JSON.stringify(backup, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
+    const url = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }));
     const link = document.createElement('a');
     link.href = url;
     link.download = `backup-gps-${new Date().toISOString().split('T')[0]}.json`;
     link.click();
     URL.revokeObjectURL(url);
-    
-    alert('✓ Backup exportado correctamente. Guarda este archivo en un lugar seguro.');
+    alert('✓ Backup exportado correctamente.');
   };
 
-  // Importar datos SOLO del usuario (preservando configuraciones del sistema)
   const importarBackup = (event) => {
     const file = event.target.files[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
         const backup = JSON.parse(e.target.result);
-        
-        if (!backup.datos) {
-          alert('❌ Archivo de backup inválido');
-          return;
-        }
-
-        // Confirmar antes de importar
-        const mensaje = `⚠️ ¿Deseas restaurar este backup?\n\n` +
-          `Fecha del backup: ${new Date(backup.fecha).toLocaleString('es-CL')}\n` +
-          `Versión: ${backup.version || '1.0'}\n\n` +
-          `Esto reemplazará:\n` +
-          `• Trabajos registrados\n` +
-          `• Equipos GPS\n` +
-          `• Clientes\n\n` +
-          `Las configuraciones del sistema (lista de empresas) se mantendrán actualizadas.`;
-
-        if (window.confirm(mensaje)) {
-          const norm = (e) => {
-            if (!e || e === 'Location World' || e === 'LW' || e === 'LW ENTEL') return 'Entel';
-            return empresas.includes(e) ? e : 'Entel';
-          };
-          const validarYMigrarEmpresa = (item) => ({ ...item, empresa: norm(item.empresa) });
-
-          // Restaurar trabajos con validación estricta
-          if (backup.datos.trabajos) {
-            const trabajosValidados = backup.datos.trabajos.map(validarYMigrarEmpresa);
-            setTrabajos(trabajosValidados);
-          }
-          
-          // Restaurar equipos nuevos con validación estricta
-          if (backup.datos.equiposNuevos) {
-            const equiposValidados = backup.datos.equiposNuevos.map(validarYMigrarEmpresa);
-            setEquiposNuevos(equiposValidados);
-          }
-          
-          // Restaurar equipos retirados con validación estricta
-          if (backup.datos.equiposRetirados) {
-            const equiposValidados = backup.datos.equiposRetirados.map(validarYMigrarEmpresa);
-            setEquiposRetirados(equiposValidados);
-          }
-          
-          // Restaurar equipos malos con validación estricta
-          if (backup.datos.equiposMalos) {
-            const equiposValidados = backup.datos.equiposMalos.map(validarYMigrarEmpresa);
-            setEquiposMalos(equiposValidados);
-          }
-          
+        if (!backup.datos) { alert('❌ Archivo de backup inválido'); return; }
+        const msg = `⚠️ ¿Deseas restaurar este backup?\n\nFecha: ${new Date(backup.fecha).toLocaleString('es-CL')}\nVersión: ${backup.version || '1.0'}\n\nEsto reemplazará todos los datos actuales.`;
+        if (window.confirm(msg)) {
+          const v = (e) => { const n = normalizeEmpresa(e); return empresas.includes(n) ? n : 'Entel'; };
+          const migrate = (item) => ({ ...item, empresa: v(item.empresa) });
+          if (backup.datos.trabajos) setTrabajos(backup.datos.trabajos.map(migrate));
+          if (backup.datos.equiposNuevos) setEquiposNuevos(backup.datos.equiposNuevos.map(migrate));
+          if (backup.datos.equiposRetirados) setEquiposRetirados(backup.datos.equiposRetirados.map(migrate));
+          if (backup.datos.equiposMalos) setEquiposMalos(backup.datos.equiposMalos.map(migrate));
           if (backup.datos.clientes) setClientes(backup.datos.clientes);
-          
-          // Restaurar selecciones (opcional)
-          if (backup.datos.empresaSeleccionada) {
-            const e = norm(backup.datos.empresaSeleccionada);
-            setEmpresaSeleccionada(e);
-          }
+          if (backup.datos.empresaSeleccionada) setEmpresaSeleccionada(v(backup.datos.empresaSeleccionada));
           if (backup.datos.mesSeleccionado) setMesSeleccionado(backup.datos.mesSeleccionado);
-
-          alert(`✓ Backup restaurado correctamente\n\nFecha del backup: ${new Date(backup.fecha).toLocaleString('es-CL')}\n\nSe han restaurado tus datos y se mantiene la lista actualizada de empresas.`);
+          alert(`✓ Backup restaurado correctamente.`);
         }
-      } catch (error) {
-        console.error('Error al importar backup:', error);
-        alert('❌ Error al leer el archivo de backup. Verifica que sea un archivo válido.');
+      } catch (err) {
+        console.error(err);
+        alert('❌ Error al leer el archivo de backup.');
       }
     };
     reader.readAsText(file);
-    
-    // Limpiar el input para permitir seleccionar el mismo archivo de nuevo
     event.target.value = '';
   };
 
   return (
     <div className="font-sans">
-      {/* Botones de Backup (visibles en todas las vistas) */}
       {currentView !== 'home' && (
-        <div style={{
-          position: 'fixed',
-          bottom: '10px',
-          right: '15px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px',
-          fontSize: '0.85em',
-          zIndex: 1000
-        }}>
-          <button
-            onClick={exportarBackup}
-            className="btn btn-success"
-            style={{
-              boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '7px'
-            }}
-            title="Exportar backup de todos los datos"
-          >
+        <div style={{ position:'fixed', bottom:'10px', right:'15px', display:'flex', flexDirection:'column', gap:'10px', fontSize:'0.85em', zIndex:1000 }}>
+          <button onClick={exportarBackup} className="btn btn-success" style={{ boxShadow:'0 4px 6px rgba(0,0,0,0.1)', display:'flex', alignItems:'center', gap:'7px' }} title="Exportar backup">
             <Download size={12} /> Backup
           </button>
-          
-          <label
-            className="btn btn-primary"
-            style={{
-              boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '7px',
-              cursor: 'pointer'
-            }}
-            title="Importar backup"
-          >
+          <label className="btn btn-primary" style={{ boxShadow:'0 4px 6px rgba(0,0,0,0.1)', display:'flex', alignItems:'center', gap:'7px', cursor:'pointer' }} title="Importar backup">
             <Upload size={12} /> Restaurar
-            <input
-              type="file"
-              accept=".json"
-              onChange={importarBackup}
-              style={{ display: 'none' }}
-            />
+            <input type="file" accept=".json" onChange={importarBackup} style={{ display:'none' }} />
           </label>
         </div>
       )}
 
       {currentView === 'home' && <Home setCurrentView={setCurrentView} />}
-      
+
       {currentView === 'trabajos' && (
-        <Trabajos
-          setCurrentView={setCurrentView}
-          trabajos={trabajos}
-          setTrabajos={setTrabajos}
-          empresas={empresas}
-          empresaSeleccionada={empresaSeleccionada}
-          setEmpresaSeleccionada={setEmpresaSeleccionada}
-          mesSeleccionado={mesSeleccionado}
-          setMesSeleccionado={setMesSeleccionado}
-          equiposNuevos={equiposNuevos}
-          setEquiposNuevos={setEquiposNuevos}
-          equiposRetirados={equiposRetirados}
-          setEquiposRetirados={setEquiposRetirados}
-          clientes={clientes}
-          setClientes={setClientes}
-        />
-      )}
-      
-      {currentView === 'equipos' && (
-        <Equipos 
-          setCurrentView={setCurrentView}
-          equiposNuevos={equiposNuevos}
-          setEquiposNuevos={setEquiposNuevos}
-          equiposRetirados={equiposRetirados}
-          setEquiposRetirados={setEquiposRetirados}
-          equiposMalos={equiposMalos}
-          setEquiposMalos={setEquiposMalos}
-          empresas={empresas}
-          empresaSeleccionada={empresaSeleccionada}
-          setEmpresaSeleccionada={setEmpresaSeleccionada}
-        />
-      )}
-      
-      {currentView === 'valores' && (
-        <ValoresTrabajos
-          setCurrentView={setCurrentView}
-        />
+        <Trabajos setCurrentView={setCurrentView} trabajos={trabajos} setTrabajos={setTrabajos}
+          empresas={empresas} empresaSeleccionada={empresaSeleccionada} setEmpresaSeleccionada={setEmpresaSeleccionada}
+          mesSeleccionado={mesSeleccionado} setMesSeleccionado={setMesSeleccionado}
+          equiposNuevos={equiposNuevos} setEquiposNuevos={setEquiposNuevos}
+          equiposRetirados={equiposRetirados} setEquiposRetirados={setEquiposRetirados}
+          clientes={clientes} setClientes={setClientes} />
       )}
 
+      {currentView === 'equipos' && (
+        <Equipos setCurrentView={setCurrentView}
+          equiposNuevos={equiposNuevos} setEquiposNuevos={setEquiposNuevos}
+          equiposRetirados={equiposRetirados} setEquiposRetirados={setEquiposRetirados}
+          equiposMalos={equiposMalos} setEquiposMalos={setEquiposMalos}
+          empresas={empresas} empresaSeleccionada={empresaSeleccionada} setEmpresaSeleccionada={setEmpresaSeleccionada} />
+      )}
+
+      {currentView === 'valores' && <ValoresTrabajos setCurrentView={setCurrentView} />}
+
       {currentView === 'ordenes' && (
-        <OrdenesTrabajo
-          setCurrentView={setCurrentView}
-          empresas={empresas}
-          empresaSeleccionada={empresaSeleccionada}
-          setEmpresaSeleccionada={setEmpresaSeleccionada}
-          clientes={clientes}
-        />
+        <OrdenesTrabajo setCurrentView={setCurrentView} empresas={empresas}
+          empresaSeleccionada={empresaSeleccionada} setEmpresaSeleccionada={setEmpresaSeleccionada}
+          clientes={clientes} />
       )}
 
       {currentView === 'validacion' && (
-        <ValidacionWhatsapp
-          setCurrentView={setCurrentView}
-          equiposNuevos={equiposNuevos}
-          setEquiposNuevos={setEquiposNuevos}
-          equiposRetirados={equiposRetirados}
-          setEquiposRetirados={setEquiposRetirados}
-          equiposMalos={equiposMalos}
-          setEquiposMalos={setEquiposMalos}
-          trabajos={trabajos}
-          setTrabajos={setTrabajos}
-          clientes={clientes}
-          setClientes={setClientes}
-          mesSeleccionado={mesSeleccionado}
-        />
+        <ValidacionWhatsapp setCurrentView={setCurrentView}
+          equiposNuevos={equiposNuevos} setEquiposNuevos={setEquiposNuevos}
+          equiposRetirados={equiposRetirados} setEquiposRetirados={setEquiposRetirados}
+          equiposMalos={equiposMalos} setEquiposMalos={setEquiposMalos}
+          trabajos={trabajos} setTrabajos={setTrabajos}
+          clientes={clientes} setClientes={setClientes}
+          mesSeleccionado={mesSeleccionado} />
       )}
     </div>
   );
