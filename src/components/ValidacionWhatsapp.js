@@ -25,18 +25,38 @@ const getMesFacturacion = (fechaStr, empresa) => {
   return `${MESES_ES[base.getMonth()]} ${base.getFullYear()}`;
 };
 
+const CL_ITEMS = ['Batería','Check Engine','Error tablero inst.','A/C','Radio','Intermitentes'];
+
 const ValidacionWhatsapp = ({
   setCurrentView,
   equiposNuevos, setEquiposNuevos,
   equiposRetirados, setEquiposRetirados,
   equiposMalos, setEquiposMalos,
   trabajos, setTrabajos,
-  mesSeleccionado
+  mesSeleccionado, setOtPendiente
 }) => {
   const [form, setForm] = useState({ ...VACIO });
   const [showGpsOut, setShowGpsOut] = useState(false);
+  const [drafted, setDrafted] = useState(false);
 
   const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : '';
+
+  const crearDraftOT = () => ({
+    fecha: form.fecha,
+    tipoServicio: form.servicio,
+    region: '', ciudad: '', comuna: '',
+    tecnico: 'Sebastian Parra', empresaInstaladora: 'Sebastian Parra',
+    ppu: (form.ppuVinIn || form.ppuVinOut || '').toUpperCase(),
+    marca: '', modelo: form.marcaModelo || '',
+    anio: '', color: '',
+    kilometraje: form.kms || '',
+    imeiIn: form.gpsIn || '',
+    imeiOut: showGpsOut ? (form.gpsOut || '') : '',
+    accesoriosGPS: [],
+    checklist: Object.fromEntries(CL_ITEMS.map(k => [k, { estado: 'NA', nota: '' }])),
+    observaciones: [form.detalles, form.trabajo, form.perifericos ? `Periféricos: ${form.perifericos}` : ''].filter(Boolean).join(' | '),
+    _empresa: form.empresa,
+  });
 
   const verificarGPS = imei => {
     if (!imei?.trim()) return null;
@@ -142,8 +162,10 @@ const ValidacionWhatsapp = ({
   };
 
   const ejecutarAcciones = () => {
+    const draft = crearDraftOT();
     procesarEquipos();
     agregarATrabajos();
+    if (setOtPendiente) { setOtPendiente(draft); setDrafted(true); }
     setForm({ ...VACIO });
     setShowGpsOut(false);
   };
@@ -348,6 +370,22 @@ const ValidacionWhatsapp = ({
                 ⎘ Copiar
               </button>
             </div>
+
+            {drafted && (
+              <div style={{ marginTop: 12, padding: '10px 14px', background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <span style={{ fontFamily: 'Quantico', fontSize: '0.7em', color: '#92400e', flex: 1 }}>
+                  📋 Borrador de OT listo. Solo falta región, checklist y firma.
+                </span>
+                <button className="btn btn-primary" style={{ fontSize: '0.7em', padding: '4px 10px' }}
+                  onClick={() => { setDrafted(false); setCurrentView('ordenes'); }}>
+                  Completar OT →
+                </button>
+                <button className="btn btn-secondary" style={{ fontSize: '0.7em', padding: '4px 8px' }}
+                  onClick={() => setDrafted(false)}>
+                  ✕
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

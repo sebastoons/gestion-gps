@@ -292,7 +292,7 @@ const downloadPDF = async (elementId, filename) => {
 };
 
 // ── Componente principal ──────────────────────────────────────────────────────
-const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada }) => {
+const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, clientes, otPendiente, setOtPendiente }) => {
   const [step,setStep] = useState('list');
   const [otsList,setOtsList] = useState([]);
   const [sessionOTs,setSessionOTs] = useState([]);
@@ -390,6 +390,18 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada }) => {
   const comunasDisp=currentOT.ciudad?(COMUNAS[currentOT.ciudad]||[currentOT.ciudad]):[];
   const isVF=currentOT.tipoServicio==='Visita Fallida';
 
+  const cargarDraftOT = () => {
+    const { _empresa, ...otData } = otPendiente;
+    setSessionEmpresa(_empresa || empresaSeleccionada);
+    setSessionOTs([]);
+    setCurrentOT(otData);
+    setClienteData({ nombre: '', rut: '' });
+    setAceptacion(false);
+    setFirma(null);
+    setOtPendiente(null);
+    setStep('form');
+  };
+
   // ── LIST ──────────────────────────────────────────────────────────────────
   if(step==='list') return (
     <div className="page-container">
@@ -403,6 +415,19 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada }) => {
             <h1 className="page-title">Órdenes de Trabajo</h1>
             <button className="btn btn-success" onClick={startSession}><Plus size={14}/> Nueva OT</button>
           </div>
+          {otPendiente && (
+            <div style={{background:'#fffbeb',border:'1px solid #fcd34d',borderRadius:8,padding:'10px 14px',marginBottom:12,display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+              <span style={{fontFamily:'Quantico',fontSize:'0.7em',textTransform:'uppercase',color:'#92400e',flex:1}}>
+                📋 OT pendiente — {otPendiente._empresa} | {otPendiente.ppu||'Sin PPU'} | {otPendiente.tipoServicio}
+              </span>
+              <button className="btn btn-primary" style={{fontSize:'0.7em',padding:'4px 12px'}} onClick={cargarDraftOT}>
+                Completar OT →
+              </button>
+              <button className="btn btn-secondary" style={{fontSize:'0.7em',padding:'4px 8px'}} onClick={()=>setOtPendiente(null)}>
+                ✕
+              </button>
+            </div>
+          )}
           <div className="ot-filter-bar">
             <div style={{position:'relative',flex:1}}>
               <Search size={13} style={{position:'absolute',left:8,top:'50%',transform:'translateY(-50%)',color:'#9ca3af'}}/>
