@@ -31,6 +31,7 @@ const App = () => {
     const m = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     return `${m[n.getMonth()]} ${n.getFullYear()}`;
   });
+  const [otPendiente, setOtPendiente] = useState(null);
 
   // Cargar desde Supabase al iniciar
   useEffect(() => {
@@ -164,7 +165,7 @@ const App = () => {
       {currentView === 'ordenes' && (
         <OrdenesTrabajo setCurrentView={setCurrentView} empresas={empresas}
           empresaSeleccionada={empresaSeleccionada} setEmpresaSeleccionada={setEmpresaSeleccionada}
-          clientes={clientes} />
+          clientes={clientes} otPendiente={otPendiente} setOtPendiente={setOtPendiente} />
       )}
 
       {currentView === 'validacion' && (
@@ -174,7 +175,7 @@ const App = () => {
           equiposMalos={equiposMalos} setEquiposMalos={setEquiposMalos}
           trabajos={trabajos} setTrabajos={setTrabajos}
           clientes={clientes} setClientes={setClientes}
-          mesSeleccionado={mesSeleccionado} />
+          mesSeleccionado={mesSeleccionado} setOtPendiente={setOtPendiente} />
       )}
     </div>
   );
