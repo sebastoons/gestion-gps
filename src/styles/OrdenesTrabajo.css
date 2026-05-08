@@ -132,4 +132,5 @@
 .otd-firma-lbl  { font-size:6.5px; color:#9ca3af; margin-top:2px; text-align:center; }
 
 /* Footer */
-.otd-footer { font-size:7px; color:#9ca3af; padding:4px 8px; text-align:center; background:#f8fafc; border-top:1px solid #e5e7eb; line-height:1.4; }
+.otd-footer { font-size:7px; color:#9ca3af; padding:4px 8px; background:#f4f8ff; border-top:1px solid #dbeafe; line-height:1.4; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.otd-footer-logo { height:14px; width:auto; opacity:0.55; flex-shrink:0; }
