@@ -148,7 +148,7 @@ const ChecklistRow = ({ item, estado, onChange }) => {
 // ── EmpresaLogos ──────────────────────────────────────────────────────────────
 const EmpresaLogos = ({ empresa }) => empresa==='UGPS'
   ? <div className="ot-logos-wrap"><img src="/logos/ugps.png" alt="UGPS" className="ot-logo-img"/></div>
-  : <div className="ot-logos-wrap"><img src="/logos/onway.png" alt="Onway" className="ot-logo-img"/><img src="/logos/entel.png" alt="Entel" className="ot-logo-img"/></div>;
+  : <div className="ot-logos-wrap"><img src="/logos/onway.png" alt="Onway" className="ot-logo-img"/><img src="/logos/letra_entel.png" alt="Entel" className="ot-logo-img"/></div>;
 
 // ── OTField ───────────────────────────────────────────────────────────────────
 const OTField = ({ l, v, full }) => (
@@ -270,7 +270,8 @@ const OTDoc = ({ ot, numero, empresa, cliente, rut, firma, aceptacion }) => {
       </div>
 
       <div className="otd-footer">
-        {empresa} · {ot.fecha} · La firma acredita autorización y conformidad.
+        <span>{empresa} · {ot.fecha} · La firma acredita autorización y conformidad.</span>
+        <img src="/logo.svg" alt="ServITrak" className="otd-footer-logo"/>
       </div>
     </div>
   );
