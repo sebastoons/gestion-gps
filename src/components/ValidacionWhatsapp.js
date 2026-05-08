@@ -14,6 +14,17 @@ const VACIO = {
   destinoDesinstalacion: 'Retirado'
 };
 
+const MESES_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+const getMesFacturacion = (fechaStr, empresa) => {
+  const d = new Date(fechaStr + 'T12:00:00');
+  if (isNaN(d)) return null;
+  const base = (empresa === 'Entel' && d.getDate() >= 24)
+    ? new Date(d.getFullYear(), d.getMonth() + 1, 1)
+    : d;
+  return `${MESES_ES[base.getMonth()]} ${base.getFullYear()}`;
+};
+
 const ValidacionWhatsapp = ({
   setCurrentView,
   equiposNuevos, setEquiposNuevos,
@@ -23,6 +34,7 @@ const ValidacionWhatsapp = ({
   mesSeleccionado
 }) => {
   const [form, setForm] = useState({ ...VACIO });
+  const [showGpsOut, setShowGpsOut] = useState(false);
 
   const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : '';
 
@@ -110,13 +122,14 @@ const ValidacionWhatsapp = ({
     const newId = `${prefix}${String(trabajosEmp.length + 1).padStart(3, '0')}`;
     const uf = COSTOS[form.servicio] || 0.8;
     const accs = form.perifericos ? form.perifericos.split(',').map(s => s.trim()).filter(Boolean) : [];
+    const mes = getMesFacturacion(form.fecha, emp) || mesSeleccionado;
     setTrabajos(prev => [...prev, {
       id: newId, nombreCliente: form.cliente, fecha: form.fecha,
       servicio: form.servicio, accesorios: accs,
       ppuIn: form.ppuVinIn.toUpperCase(), ppuOut: form.ppuVinOut.toUpperCase(),
-      imeiIn: form.gpsIn, imeiOut: form.gpsOut, km: form.kms,
+      imeiIn: form.gpsIn, imeiOut: showGpsOut ? form.gpsOut : '', km: form.kms,
       valorUF: uf.toString(), valorPesos: Math.round(uf * 39000).toString(),
-      empresa: emp, mes: mesSeleccionado
+      empresa: emp, mes
     }]);
   };
 
@@ -132,6 +145,7 @@ const ValidacionWhatsapp = ({
     procesarEquipos();
     agregarATrabajos();
     setForm({ ...VACIO });
+    setShowGpsOut(false);
   };
 
   const handleEnviar = () => {
@@ -251,20 +265,28 @@ const ValidacionWhatsapp = ({
 
               <div>
                 <label style={lbl}>GPS IN (IMEI)</label>
-                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                  <div style={{ position: 'relative', flex: 1 }}>
-                    <input className="form-input" value={form.gpsIn}
-                      onChange={e => setForm({ ...form, gpsIn: e.target.value })}
-                      style={{ paddingRight: gpsInEstado ? '72px' : undefined }} />
-                    {gpsInEstado && <span style={badge(gpsInEstado)}>{gpsInEstado}</span>}
-                  </div>
+                <div style={{ position: 'relative' }}>
+                  <input className="form-input" value={form.gpsIn}
+                    onChange={e => setForm({ ...form, gpsIn: e.target.value })}
+                    style={{ paddingRight: gpsInEstado ? '72px' : undefined }} />
+                  {gpsInEstado && <span style={badge(gpsInEstado)}>{gpsInEstado}</span>}
+                </div>
+              </div>
+
+              <div>
+                <label style={{ ...lbl, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={showGpsOut} onChange={e => setShowGpsOut(e.target.checked)}
+                    style={{ width: 16, height: 16, accentColor: '#3b82f6', cursor: 'pointer' }} />
+                  GPS OUT
+                </label>
+                {showGpsOut && (
                   <div style={{ position: 'relative' }}>
-                    <input className="form-input" placeholder="GPS OUT" value={form.gpsOut}
+                    <input className="form-input" value={form.gpsOut}
                       onChange={e => setForm({ ...form, gpsOut: e.target.value })}
-                      style={{ maxWidth: '120px', paddingRight: gpsOutEstado ? '72px' : undefined }} />
+                      style={{ paddingRight: gpsOutEstado ? '72px' : undefined }} />
                     {gpsOutEstado && <span style={badge(gpsOutEstado)}>{gpsOutEstado}</span>}
                   </div>
-                </div>
+                )}
               </div>
 
               <div>

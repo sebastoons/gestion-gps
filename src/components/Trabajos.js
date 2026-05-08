@@ -117,7 +117,7 @@ const Trabajos = ({
     const totalUF = trabajosFiltrados.reduce((sum, t) => sum + (parseFloat(t.valorUF) || 0), 0);
     const totalPesos = trabajosFiltrados.reduce((sum, t) => sum + (parseFloat(t.valorPesos) || 0), 0);
     const totalKm = trabajosFiltrados.reduce((sum, t) => sum + (parseFloat(t.km) || 0), 0);
-    const valorKm = empresaSeleccionada === 'Location World' ? 150 : 250;
+    const valorKm = empresaSeleccionada === 'Entel' ? 200 : 250;
     const totalValorKm = totalKm * valorKm;
     const subtotal = totalPesos + totalValorKm;
     const iva = subtotal * 0.19;
@@ -322,13 +322,17 @@ const Trabajos = ({
                 onChange={(e) => setMesSeleccionado(e.target.value)}
                 className="form-select"
               >
-                <option>Febrero 2026</option>
-                <option>Marzo 2026</option>
-                <option>Abril 2026</option>
-                <option>Mayo 2026</option>
-                <option>Junio 2026</option>
-                <option>Julio 2026</option>
-                <option>Enero 2026</option>
+                {(() => {
+                  const m = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+                  const now = new Date();
+                  const opts = [];
+                  for (let i = -4; i <= 8; i++) {
+                    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+                    const label = `${m[d.getMonth()]} ${d.getFullYear()}`;
+                    opts.push(<option key={label}>{label}</option>);
+                  }
+                  return opts;
+                })()}
               </select>
             </div>
             <div>
