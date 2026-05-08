@@ -26,7 +26,11 @@ const App = () => {
 
   const [empresas] = useState(['Entel', 'UGPS']);
   const [empresaSeleccionada, setEmpresaSeleccionada] = useState('Entel');
-  const [mesSeleccionado, setMesSeleccionado] = useState('Octubre 2025');
+  const [mesSeleccionado, setMesSeleccionado] = useState(() => {
+    const n = new Date();
+    const m = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    return `${m[n.getMonth()]} ${n.getFullYear()}`;
+  });
 
   // Cargar desde Supabase al iniciar
   useEffect(() => {
