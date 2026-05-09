@@ -416,6 +416,16 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, cliente
     setStep('form');
   };
 
+  // Agregar OT de Desinstalación sin borrar la sesión actual (usado desde confirm step)
+  const agregarOTDesinst = () => {
+    const { _empresa, ...otData } = otPendiente2;
+    setCurrentOT(otData);
+    setAceptacion(false);
+    setFirma(null);
+    setOtPendiente2(null);
+    setStep('form');
+  };
+
   // ── LIST ──────────────────────────────────────────────────────────────────
   if(step==='list') return (
     <div className="page-container">
@@ -663,11 +673,26 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, cliente
       <div className="ot-confirm-card">
         <Check size={40} color="#16a34a"/>
         <h2 className="ot-confirm-title">OT Guardada</h2>
-        <p className="ot-confirm-sub">{sessionOTs.length} OT{sessionOTs.length!==1?'s':''} en esta sesión.<br/>¿Necesitas crear otra OT?<br/><small>(Ubicación y técnico se copiarán)</small></p>
-        <div className="ot-confirm-actions">
-          <button className="btn btn-primary" style={{fontSize:'0.85em',padding:'10px 20px'}} onClick={addAnotherOT}><Plus size={15}/> Agregar otra OT</button>
-          <button className="btn btn-success" style={{fontSize:'0.85em',padding:'10px 20px'}} onClick={()=>setStep('cliente')}><Check size={15}/> Datos del cliente</button>
-        </div>
+        {otPendiente2 ? (
+          <>
+            <p className="ot-confirm-sub">
+              OT de <strong>{sessionOTs[sessionOTs.length-1]?.tipoServicio||'Instalación'}</strong> guardada.<br/>
+              ¿Crear también la OT de <strong>Desinstalación</strong>?
+            </p>
+            <div className="ot-confirm-actions">
+              <button className="btn btn-primary" style={{fontSize:'0.85em',padding:'10px 20px'}} onClick={agregarOTDesinst}><Plus size={15}/> OT Desinstalación</button>
+              <button className="btn btn-success" style={{fontSize:'0.85em',padding:'10px 20px'}} onClick={()=>{setOtPendiente2(null);setStep('cliente');}}><Check size={15}/> No, ir a Firma</button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="ot-confirm-sub">{sessionOTs.length} OT{sessionOTs.length!==1?'s':''} en esta sesión.<br/>¿Necesitas crear otra OT?<br/><small>(Ubicación y técnico se copiarán)</small></p>
+            <div className="ot-confirm-actions">
+              <button className="btn btn-primary" style={{fontSize:'0.85em',padding:'10px 20px'}} onClick={addAnotherOT}><Plus size={15}/> Agregar otra OT</button>
+              <button className="btn btn-success" style={{fontSize:'0.85em',padding:'10px 20px'}} onClick={()=>setStep('cliente')}><Check size={15}/> Datos del cliente</button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
