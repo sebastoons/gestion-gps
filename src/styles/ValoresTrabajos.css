@@ -473,3 +473,13 @@
     width: 100%;
   }
 }
+
+/* ── Dark mode overrides ── */
+.dark .valores-container      { background-color: #0f172a; }
+.dark .valores-header-card    { background-color: #1a2744; box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+.dark .valores-export-card    { background-color: #1a2744; }
+.dark .valores-table tbody tr { background-color: #1a2744 !important; }
+.dark .valores-table tbody tr:nth-child(even) { background-color: #1e2f50 !important; }
+.dark .valores-table tbody tr:hover { background-color: #1e3a5f !important; }
+.dark .valores-table td       { border-color: #334155; color: #cbd5e1; }
+.dark .valores-table th       { background-color: #0f172a; color: #94a3b8; border-color: #334155; }
