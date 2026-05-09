@@ -5,6 +5,7 @@ import Equipos from './components/Equipos';
 import ValoresTrabajos from './components/ValoresTrabajos';
 import ValidacionWhatsapp from './components/ValidacionWhatsapp';
 import OrdenesTrabajo from './components/OrdenesTrabajo';
+import EscanerGPS from './components/EscanerGPS';
 import { Download, Upload } from 'lucide-react';
 import { loadTable, syncTable } from './lib/supabase';
 import './styles/Common.css';
@@ -174,6 +175,14 @@ const App = () => {
         <OrdenesTrabajo setCurrentView={setCurrentView} empresas={empresas}
           empresaSeleccionada={empresaSeleccionada} setEmpresaSeleccionada={setEmpresaSeleccionada}
           clientes={clientes} otPendiente={otPendiente} setOtPendiente={setOtPendiente} />
+      )}
+
+      {currentView === 'escaner' && (
+        <EscanerGPS setCurrentView={setCurrentView}
+          equiposNuevos={equiposNuevos} setEquiposNuevos={setEquiposNuevos}
+          equiposRetirados={equiposRetirados} setEquiposRetirados={setEquiposRetirados}
+          equiposMalos={equiposMalos} setEquiposMalos={setEquiposMalos}
+          empresas={empresas} />
       )}
 
       {currentView === 'validacion' && (
