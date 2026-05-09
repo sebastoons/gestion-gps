@@ -3,7 +3,7 @@
 /* Contenedores principales */
 .page-container {
   min-height: 100vh;
-  background-color: #f9fafb;
+  background: linear-gradient(160deg, #f0f6ff 0%, #eef2ff 100%);
   padding: 1rem;
 }
 
@@ -14,8 +14,9 @@
 
 .page-card {
   background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.04);
+  border: 1px solid rgba(226,232,240,0.8);
   padding: 1.5rem;
   margin-bottom: 1.5rem;
 }
@@ -94,16 +95,18 @@
 .btn {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 4px 10px;
-  border-radius: 0.5rem;
-  font-weight: 500;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: 9px;
+  font-weight: 600;
   border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.18s ease;
   font-family: 'changa';
   text-transform: uppercase;
   font-size: 0.7em;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .btn-primary {
@@ -229,18 +232,20 @@
 
 .form-input, .form-select {
   width: 100%;
-  padding: 3px;
+  padding: 7px 10px;
   border: 1px solid #d1d5db;
   border-radius: 8px;
   font-size: 0.75em;
   font-family: 'changa';
   text-transform: uppercase;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  background: #fff;
 }
 
 .form-input:focus, .form-select:focus {
   outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  border-color: #507cdd;
+  box-shadow: 0 0 0 3px rgba(80, 124, 221, 0.12);
 }
 
 .form-actions {
@@ -791,18 +796,11 @@
 
 /* Toolbar */
 .toolbar {
-  display: grid;
-  grid-template-columns: repeat(1, 1fr);
-  gap: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-bottom: 1em;
-  justify-content: center;
   align-items: center;
-}
-
-@media (min-width: 768px) {
-  .toolbar {
-    flex-direction: row;
-  }
 }
 
 /* Utilidades */

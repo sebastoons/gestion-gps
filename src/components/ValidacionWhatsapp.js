@@ -213,7 +213,16 @@ const ValidacionWhatsapp = ({
     procesarEquipos();
     agregarATrabajos();
     if (setOtPendiente) { setOtPendiente(draft); setDrafted(true); }
-    setForm({ ...VACIO });
+    // Mantener campos repetibles; limpiar solo los específicos del trabajo
+    setForm(prev => ({
+      ...VACIO,
+      cliente: prev.cliente,
+      empresa: prev.empresa,
+      servicio: prev.servicio,
+      marca: prev.marca,
+      modelo: prev.modelo,
+      anio: prev.anio,
+    }));
     setShowPpuOut(false);
     setShowGpsOut(false);
   };
