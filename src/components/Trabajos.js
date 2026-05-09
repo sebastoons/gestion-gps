@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Plus, Home, Edit2, Trash2, AlertCircle } from 'lucide-react';
+import { Download, Plus, Home, Edit2, Trash2, AlertCircle, FileImage } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
+import { exportToVisualImage } from '../utils/visualExportUtils';
 
 const Trabajos = ({
   setCurrentView,
@@ -257,6 +258,10 @@ const Trabajos = ({
 
   const totales = calcularTotales();
 
+  const handleExportVisualImage = async () => {
+    await exportToVisualImage('tabla-trabajos', `trabajos_${empresaSeleccionada}_${mesSeleccionado}`);
+  };
+
   // FUNCIÓN MEJORADA: Verifica en AMBOS inventarios
   const verificarIMEIEnInventario = (imei) => {
     if (!imei || imei.trim() === '') return null;
@@ -372,6 +377,9 @@ const Trabajos = ({
               className="btn btn-success"
             >
               <Download size={20} /> Excel
+            </button>
+            <button onClick={handleExportVisualImage} className="btn btn-secondary">
+              <FileImage size={20} /> Imagen
             </button>
           </div>
 
