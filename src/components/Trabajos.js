@@ -381,6 +381,15 @@ const Trabajos = ({
             <button onClick={handleExportVisualImage} className="btn btn-secondary">
               <FileImage size={20} /> Imagen
             </button>
+            <button
+              onClick={() => {
+                if (!window.confirm(`¿Eliminar TODOS los trabajos de ${empresaSeleccionada} — ${mesSeleccionado}?\n\nEsta acción no se puede deshacer.`)) return;
+                setTrabajos(prev => prev.filter(t => !(t.empresa === empresaSeleccionada && t.mes === mesSeleccionado)));
+              }}
+              className="btn btn-danger"
+            >
+              <Trash2 size={20} /> Limpiar mes
+            </button>
           </div>
 
           {showForm && (

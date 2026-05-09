@@ -10,11 +10,13 @@ const COSTOS = {
 const PERIFERICOS = ['ON BATT','edata','dallas','buzzer','sos','inmovilizador','GPS externo','sensor T°','sensor puerta','cipia','dashcam'];
 
 const MARCAS_VAL = [
-  'Alfa Romeo','Audi','BAIC','BMW','BYD','Chery','Chevrolet','Citroën','Dodge',
-  'Dongfeng','Fiat','Ford','Foton','Geely','Great Wall','Haval','Honda','Hyundai',
-  'Isuzu','JAC','Jeep','Kia','Land Rover','Mazda','Mercedes-Benz','MG','Mitsubishi',
-  'Nissan','Opel','Peugeot','Ram','Renault','Ssangyong','Subaru','Suzuki',
-  'Toyota','Volkswagen','Volvo','Otros'
+  'Alfa Romeo','Audi','BAIC','BMW','BYD','Changan','Chery','Chevrolet','Citroën',
+  'DAF','DFSK','Dodge','Dongfeng','Fiat','Ford','Foton','Geely','Great Wall',
+  'Haval','Hino','Honda','Hyundai','Isuzu','Iveco','JAC','JMC','Jeep','Kenworth',
+  'Kia','Lada','Land Rover','Lexus','MAN','MG','Mahindra','Maxus','Mazda',
+  'Mercedes-Benz','Mitsubishi','Nissan','Omoda','Opel','Peugeot','Porsche','Ram',
+  'Renault','Scania','Seat','Skoda','Ssangyong','Subaru','Suzuki','Tata',
+  'Toyota','Volkswagen','Volvo','Wuling','Otros'
 ];
 
 const AÑOS_VAL = Array.from({ length: 37 }, (_, i) => String(2026 - i));
@@ -94,6 +96,7 @@ const ValidacionWhatsapp = ({
   mesSeleccionado, setOtPendiente
 }) => {
   const [form, setForm] = useState({ ...VACIO });
+  const [showPpuOut, setShowPpuOut] = useState(false);
   const [showGpsOut, setShowGpsOut] = useState(false);
   const [drafted, setDrafted] = useState(false);
 
@@ -105,7 +108,7 @@ const ValidacionWhatsapp = ({
     tipoServicio: form.servicio,
     region: '', ciudad: '', comuna: '',
     tecnico: 'Sebastian Parra', empresaInstaladora: 'Sebastian Parra',
-    ppu: (form.ppuVinIn || form.ppuVinOut || '').toUpperCase(),
+    ppu: (form.ppuVinIn || (showPpuOut ? form.ppuVinOut : '') || '').toUpperCase(),
     marca: form.marca, modelo: form.modelo, anio: form.anio,
     color: '', kilometraje: form.kms || '',
     imeiIn: form.gpsIn || '',
@@ -192,7 +195,7 @@ const ValidacionWhatsapp = ({
     setTrabajos(prev => [...prev, {
       id: newId, nombreCliente: form.cliente, fecha: form.fecha,
       servicio: form.servicio, accesorios: form.perifericos,
-      ppuIn: form.ppuVinIn.toUpperCase(), ppuOut: form.ppuVinOut.toUpperCase(),
+      ppuIn: form.ppuVinIn.toUpperCase(), ppuOut: showPpuOut ? form.ppuVinOut.toUpperCase() : '',
       imeiIn: form.gpsIn, imeiOut: showGpsOut ? form.gpsOut : '',
       km: '', // km de recorrido se ingresa manualmente en Trabajos
       valorUF: uf.toString(), valorPesos: Math.round(uf * 39000).toString(),
@@ -211,6 +214,7 @@ const ValidacionWhatsapp = ({
     agregarATrabajos();
     if (setOtPendiente) { setOtPendiente(draft); setDrafted(true); }
     setForm({ ...VACIO });
+    setShowPpuOut(false);
     setShowGpsOut(false);
   };
 
@@ -279,10 +283,17 @@ const ValidacionWhatsapp = ({
               </div>
               <div>
                 <label style={lbl}>PPU/VIN IN</label>
-                <div style={{ display:'flex', gap:6 }}>
-                  <input className="form-input" value={form.ppuVinIn} onChange={e => set('ppuVinIn', e.target.value.toUpperCase())} style={{ textTransform:'uppercase' }} />
-                  <input className="form-input" placeholder="OUT" value={form.ppuVinOut} onChange={e => set('ppuVinOut', e.target.value.toUpperCase())} style={{ maxWidth:80, textTransform:'uppercase' }} />
-                </div>
+                <input className="form-input" value={form.ppuVinIn} onChange={e => set('ppuVinIn', e.target.value.toUpperCase())} style={{ textTransform:'uppercase' }} />
+              </div>
+              <div>
+                <label style={{ ...lbl, display:'flex', alignItems:'center', gap:6, cursor:'pointer' }}>
+                  <input type="checkbox" checked={showPpuOut} onChange={e => setShowPpuOut(e.target.checked)}
+                    style={{ width:16, height:16, accentColor:'#3b82f6', cursor:'pointer' }} />
+                  PPU/VIN OUT
+                </label>
+                {showPpuOut && (
+                  <input className="form-input" value={form.ppuVinOut} onChange={e => set('ppuVinOut', e.target.value.toUpperCase())} style={{ textTransform:'uppercase' }} />
+                )}
               </div>
               <div>
                 <label style={lbl}>MARCA</label>

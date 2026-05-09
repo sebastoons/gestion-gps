@@ -69,11 +69,13 @@ const COMUNAS = {
 };
 
 const MARCAS = [
-  'Alfa Romeo','Audi','BAIC','BMW','BYD','Chery','Chevrolet','Citroën','Dodge',
-  'Dongfeng','Fiat','Ford','Foton','Geely','Great Wall','Haval','Honda','Hyundai',
-  'Isuzu','JAC','Jeep','Kia','Land Rover','Mazda','Mercedes-Benz','MG','Mitsubishi',
-  'Nissan','Opel','Peugeot','Ram','Renault','Ssangyong','Subaru','Suzuki',
-  'Toyota','Volkswagen','Volvo','Otros'
+  'Alfa Romeo','Audi','BAIC','BMW','BYD','Changan','Chery','Chevrolet','Citroën',
+  'DAF','DFSK','Dodge','Dongfeng','Fiat','Ford','Foton','Geely','Great Wall',
+  'Haval','Hino','Honda','Hyundai','Isuzu','Iveco','JAC','JMC','Jeep','Kenworth',
+  'Kia','Lada','Land Rover','Lexus','MAN','MG','Mahindra','Maxus','Mazda',
+  'Mercedes-Benz','Mitsubishi','Nissan','Omoda','Opel','Peugeot','Porsche','Ram',
+  'Renault','Scania','Seat','Skoda','Ssangyong','Subaru','Suzuki','Tata',
+  'Toyota','Volkswagen','Volvo','Wuling','Otros'
 ];
 const COLORES = ['Blanco','Negro','Gris','Plata','Rojo','Azul','Verde','Amarillo','Naranja','Café/Marrón','Beige','Celeste','Morado','Otro'];
 const AÑOS = Array.from({length:37},(_,i)=>String(2026-i));
@@ -379,14 +381,14 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, cliente
   const setOTField=(f,v)=>setCurrentOT(p=>({...p,[f]:v}));
   const setChecklist=(item,estado)=>setCurrentOT(p=>({...p,checklist:{...p.checklist,[item]:{estado,nota:''}}}));
 
-  const threeAgo=new Date(); threeAgo.setMonth(threeAgo.getMonth()-3);
+  const sixAgo=new Date(); sixAgo.setMonth(sixAgo.getMonth()-6);
   const filteredOTs=otsList.filter(ot=>{
-    if(new Date(ot.createdAt||ot.fecha)<threeAgo)return false;
+    if(new Date(ot.createdAt||ot.fecha)<sixAgo)return false;
     if(filterMes&&!ot.fecha?.startsWith(filterMes))return false;
     if(search){const q=search.toLowerCase();return(ot.ppu||'').toLowerCase().includes(q)||(ot.cliente||'').toLowerCase().includes(q)||String(ot.numero).toLowerCase().includes(q);}
     return true;
   });
-  const getMeses=()=>{const now=new Date();return Array.from({length:3},(_,i)=>{const d=new Date(now.getFullYear(),now.getMonth()-i,1);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;});};
+  const getMeses=()=>{const now=new Date();return Array.from({length:6},(_,i)=>{const d=new Date(now.getFullYear(),now.getMonth()-i,1);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;});};
   const comunasDisp=currentOT.ciudad?(COMUNAS[currentOT.ciudad]||[currentOT.ciudad]):[];
   const isVF=currentOT.tipoServicio==='Visita Fallida';
 
@@ -434,7 +436,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, cliente
               <input className="search-input" style={{paddingLeft:28}} placeholder="Buscar PPU, cliente, N°..." value={search} onChange={e=>setSearch(e.target.value)}/>
             </div>
             <select className="form-select" style={{maxWidth:160}} value={filterMes} onChange={e=>setFilterMes(e.target.value)}>
-              <option value="">Todos (3 meses)</option>
+              <option value="">Todos (6 meses)</option>
               {getMeses().map(m=><option key={m} value={m}>{m}</option>)}
             </select>
           </div>
@@ -458,7 +460,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, cliente
               </tbody>
             </table>
           </div>
-          <p style={{fontSize:'0.6em',color:'#9ca3af',marginTop:8,fontFamily:'quantico',textAlign:'center'}}>Últimos 3 meses</p>
+          <p style={{fontSize:'0.6em',color:'#9ca3af',marginTop:8,fontFamily:'quantico',textAlign:'center'}}>Últimos 6 meses</p>
         </div>
       </div>
       {historyOT&&(
