@@ -1,6 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { Home as HomeIcon, RefreshCw, Check } from 'lucide-react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import React, { useEffect, useRef, useState } from 'react';
+import { Home as HomeIcon, RefreshCw, Check, AlertCircle } from 'lucide-react';
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
+
+const FORMATS = [
+  Html5QrcodeSupportedFormats.QR_CODE,
+  Html5QrcodeSupportedFormats.CODE_128,
+  Html5QrcodeSupportedFormats.CODE_39,
+  Html5QrcodeSupportedFormats.CODE_93,
+  Html5QrcodeSupportedFormats.EAN_13,
+  Html5QrcodeSupportedFormats.DATA_MATRIX,
+  Html5QrcodeSupportedFormats.ITF,
+];
 
 const TIPO_COLOR = {
   Nuevo:    { border: '#16a34a', bg: '#dcfce7', text: '#166534' },
@@ -22,6 +32,8 @@ const EscanerGPS = ({
 }) => {
   const [phase, setPhase] = useState('scanning');
   const [scanKey, setScanKey] = useState(0);
+  const [camError, setCamError] = useState('');
+  const qrRef = useRef(null);
   const [form, setForm] = useState({
     imei: '', tipo: 'Nuevo', empresa: 'Entel',
     fecha: new Date().toISOString().split('T')[0],
@@ -29,20 +41,42 @@ const EscanerGPS = ({
 
   useEffect(() => {
     if (phase !== 'scanning') return;
-    let scanner = null;
-    const id = 'qr-reader-' + scanKey;
-    const timer = setTimeout(() => {
+
+    const id = 'qr-vid-' + scanKey;
+    setCamError('');
+    let cancelled = false;
+
+    const tryStart = async (constraints) => {
+      const qr = new Html5Qrcode(id, { formatsToSupport: FORMATS, verbose: false });
+      qrRef.current = qr;
+      await qr.start(
+        constraints,
+        { fps: 20, qrbox: { width: 290, height: 95 }, aspectRatio: 1.6, disableFlip: true },
+        (text) => {
+          if (cancelled) return;
+          qr.stop().catch(() => {});
+          setForm(f => ({ ...f, imei: text.trim() }));
+          setPhase('confirm');
+        },
+        () => {}
+      );
+    };
+
+    (async () => {
       try {
-        scanner = new Html5QrcodeScanner(id, { fps: 10, qrbox: { width: 280, height: 90 }, rememberLastUsedCamera: true }, false);
-        scanner.render(
-          (text) => { try { scanner.clear(); } catch (e) {} setForm(f => ({ ...f, imei: text.trim() })); setPhase('confirm'); },
-          () => {}
-        );
-      } catch (e) { console.error('Scanner init error:', e); }
-    }, 120);
+        await tryStart({ facingMode: { exact: 'environment' } });
+      } catch {
+        try {
+          await tryStart({ facingMode: 'environment' });
+        } catch (e2) {
+          if (!cancelled) setCamError('Sin acceso a cámara. Usa ingreso manual.');
+        }
+      }
+    })();
+
     return () => {
-      clearTimeout(timer);
-      if (scanner) { try { scanner.clear(); } catch (e) {} }
+      cancelled = true;
+      if (qrRef.current) { qrRef.current.stop().catch(() => {}); qrRef.current = null; }
     };
   }, [phase, scanKey]);
 
@@ -80,10 +114,30 @@ const EscanerGPS = ({
           {phase === 'scanning' && (
             <div>
               <p style={{ fontFamily: 'Quantico', fontSize: '0.65em', color: '#6b7280', textTransform: 'uppercase', marginBottom: 12, textAlign: 'center' }}>
-                Apunta al código de barras / QR del IMEI
+                Apunta la cámara al código de barras del IMEI
               </p>
-              <div id={'qr-reader-' + scanKey} style={{ maxWidth: 420, margin: '0 auto' }} />
-              <div style={{ margin: '16px auto', maxWidth: 420 }}>
+
+              <div className="scanner-box">
+                <div id={'qr-vid-' + scanKey} style={{ width: '100%' }} />
+                <div className="scanner-overlay">
+                  <div className="scanner-frame">
+                    <div className="scanner-corner tl" />
+                    <div className="scanner-corner tr" />
+                    <div className="scanner-corner bl" />
+                    <div className="scanner-corner br" />
+                    <div className="scan-line" />
+                  </div>
+                </div>
+              </div>
+
+              {camError && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '8px 12px', margin: '12px auto', maxWidth: 420 }}>
+                  <AlertCircle size={14} color="#dc2626" />
+                  <span style={{ fontFamily: 'Quantico', fontSize: '0.6em', color: '#dc2626', textTransform: 'uppercase' }}>{camError}</span>
+                </div>
+              )}
+
+              <div style={{ margin: '14px auto', maxWidth: 420 }}>
                 <label style={lbl}>O ingresa el IMEI manualmente</label>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <input className="form-input" value={form.imei}
