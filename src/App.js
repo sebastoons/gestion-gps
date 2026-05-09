@@ -6,7 +6,7 @@ import ValoresTrabajos from './components/ValoresTrabajos';
 import ValidacionWhatsapp from './components/ValidacionWhatsapp';
 import OrdenesTrabajo from './components/OrdenesTrabajo';
 import EscanerGPS from './components/EscanerGPS';
-import { Download, Upload, Sun, Moon } from 'lucide-react';
+import { Sun, Moon } from 'lucide-react';
 import { loadTable, syncTable } from './lib/supabase';
 import './styles/Common.css';
 
@@ -33,6 +33,7 @@ const App = () => {
     return `${m[n.getMonth()]} ${n.getFullYear()}`;
   });
   const [otPendiente, setOtPendiente] = useState(null);
+  const [otPendiente2, setOtPendiente2] = useState(null);
   const [darkMode, setDarkMode] = useState(() => {
     const s = localStorage.getItem('theme');
     return s !== null ? s === 'dark' : true;
@@ -100,51 +101,6 @@ const App = () => {
     return () => clearTimeout(t);
   }, [clientes, loaded]);
 
-  // ── Backup ──────────────────────────────────────────────────────────────────
-  const exportarBackup = () => {
-    const backup = {
-      version: '2.0', fecha: new Date().toISOString(),
-      datos: { trabajos, equiposNuevos, equiposRetirados, equiposMalos, clientes, empresaSeleccionada, mesSeleccionado }
-    };
-    const url = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `backup-gps-${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-    alert('✓ Backup exportado correctamente.');
-  };
-
-  const importarBackup = (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const backup = JSON.parse(e.target.result);
-        if (!backup.datos) { alert('❌ Archivo de backup inválido'); return; }
-        const msg = `⚠️ ¿Deseas restaurar este backup?\n\nFecha: ${new Date(backup.fecha).toLocaleString('es-CL')}\nVersión: ${backup.version || '1.0'}\n\nEsto reemplazará todos los datos actuales.`;
-        if (window.confirm(msg)) {
-          const v = (e) => { const n = normalizeEmpresa(e); return empresas.includes(n) ? n : 'Entel'; };
-          const migrate = (item) => ({ ...item, empresa: v(item.empresa) });
-          if (backup.datos.trabajos) setTrabajos(backup.datos.trabajos.map(migrate));
-          if (backup.datos.equiposNuevos) setEquiposNuevos(backup.datos.equiposNuevos.map(migrate));
-          if (backup.datos.equiposRetirados) setEquiposRetirados(backup.datos.equiposRetirados.map(migrate));
-          if (backup.datos.equiposMalos) setEquiposMalos(backup.datos.equiposMalos.map(migrate));
-          if (backup.datos.clientes) setClientes(backup.datos.clientes);
-          if (backup.datos.empresaSeleccionada) setEmpresaSeleccionada(v(backup.datos.empresaSeleccionada));
-          if (backup.datos.mesSeleccionado) setMesSeleccionado(backup.datos.mesSeleccionado);
-          alert(`✓ Backup restaurado correctamente.`);
-        }
-      } catch (err) {
-        console.error(err);
-        alert('❌ Error al leer el archivo de backup.');
-      }
-    };
-    reader.readAsText(file);
-    event.target.value = '';
-  };
-
   return (
     <div className="font-sans">
       {currentView !== 'home' && (
@@ -153,13 +109,6 @@ const App = () => {
             {darkMode ? <Sun size={13} /> : <Moon size={13} />}
             {darkMode ? 'Claro' : 'Oscuro'}
           </button>
-          <button onClick={exportarBackup} className="btn btn-success" style={{ boxShadow:'0 4px 12px rgba(0,0,0,0.2)', justifyContent:'center' }} title="Exportar backup">
-            <Download size={12} /> Backup
-          </button>
-          <label className="btn btn-primary" style={{ boxShadow:'0 4px 12px rgba(0,0,0,0.2)', justifyContent:'center', cursor:'pointer' }} title="Importar backup">
-            <Upload size={12} /> Restaurar
-            <input type="file" accept=".json" onChange={importarBackup} style={{ display:'none' }} />
-          </label>
         </div>
       )}
 
@@ -187,7 +136,8 @@ const App = () => {
       {currentView === 'ordenes' && (
         <OrdenesTrabajo setCurrentView={setCurrentView} empresas={empresas}
           empresaSeleccionada={empresaSeleccionada} setEmpresaSeleccionada={setEmpresaSeleccionada}
-          clientes={clientes} otPendiente={otPendiente} setOtPendiente={setOtPendiente} />
+          clientes={clientes} otPendiente={otPendiente} setOtPendiente={setOtPendiente}
+          otPendiente2={otPendiente2} setOtPendiente2={setOtPendiente2} />
       )}
 
       {currentView === 'escaner' && (
@@ -205,7 +155,7 @@ const App = () => {
           equiposMalos={equiposMalos} setEquiposMalos={setEquiposMalos}
           trabajos={trabajos} setTrabajos={setTrabajos}
           clientes={clientes} setClientes={setClientes}
-          mesSeleccionado={mesSeleccionado} setOtPendiente={setOtPendiente} />
+          mesSeleccionado={mesSeleccionado} setOtPendiente={setOtPendiente} setOtPendiente2={setOtPendiente2} />
       )}
     </div>
   );

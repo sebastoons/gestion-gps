@@ -950,6 +950,15 @@ body.dark input::placeholder,
 body.dark textarea::placeholder { color: #475569 !important; }
 body.dark select option { background: #0f172a; color: #e2e8f0; }
 
+/* ── Dark mode: field labels inside form containers ── */
+.dark .form-container label { color: #94a3b8 !important; }
+
+/* ── Dark mode: Trabajos export wrapper ── */
+.trabajos-export-wrap { background-color: white; }
+.dark .trabajos-export-wrap { background-color: #1a2744 !important; }
+.dark .trabajos-export-wrap h2 { color: #e2e8f0 !important; }
+.dark .trabajos-export-wrap div { color: #94a3b8; }
+
 /* ── Dark mode: tipo buttons (EscanerGPS) ── */
 .tipo-btn { background: white; }
 .dark .tipo-btn:not(.active) { background: #1e293b !important; color: #94a3b8 !important; border-color: #334155 !important; }

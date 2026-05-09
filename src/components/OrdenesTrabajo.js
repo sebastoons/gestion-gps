@@ -294,7 +294,7 @@ const downloadPDF = async (elementId, filename) => {
 };
 
 // ── Componente principal ──────────────────────────────────────────────────────
-const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, clientes, otPendiente, setOtPendiente }) => {
+const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, clientes, otPendiente, setOtPendiente, otPendiente2, setOtPendiente2 }) => {
   const [step,setStep] = useState('list');
   const [otsList,setOtsList] = useState([]);
   const [sessionOTs,setSessionOTs] = useState([]);
@@ -404,6 +404,18 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, cliente
     setStep('form');
   };
 
+  const cargarDraftOT2 = () => {
+    const { _empresa, ...otData } = otPendiente2;
+    setSessionEmpresa(_empresa || empresaSeleccionada);
+    setSessionOTs([]);
+    setCurrentOT(otData);
+    setClienteData({ nombre: '', rut: '' });
+    setAceptacion(false);
+    setFirma(null);
+    setOtPendiente2(null);
+    setStep('form');
+  };
+
   // ── LIST ──────────────────────────────────────────────────────────────────
   if(step==='list') return (
     <div className="page-container">
@@ -418,14 +430,27 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, cliente
             <button className="btn btn-success" onClick={startSession}><Plus size={14}/> Nueva OT</button>
           </div>
           {otPendiente && (
-            <div className="ot-banner-warn" style={{background:'#fffbeb',border:'1px solid #fcd34d',borderRadius:8,padding:'10px 14px',marginBottom:12,display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+            <div className="ot-banner-warn" style={{background:'#fffbeb',border:'1px solid #fcd34d',borderRadius:8,padding:'10px 14px',marginBottom:6,display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
               <span style={{fontFamily:'Quantico',fontSize:'0.7em',textTransform:'uppercase',color:'#92400e',flex:1}}>
-                📋 OT pendiente — {otPendiente._empresa} | {otPendiente.ppu||'Sin PPU'} | {otPendiente.tipoServicio}
+                📋 OT {otPendiente.tipoServicio} — {otPendiente._empresa} | {otPendiente.ppu||'Sin PPU'}
               </span>
               <button className="btn btn-primary" style={{fontSize:'0.7em',padding:'4px 12px'}} onClick={cargarDraftOT}>
-                Completar OT →
+                Completar →
               </button>
               <button className="btn btn-secondary" style={{fontSize:'0.7em',padding:'4px 8px'}} onClick={()=>setOtPendiente(null)}>
+                ✕
+              </button>
+            </div>
+          )}
+          {otPendiente2 && (
+            <div className="ot-banner-warn" style={{background:'#fff7ed',border:'1px solid #fed7aa',borderRadius:8,padding:'10px 14px',marginBottom:12,display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+              <span style={{fontFamily:'Quantico',fontSize:'0.7em',textTransform:'uppercase',color:'#9a3412',flex:1}}>
+                📋 OT {otPendiente2.tipoServicio} — {otPendiente2._empresa} | {otPendiente2.ppu||'Sin PPU'}
+              </span>
+              <button className="btn btn-success" style={{fontSize:'0.7em',padding:'4px 12px'}} onClick={cargarDraftOT2}>
+                Completar →
+              </button>
+              <button className="btn btn-secondary" style={{fontSize:'0.7em',padding:'4px 8px'}} onClick={()=>setOtPendiente2(null)}>
                 ✕
               </button>
             </div>

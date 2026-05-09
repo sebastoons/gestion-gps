@@ -10,9 +10,11 @@
 .dark .cl-label              { color:#cbd5e1; }
 .dark .cl-nota               { background:#0f172a !important; color:#e2e8f0 !important; border-color:#334155 !important; }
 .dark .ot-confirm-card       { background:#1a2744; box-shadow:0 10px 40px rgba(0,0,0,0.4); }
+.dark .ot-banner-orange      { background:rgba(154,52,18,0.15) !important; border-color:#c2410c !important; }
+.dark .ot-banner-orange span { color:#fdba74 !important; }
 .dark .ot-confirm-title      { color:#e2e8f0; }
 .dark .ot-confirm-sub        { color:#94a3b8; }
-.dark .ot-canvas-wrapper     { border-color:#334155; background:#0f172a; }
+.dark .ot-canvas-wrapper     { border-color:#4a5568; background:#f0f4f8; }
 /* El documento OT (.otd) se mantiene en modo claro siempre (es para imprimir) */
 
 /* ── Accesorios dropdown ── */

@@ -614,7 +614,7 @@ const Trabajos = ({
           )}
 
           {/* Contenedor para exportación visual */}
-          <div id="trabajos-export-container" style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px' }}>
+          <div id="trabajos-export-container" className="trabajos-export-wrap" style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px' }}>
             <div style={{ marginBottom: '20px', textAlign: 'center' }}>
               <h2 style={{ fontFamily: 'Russo One', fontSize: '1.5em', color: '#1f2937', marginBottom: '10px' }}>
                 TRABAJOS DEL MES
