@@ -7,7 +7,7 @@ const COSTOS = {
   'Mantención': 0.7, 'Reinstalación': 0.8, 'Visita Fallida': 0.5
 };
 
-const PERIFERICOS = ['ON BATT','edata','dallas','buzzer','sos','inmovilizador','GPS externo','sensor T°','sensor puerta','cipia','dashcam'];
+const PERIFERICOS = ['ON BATT','edata','dallas','buzzer','sos','inmovilizador','GPS externo','sensor T°','sensor puerta','cipia','dashcam','Básico'];
 
 const MARCAS_VAL = [
   'Alfa Romeo','Audi','BAIC','BMW','BYD','Changan','Chery','Chevrolet','Citroën',
@@ -98,8 +98,7 @@ const ValidacionWhatsapp = ({
   const [form, setForm] = useState({ ...VACIO });
   const [showPpuOut, setShowPpuOut] = useState(false);
   const [showGpsOut, setShowGpsOut] = useState(false);
-  const [drafted, setDrafted] = useState(false);
-  const [reinstDesinst, setReinstDesinst] = useState(null);
+  const [draftedOT, setDraftedOT] = useState(null); // { inst, desinst|null }
 
   const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : '';
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
@@ -258,12 +257,9 @@ const ValidacionWhatsapp = ({
 
   const ejecutarAcciones = () => {
     const esReinst = form.servicio === 'Reinstalación';
-    const draft = crearDraftOT();
-    const draftDesinst = esReinst ? crearDraftOTDesinst() : null;
     procesarEquipos();
     agregarATrabajos();
-    if (setOtPendiente) { setOtPendiente(draft); setDrafted(true); }
-    if (esReinst && draftDesinst) { setReinstDesinst(draftDesinst); }
+    setDraftedOT({ inst: crearDraftOT(), desinst: esReinst ? crearDraftOTDesinst() : null });
     setForm(prev => ({
       ...VACIO,
       cliente: prev.cliente,
@@ -375,7 +371,8 @@ const ValidacionWhatsapp = ({
               <div>
                 <label style={lbl}>GPS IN (IMEI)</label>
                 <div style={{ position:'relative' }}>
-                  <input className="form-input" value={form.gpsIn} onChange={e => set('gpsIn', e.target.value)}
+                  <input className="form-input" type="tel" inputMode="numeric" pattern="[0-9]*"
+                    value={form.gpsIn} onChange={e => set('gpsIn', e.target.value)}
                     style={{ paddingRight: gpsInEstado ? '72px' : undefined }} />
                   {gpsInEstado && <span style={badge(gpsInEstado)}>{gpsInEstado}</span>}
                 </div>
@@ -388,7 +385,8 @@ const ValidacionWhatsapp = ({
                 </label>
                 {showGpsOut && (
                   <div style={{ position:'relative' }}>
-                    <input className="form-input" value={form.gpsOut} onChange={e => set('gpsOut', e.target.value)}
+                    <input className="form-input" type="tel" inputMode="numeric" pattern="[0-9]*"
+                      value={form.gpsOut} onChange={e => set('gpsOut', e.target.value)}
                       style={{ paddingRight: gpsOutEstado ? '72px' : undefined }} />
                     {gpsOutEstado && <span style={badge(gpsOutEstado)}>{gpsOutEstado}</span>}
                   </div>
@@ -439,33 +437,27 @@ const ValidacionWhatsapp = ({
               </button>
             </div>
 
-            {drafted && (
-              <div className="val-banner" style={{ marginTop:12, padding:'10px 14px', background:'#fffbeb', border:'1px solid #fcd34d', borderRadius:8, display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
-                <span style={{ fontFamily:'Quantico', fontSize:'0.7em', color:'#92400e', flex:1 }}>
-                  📋 OT de Instalación lista. Falta región, checklist y firma.
-                </span>
-                <button className="btn btn-primary" style={{ fontSize:'0.7em', padding:'4px 10px' }}
-                  onClick={() => { setDrafted(false); setCurrentView('ordenes'); }}>
-                  Completar →
-                </button>
-                <button className="btn btn-secondary" style={{ fontSize:'0.7em', padding:'4px 8px' }}
-                  onClick={() => setDrafted(false)}>✕</button>
-              </div>
-            )}
-            {reinstDesinst && (
-              <div style={{ marginTop:8, padding:'10px 14px', background:'#fff7ed', border:'1px solid #fed7aa', borderRadius:8, display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
-                <span style={{ fontFamily:'Quantico', fontSize:'0.7em', color:'#9a3412', flex:1 }}>
-                  🔄 ¿Crear también OT de <strong>Desinstalación</strong>?
-                </span>
-                <button className="btn btn-success" style={{ fontSize:'0.7em', padding:'4px 10px' }}
-                  onClick={() => {
-                    if (setOtPendiente2) setOtPendiente2(reinstDesinst);
-                    setReinstDesinst(null);
-                  }}>
-                  Sí →
-                </button>
-                <button className="btn btn-secondary" style={{ fontSize:'0.7em', padding:'4px 8px' }}
-                  onClick={() => setReinstDesinst(null)}>No</button>
+            {draftedOT && (
+              <div style={{ marginTop:12, display:'flex', flexDirection:'column', gap:8 }}>
+                <div style={{ padding:'8px 12px', background:'#f0fdf4', border:'1px solid #86efac', borderRadius:8, fontFamily:'Quantico', fontSize:'0.65em', color:'#166534', textTransform:'uppercase' }}>
+                  ✓ Datos registrados en trabajos del mes
+                </div>
+                <div className="val-banner" style={{ padding:'10px 14px', background:'#fffbeb', border:'1px solid #fcd34d', borderRadius:8, display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
+                  <span style={{ fontFamily:'Quantico', fontSize:'0.7em', color:'#92400e', flex:1 }}>
+                    📋 ¿Crear OT de {draftedOT.inst.tipoServicio}?
+                  </span>
+                  <button className="btn btn-primary" style={{ fontSize:'0.7em', padding:'4px 10px' }}
+                    onClick={() => {
+                      if (setOtPendiente) setOtPendiente(draftedOT.inst);
+                      if (draftedOT.desinst && setOtPendiente2) setOtPendiente2(draftedOT.desinst);
+                      setDraftedOT(null);
+                      setCurrentView('ordenes');
+                    }}>
+                    Sí →
+                  </button>
+                  <button className="btn btn-secondary" style={{ fontSize:'0.7em', padding:'4px 8px' }}
+                    onClick={() => setDraftedOT(null)}>No</button>
+                </div>
               </div>
             )}
           </div>
