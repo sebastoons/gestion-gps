@@ -93,32 +93,52 @@ const ValidacionWhatsapp = ({
   equiposRetirados, setEquiposRetirados,
   equiposMalos, setEquiposMalos,
   trabajos, setTrabajos,
-  mesSeleccionado, setOtPendiente
+  mesSeleccionado, setOtPendiente, setOtPendiente2
 }) => {
   const [form, setForm] = useState({ ...VACIO });
   const [showPpuOut, setShowPpuOut] = useState(false);
   const [showGpsOut, setShowGpsOut] = useState(false);
   const [drafted, setDrafted] = useState(false);
+  const [reinstDesinst, setReinstDesinst] = useState(null);
 
   const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : '';
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
-  const crearDraftOT = () => ({
+  const crearDraftOT = () => {
+    const esReinst = form.servicio === 'Reinstalación';
+    return {
+      fecha: form.fecha,
+      tipoServicio: esReinst ? 'Instalación' : form.servicio,
+      region: '', ciudad: '', comuna: '',
+      tecnico: 'Sebastian Parra', empresaInstaladora: 'Sebastian Parra',
+      ppu: (form.ppuVinIn || '').toUpperCase(),
+      marca: form.marca, modelo: form.modelo, anio: form.anio,
+      color: '', kilometraje: form.kms || '',
+      imeiIn: form.gpsIn || '',
+      imeiOut: esReinst ? '' : (showGpsOut ? (form.gpsOut || '') : ''),
+      accesoriosGPS: [],
+      checklist: Object.fromEntries(CL_ITEMS.map(k => [k, { estado: 'NA', nota: '' }])),
+      observaciones: [
+        form.detalles, form.trabajo,
+        form.perifericos.length ? `Periféricos: ${form.perifericos.join(', ')}` : ''
+      ].filter(Boolean).join(' | '),
+      _empresa: form.empresa,
+    };
+  };
+
+  const crearDraftOTDesinst = () => ({
     fecha: form.fecha,
-    tipoServicio: form.servicio,
+    tipoServicio: 'Desinstalación',
     region: '', ciudad: '', comuna: '',
     tecnico: 'Sebastian Parra', empresaInstaladora: 'Sebastian Parra',
-    ppu: (form.ppuVinIn || (showPpuOut ? form.ppuVinOut : '') || '').toUpperCase(),
-    marca: form.marca, modelo: form.modelo, anio: form.anio,
-    color: '', kilometraje: form.kms || '',
-    imeiIn: form.gpsIn || '',
+    ppu: (showPpuOut ? form.ppuVinOut : '').toUpperCase(),
+    marca: '', modelo: '', anio: '',
+    color: '', kilometraje: '',
+    imeiIn: '',
     imeiOut: showGpsOut ? (form.gpsOut || '') : '',
     accesoriosGPS: [],
     checklist: Object.fromEntries(CL_ITEMS.map(k => [k, { estado: 'NA', nota: '' }])),
-    observaciones: [
-      form.detalles, form.trabajo,
-      form.perifericos.length ? `Periféricos: ${form.perifericos.join(', ')}` : ''
-    ].filter(Boolean).join(' | '),
+    observaciones: [form.detalles, form.trabajo].filter(Boolean).join(' | '),
     _empresa: form.empresa,
   });
 
@@ -187,20 +207,48 @@ const ValidacionWhatsapp = ({
   const agregarATrabajos = () => {
     const emp = form.empresa;
     const prefix = emp === 'UGPS' ? 'U' : 'E';
-    const newId = `${prefix}${String(trabajos.filter(t => t.empresa === emp).length + 1).padStart(3,'0')}`;
-    // ON BATT reemplaza el costo de instalación de 0.8 a 0.6
-    let uf = COSTOS[form.servicio] || 0.8;
-    if (form.servicio === 'Instalación' && form.perifericos.includes('ON BATT')) uf = 0.6;
     const mes = getMesFacturacion(form.fecha, emp) || mesSeleccionado;
-    setTrabajos(prev => [...prev, {
-      id: newId, nombreCliente: form.cliente, fecha: form.fecha,
-      servicio: form.servicio, accesorios: form.perifericos,
-      ppuIn: form.ppuVinIn.toUpperCase(), ppuOut: showPpuOut ? form.ppuVinOut.toUpperCase() : '',
-      imeiIn: form.gpsIn, imeiOut: showGpsOut ? form.gpsOut : '',
-      km: '', // km de recorrido se ingresa manualmente en Trabajos
-      valorUF: uf.toString(), valorPesos: Math.round(uf * 39000).toString(),
-      empresa: emp, mes
-    }]);
+
+    if (form.servicio === 'Reinstalación') {
+      // Split into separate Desinstalación + Instalación entries
+      setTrabajos(prev => {
+        const count = prev.filter(t => t.empresa === emp).length;
+        const id1 = `${prefix}${String(count + 1).padStart(3,'0')}`;
+        const id2 = `${prefix}${String(count + 2).padStart(3,'0')}`;
+        const ufInst = form.perifericos.includes('ON BATT') ? 0.6 : COSTOS['Instalación'];
+        const ufDes = COSTOS['Desinstalación'];
+        return [...prev,
+          {
+            id: id1, nombreCliente: form.cliente, fecha: form.fecha,
+            servicio: 'Desinstalación', accesorios: [],
+            ppuIn: '', ppuOut: showPpuOut ? form.ppuVinOut.toUpperCase() : '',
+            imeiIn: '', imeiOut: showGpsOut ? form.gpsOut : '',
+            km: '', valorUF: ufDes.toString(), valorPesos: Math.round(ufDes * 39000).toString(),
+            empresa: emp, mes
+          },
+          {
+            id: id2, nombreCliente: form.cliente, fecha: form.fecha,
+            servicio: 'Instalación', accesorios: form.perifericos,
+            ppuIn: form.ppuVinIn.toUpperCase(), ppuOut: '',
+            imeiIn: form.gpsIn, imeiOut: '',
+            km: '', valorUF: ufInst.toString(), valorPesos: Math.round(ufInst * 39000).toString(),
+            empresa: emp, mes
+          }
+        ];
+      });
+    } else {
+      const newId = `${prefix}${String(trabajos.filter(t => t.empresa === emp).length + 1).padStart(3,'0')}`;
+      let uf = COSTOS[form.servicio] || 0.8;
+      if (form.servicio === 'Instalación' && form.perifericos.includes('ON BATT')) uf = 0.6;
+      setTrabajos(prev => [...prev, {
+        id: newId, nombreCliente: form.cliente, fecha: form.fecha,
+        servicio: form.servicio, accesorios: form.perifericos,
+        ppuIn: form.ppuVinIn.toUpperCase(), ppuOut: showPpuOut ? form.ppuVinOut.toUpperCase() : '',
+        imeiIn: form.gpsIn, imeiOut: showGpsOut ? form.gpsOut : '',
+        km: '', valorUF: uf.toString(), valorPesos: Math.round(uf * 39000).toString(),
+        empresa: emp, mes
+      }]);
+    }
   };
 
   const validar = () => {
@@ -209,11 +257,13 @@ const ValidacionWhatsapp = ({
   };
 
   const ejecutarAcciones = () => {
+    const esReinst = form.servicio === 'Reinstalación';
     const draft = crearDraftOT();
+    const draftDesinst = esReinst ? crearDraftOTDesinst() : null;
     procesarEquipos();
     agregarATrabajos();
     if (setOtPendiente) { setOtPendiente(draft); setDrafted(true); }
-    // Mantener campos repetibles; limpiar solo los específicos del trabajo
+    if (esReinst && draftDesinst) { setReinstDesinst(draftDesinst); }
     setForm(prev => ({
       ...VACIO,
       cliente: prev.cliente,
@@ -392,14 +442,30 @@ const ValidacionWhatsapp = ({
             {drafted && (
               <div className="val-banner" style={{ marginTop:12, padding:'10px 14px', background:'#fffbeb', border:'1px solid #fcd34d', borderRadius:8, display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
                 <span style={{ fontFamily:'Quantico', fontSize:'0.7em', color:'#92400e', flex:1 }}>
-                  📋 Borrador de OT listo. Solo falta región, checklist y firma.
+                  📋 OT de Instalación lista. Falta región, checklist y firma.
                 </span>
                 <button className="btn btn-primary" style={{ fontSize:'0.7em', padding:'4px 10px' }}
                   onClick={() => { setDrafted(false); setCurrentView('ordenes'); }}>
-                  Completar OT →
+                  Completar →
                 </button>
                 <button className="btn btn-secondary" style={{ fontSize:'0.7em', padding:'4px 8px' }}
                   onClick={() => setDrafted(false)}>✕</button>
+              </div>
+            )}
+            {reinstDesinst && (
+              <div style={{ marginTop:8, padding:'10px 14px', background:'#fff7ed', border:'1px solid #fed7aa', borderRadius:8, display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
+                <span style={{ fontFamily:'Quantico', fontSize:'0.7em', color:'#9a3412', flex:1 }}>
+                  🔄 ¿Crear también OT de <strong>Desinstalación</strong>?
+                </span>
+                <button className="btn btn-success" style={{ fontSize:'0.7em', padding:'4px 10px' }}
+                  onClick={() => {
+                    if (setOtPendiente2) setOtPendiente2(reinstDesinst);
+                    setReinstDesinst(null);
+                  }}>
+                  Sí →
+                </button>
+                <button className="btn btn-secondary" style={{ fontSize:'0.7em', padding:'4px 8px' }}
+                  onClick={() => setReinstDesinst(null)}>No</button>
               </div>
             )}
           </div>
