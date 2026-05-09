@@ -36,18 +36,24 @@ const App = () => {
   // Cargar desde Supabase al iniciar
   useEffect(() => {
     const loadData = async () => {
-      const [t, en, er, em] = await Promise.all([
+      const [t, en, er, em, cl] = await Promise.all([
         loadTable('trabajos'),
         loadTable('equipos_nuevos'),
         loadTable('equipos_retirados'),
         loadTable('equipos_malos'),
+        loadTable('clientes'),
       ]);
       setTrabajos(t.map(norm));
       setEquiposNuevos(en.map(norm));
       setEquiposRetirados(er.map(norm));
       setEquiposMalos(em.map(norm));
-      const storedClientes = localStorage.getItem('clientes');
-      if (storedClientes) setClientes(JSON.parse(storedClientes));
+      if (cl.length > 0) {
+        setClientes(cl);
+      } else {
+        // Migrar desde localStorage si Supabase está vacío
+        const stored = localStorage.getItem('clientes');
+        if (stored) setClientes(JSON.parse(stored));
+      }
       setLoaded(true);
     };
     loadData();
@@ -79,8 +85,10 @@ const App = () => {
   }, [equiposMalos, loaded]);
 
   useEffect(() => {
-    localStorage.setItem('clientes', JSON.stringify(clientes));
-  }, [clientes]);
+    if (!loaded) return;
+    const t = setTimeout(() => syncTable('clientes', clientes), 1500);
+    return () => clearTimeout(t);
+  }, [clientes, loaded]);
 
   // ── Backup ──────────────────────────────────────────────────────────────────
   const exportarBackup = () => {
