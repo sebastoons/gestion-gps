@@ -170,10 +170,10 @@ const EscanerGPS = ({
                       const c = TIPO_COLOR[t];
                       const active = form.tipo === t;
                       return (
-                        <button key={t} onClick={() => setForm(f => ({ ...f, tipo: t }))} style={{
+                        <button key={t} className={`tipo-btn${active ? ' active' : ''}`} onClick={() => setForm(f => ({ ...f, tipo: t }))} style={{
                           padding: '10px 4px', borderRadius: 10,
                           border: `2px solid ${active ? c.border : '#e5e7eb'}`,
-                          background: active ? c.bg : 'white',
+                          background: active ? c.bg : undefined,
                           color: active ? c.text : '#6b7280',
                           cursor: 'pointer', fontFamily: 'Quantico', fontSize: '0.65em',
                           fontWeight: 'bold', textTransform: 'uppercase', transition: 'all 0.15s',

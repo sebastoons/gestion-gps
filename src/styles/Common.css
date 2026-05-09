@@ -937,3 +937,48 @@
   90%  { opacity: 1; }
   100% { top: 95%; opacity: 0; }
 }
+
+/* ── Dark mode: global form element override ── */
+body.dark input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="color"]):not([type="range"]),
+body.dark select,
+body.dark textarea {
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+  border-color: #334155 !important;
+}
+body.dark input::placeholder,
+body.dark textarea::placeholder { color: #475569 !important; }
+body.dark select option { background: #0f172a; color: #e2e8f0; }
+
+/* ── Dark mode: tipo buttons (EscanerGPS) ── */
+.tipo-btn { background: white; }
+.dark .tipo-btn:not(.active) { background: #1e293b !important; color: #94a3b8 !important; border-color: #334155 !important; }
+
+/* ── Dark mode: periféricos dropdown ── */
+.dark .perifedrop-trigger { background: #0f172a !important; border-color: #334155 !important; color: #e2e8f0 !important; }
+.dark .perifedrop-menu    { background: #1a2744 !important; border-color: #334155 !important; box-shadow: 0 4px 16px rgba(0,0,0,0.4) !important; }
+.dark .perifedrop-menu label { color: #cbd5e1; }
+
+/* ── Dark mode: banners amarillos ── */
+.dark .val-banner,
+.dark .ot-banner-warn {
+  background: rgba(120,80,0,0.18) !important;
+  border-color: #a16207 !important;
+}
+.dark .val-banner span,
+.dark .ot-banner-warn span { color: #fde68a !important; }
+
+/* ── Dark mode: preview mensaje WhatsApp ── */
+.dark .val-preview {
+  background: rgba(22,163,74,0.1) !important;
+  border-color: rgba(134,239,172,0.22) !important;
+  color: #86efac !important;
+}
+
+/* ── Dark mode: sección aceptación OT ── */
+.dark .form-container-acept {
+  background: rgba(245,158,11,0.08) !important;
+  border-color: rgba(245,158,11,0.3) !important;
+}
+.dark .form-container-acept p { color: #cbd5e1 !important; }
+.dark .acept-btn:not(.acept-btn--on) { background: #0f172a !important; border-color: #d97706 !important; }

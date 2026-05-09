@@ -418,7 +418,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, cliente
             <button className="btn btn-success" onClick={startSession}><Plus size={14}/> Nueva OT</button>
           </div>
           {otPendiente && (
-            <div style={{background:'#fffbeb',border:'1px solid #fcd34d',borderRadius:8,padding:'10px 14px',marginBottom:12,display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+            <div className="ot-banner-warn" style={{background:'#fffbeb',border:'1px solid #fcd34d',borderRadius:8,padding:'10px 14px',marginBottom:12,display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
               <span style={{fontFamily:'Quantico',fontSize:'0.7em',textTransform:'uppercase',color:'#92400e',flex:1}}>
                 📋 OT pendiente — {otPendiente._empresa} | {otPendiente.ppu||'Sin PPU'} | {otPendiente.tipoServicio}
               </span>
@@ -672,9 +672,9 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, cliente
             </div>
           </div>
 
-          <div className="form-container" style={{borderColor:'#f59e0b',background:'#fffbeb'}}>
+          <div className="form-container form-container-acept" style={{borderColor:'#f59e0b',background:'#fffbeb'}}>
             <div style={{display:'flex',alignItems:'flex-start',gap:12,padding:'4px 0'}}>
-              <button type="button" className="acept-btn" style={{background:aceptacion?'#16a34a':'white',borderColor:aceptacion?'#16a34a':'#d97706'}} onClick={()=>setAceptacion(!aceptacion)}>
+              <button type="button" className={`acept-btn${aceptacion?' acept-btn--on':''}`} style={{background:aceptacion?'#16a34a':undefined,borderColor:aceptacion?'#16a34a':'#d97706'}} onClick={()=>setAceptacion(!aceptacion)}>
                 {aceptacion&&<Check size={14} color="white"/>}
               </button>
               <p style={{fontFamily:'quantico',fontSize:'0.7em',color:'#374151',lineHeight:1.6,margin:0}}>

@@ -53,7 +53,7 @@ const PerifeDropdown = ({ selected, onChange }) => {
   const toggle = p => onChange(selected.includes(p) ? selected.filter(x => x !== p) : [...selected, p]);
   return (
     <div ref={ref} style={{ position: 'relative' }}>
-      <div onClick={() => setOpen(!open)} style={{
+      <div onClick={() => setOpen(!open)} className="perifedrop-trigger" style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 8,
         cursor: 'pointer', background: 'white', minHeight: 36, gap: 6, fontSize: '0.8em'
@@ -64,7 +64,7 @@ const PerifeDropdown = ({ selected, onChange }) => {
         <ChevronDown size={13} style={{ flexShrink: 0 }} />
       </div>
       {open && (
-        <div style={{
+        <div className="perifedrop-menu" style={{
           position: 'absolute', top: 'calc(100% + 2px)', left: 0, right: 0, zIndex: 100,
           background: 'white', border: '1px solid #d1d5db', borderRadius: 8,
           boxShadow: '0 4px 12px rgba(0,0,0,0.12)', padding: 6
@@ -376,7 +376,7 @@ const ValidacionWhatsapp = ({
               )}
             </div>
 
-            <div style={{ marginTop:15, padding:12, backgroundColor:'#f0fdf4', border:'1px solid #86efac', borderRadius:8, fontFamily:'monospace', fontSize:'0.8em', whiteSpace:'pre-wrap', color:'#166534', lineHeight:1.6 }}>
+            <div className="val-preview" style={{ marginTop:15, padding:12, backgroundColor:'#f0fdf4', border:'1px solid #86efac', borderRadius:8, fontFamily:'monospace', fontSize:'0.8em', whiteSpace:'pre-wrap', color:'#166534', lineHeight:1.6 }}>
               {generarMensaje()}
             </div>
 
@@ -390,7 +390,7 @@ const ValidacionWhatsapp = ({
             </div>
 
             {drafted && (
-              <div style={{ marginTop:12, padding:'10px 14px', background:'#fffbeb', border:'1px solid #fcd34d', borderRadius:8, display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
+              <div className="val-banner" style={{ marginTop:12, padding:'10px 14px', background:'#fffbeb', border:'1px solid #fcd34d', borderRadius:8, display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
                 <span style={{ fontFamily:'Quantico', fontSize:'0.7em', color:'#92400e', flex:1 }}>
                   📋 Borrador de OT listo. Solo falta región, checklist y firma.
                 </span>
