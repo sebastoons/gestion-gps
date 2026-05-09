@@ -1,11 +1,18 @@
 import React from 'react';
-import { Briefcase, Package, DollarSign, MessageCircle, ClipboardList, QrCode } from 'lucide-react';
+import { Briefcase, Package, DollarSign, MessageCircle, ClipboardList, QrCode, Sun, Moon } from 'lucide-react';
 import '../styles/Home.css';
 
-const Home = ({ setCurrentView }) => {
+const Home = ({ setCurrentView, darkMode, setDarkMode }) => {
   return (
     <div className="home-container">
       <div className="home-content">
+        <div className="home-topbar">
+          <button className="home-toggle" onClick={() => setDarkMode(d => !d)}>
+            {darkMode ? <Sun size={13} /> : <Moon size={13} />}
+            {darkMode ? 'Modo claro' : 'Modo oscuro'}
+          </button>
+        </div>
+
         <div className="logo-container">
           <img src="/logo.svg" alt="Logo GPS Management" className="app-logo" />
         </div>

@@ -6,7 +6,7 @@ import ValoresTrabajos from './components/ValoresTrabajos';
 import ValidacionWhatsapp from './components/ValidacionWhatsapp';
 import OrdenesTrabajo from './components/OrdenesTrabajo';
 import EscanerGPS from './components/EscanerGPS';
-import { Download, Upload } from 'lucide-react';
+import { Download, Upload, Sun, Moon } from 'lucide-react';
 import { loadTable, syncTable } from './lib/supabase';
 import './styles/Common.css';
 
@@ -33,6 +33,15 @@ const App = () => {
     return `${m[n.getMonth()]} ${n.getFullYear()}`;
   });
   const [otPendiente, setOtPendiente] = useState(null);
+  const [darkMode, setDarkMode] = useState(() => {
+    const s = localStorage.getItem('theme');
+    return s !== null ? s === 'dark' : true;
+  });
+
+  useEffect(() => {
+    document.body.classList.toggle('dark', darkMode);
+    localStorage.setItem('theme', darkMode ? 'dark' : 'light');
+  }, [darkMode]);
 
   // Cargar desde Supabase al iniciar
   useEffect(() => {
@@ -139,18 +148,22 @@ const App = () => {
   return (
     <div className="font-sans">
       {currentView !== 'home' && (
-        <div style={{ position:'fixed', bottom:'10px', right:'15px', display:'flex', flexDirection:'column', gap:'10px', fontSize:'0.85em', zIndex:1000 }}>
-          <button onClick={exportarBackup} className="btn btn-success" style={{ boxShadow:'0 4px 6px rgba(0,0,0,0.1)', display:'flex', alignItems:'center', gap:'7px' }} title="Exportar backup">
+        <div style={{ position:'fixed', bottom:'10px', right:'15px', display:'flex', flexDirection:'column', gap:'8px', zIndex:1000 }}>
+          <button onClick={() => setDarkMode(d => !d)} className="btn btn-secondary" style={{ boxShadow:'0 4px 12px rgba(0,0,0,0.2)', justifyContent:'center' }} title="Cambiar tema">
+            {darkMode ? <Sun size={13} /> : <Moon size={13} />}
+            {darkMode ? 'Claro' : 'Oscuro'}
+          </button>
+          <button onClick={exportarBackup} className="btn btn-success" style={{ boxShadow:'0 4px 12px rgba(0,0,0,0.2)', justifyContent:'center' }} title="Exportar backup">
             <Download size={12} /> Backup
           </button>
-          <label className="btn btn-primary" style={{ boxShadow:'0 4px 6px rgba(0,0,0,0.1)', display:'flex', alignItems:'center', gap:'7px', cursor:'pointer' }} title="Importar backup">
+          <label className="btn btn-primary" style={{ boxShadow:'0 4px 12px rgba(0,0,0,0.2)', justifyContent:'center', cursor:'pointer' }} title="Importar backup">
             <Upload size={12} /> Restaurar
             <input type="file" accept=".json" onChange={importarBackup} style={{ display:'none' }} />
           </label>
         </div>
       )}
 
-      {currentView === 'home' && <Home setCurrentView={setCurrentView} />}
+      {currentView === 'home' && <Home setCurrentView={setCurrentView} darkMode={darkMode} setDarkMode={setDarkMode} />}
 
       {currentView === 'trabajos' && (
         <Trabajos setCurrentView={setCurrentView} trabajos={trabajos} setTrabajos={setTrabajos}

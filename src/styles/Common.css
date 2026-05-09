@@ -3,8 +3,9 @@
 /* Contenedores principales */
 .page-container {
   min-height: 100vh;
-  background: linear-gradient(150deg, #0f172a 0%, #1e3a5f 55%, #0a2540 100%);
+  background: linear-gradient(160deg, #f0f6ff 0%, #eef2ff 100%);
   padding: 16px;
+  transition: background 0.3s ease;
 }
 
 .page-content {
@@ -15,10 +16,11 @@
 .page-card {
   background: #ffffff;
   border-radius: 20px;
-  box-shadow: 0 24px 80px rgba(0,0,0,0.32), 0 4px 20px rgba(0,0,0,0.18);
-  border: 1px solid rgba(255,255,255,0.9);
+  box-shadow: 0 4px 24px rgba(37,99,235,0.08), 0 1px 4px rgba(0,0,0,0.05);
+  border: 1px solid rgba(226,232,240,0.9);
   padding: 1.5rem;
   margin-bottom: 1.5rem;
+  transition: background 0.3s ease, border-color 0.3s ease;
 }
 
 /* Agregar al inicio de Common.css, después de los contenedores principales */
@@ -811,6 +813,90 @@
 .col-span-2 {
   grid-column: span 2;
 }
+
+/* ══════════════════════════════════════
+   DARK MODE OVERRIDES
+══════════════════════════════════════ */
+.dark .page-container {
+  background: linear-gradient(150deg, #0f172a 0%, #1e3a5f 55%, #0a2540 100%);
+}
+.dark .page-card {
+  background: #1a2744;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.4), 0 4px 20px rgba(0,0,0,0.25);
+  border-color: rgba(255,255,255,0.07);
+}
+.dark .page-title    { color: #e2e8f0; }
+.dark .filter-label  { color: #94a3b8; }
+.dark .form-title    { color: #e2e8f0; }
+.dark .summary-title { color: #e2e8f0; }
+.dark .empty-state   { color: #64748b; }
+
+/* Inputs & selects */
+.dark .form-input,
+.dark .form-select {
+  background: #0f172a;
+  color: #e2e8f0;
+  border-color: #334155;
+}
+.dark .form-input:focus,
+.dark .form-select:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96,165,250,0.15);
+}
+.dark .form-input::placeholder { color: #475569; }
+.dark .form-input option,
+.dark .form-select option { background: #0f172a; color: #e2e8f0; }
+
+/* Form containers */
+.dark .form-container         { background: rgba(22,163,74,0.07);    border-color: rgba(134,239,172,0.18); }
+.dark .form-container.blue    { background: rgba(59,130,246,0.08);   border-color: rgba(147,197,253,0.2); }
+.dark .form-container.purple  { background: rgba(147,51,234,0.08);   border-color: rgba(216,180,254,0.2); }
+.dark .form-container.red     { background: rgba(220,38,38,0.08);    border-color: rgba(252,165,165,0.2); }
+
+/* Tables */
+.dark .data-table tbody tr    { background: #1a2744; }
+.dark .data-table tbody tr:hover { background: #1e3a5f; }
+.dark .data-table td          { border-color: #334155; color: #cbd5e1; }
+
+/* Buttons */
+.dark .btn-secondary          { background: #334155; color: #e2e8f0; }
+.dark .btn-secondary:hover    { background: #475569; }
+
+/* Summary */
+.dark .summary-container      { background: rgba(59,130,246,0.08); border-color: rgba(147,197,253,0.15); }
+.dark .summary-card           { background: #0f172a; box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+.dark .summary-label          { color: #94a3b8; }
+.dark .summary-total-card     { background: #0f172a; }
+.dark .summary-total-card.highlight { background: #1d4ed8; }
+.dark .summary-total-label    { color: #94a3b8; }
+.dark .summary-total-value    { color: #e2e8f0; }
+
+/* Tabs */
+.dark .tab-button             { background: #1e293b; color: #94a3b8; }
+.dark .tab-button:hover       { background: #334155; color: #e2e8f0; }
+.dark .tab-button.active.green { background: #166534; }
+.dark .tab-button.active.blue  { background: #1d4ed8; }
+.dark .tab-button.active.red   { background: #991b1b; }
+
+/* Search */
+.dark .search-input           { background: #0f172a; color: #e2e8f0; border-color: #334155; }
+.dark .search-input:focus     { border-color: #9333ea; box-shadow: 0 0 0 3px rgba(147,51,234,0.15); }
+.dark .search-input::placeholder { color: #475569; }
+
+/* Checkbox */
+.dark .checkbox-container     { background: rgba(220,38,38,0.06); border-color: rgba(220,38,38,0.22); }
+.dark .checkbox-text          { color: #fca5a5; }
+
+/* Status badges */
+.dark .status-badge-equipos   { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.08); }
+.dark .status-text            { color: #e2e8f0; }
+
+/* Modal */
+.dark .modal-container        { background: #1a2744; box-shadow: 0 25px 60px rgba(0,0,0,0.6); }
+.dark .modal-title            { color: #e2e8f0; }
+.dark .modal-message          { color: #94a3b8; }
+.dark .modal-close-btn        { color: #94a3b8; }
+.dark .modal-close-btn:hover  { background: #334155; color: #e2e8f0; }
 
 /* ── Escáner GPS ── */
 .scanner-box {
