@@ -17,7 +17,8 @@
     
     <!-- Apple Touch Icons -->
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/icon-512.png" />
-    <link rel="icon" href="%PUBLIC_URL%/icon-512.png" />
+    <link rel="icon" href="%PUBLIC_URL%/logo_solo.svg" type="image/svg+xml" />
+    <link rel="icon" href="%PUBLIC_URL%/icon-512.png" type="image/png" />
     
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
     <title>Sistema de Gestión GPS</title>
@@ -29,6 +30,7 @@
   </style>
   <body>
     <noscript>Necesitas habilitar JavaScript para usar esta aplicación.</noscript>
+    <script>(function(){var t=localStorage.getItem('theme');if(t!=='light')document.body.classList.add('dark');})()</script>
     <div id="splash"><img src="%PUBLIC_URL%/logo_solo.svg" alt="Cargando..." /></div>
     <div id="root"></div>
     <script>
