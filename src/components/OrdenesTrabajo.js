@@ -334,10 +334,10 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, cliente
   useEffect(()=>{
     if (step!=='cliente') return;
     const c=canvasRef.current; if (!c) return;
-    const ctx=c.getContext('2d'); ctx.strokeStyle='#1f2937'; ctx.lineWidth=2; ctx.lineCap='round';
+    const ctx=c.getContext('2d'); ctx.strokeStyle='#1f2937'; ctx.lineWidth=2; ctx.lineCap='round'; ctx.lineJoin='round';
   },[step]);
 
-  const getPos=(e,c)=>{const r=c.getBoundingClientRect(),s=e.touches?e.touches[0]:e;return{x:s.clientX-r.left,y:s.clientY-r.top};};
+  const getPos=(e,c)=>{const r=c.getBoundingClientRect(),s=e.touches?e.touches[0]:e;return{x:(s.clientX-r.left)*(c.width/r.width),y:(s.clientY-r.top)*(c.height/r.height)};};
   const startDraw=e=>{e.preventDefault();isDrawing.current=true;const c=canvasRef.current,p=getPos(e,c),ctx=c.getContext('2d');ctx.beginPath();ctx.moveTo(p.x,p.y);};
   const draw=e=>{e.preventDefault();if(!isDrawing.current)return;const c=canvasRef.current,p=getPos(e,c),ctx=c.getContext('2d');ctx.lineTo(p.x,p.y);ctx.stroke();};
   const endDraw=()=>{isDrawing.current=false;if(canvasRef.current)setFirma(canvasRef.current.toDataURL());};

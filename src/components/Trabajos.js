@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Plus, Home, FileImage, Edit2, Trash2, AlertCircle } from 'lucide-react';
+import { Download, Plus, Home, Edit2, Trash2, AlertCircle } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
-import { exportToVisualPDF, exportToVisualImage } from '../utils/visualExportUtils';
 
 const Trabajos = ({
   setCurrentView,
@@ -258,15 +257,6 @@ const Trabajos = ({
 
   const totales = calcularTotales();
 
-  // Funciones de exportación visual
-  const handleExportVisualPDF = () => {
-    exportToVisualPDF('trabajos-export-container', `trabajos_${empresaSeleccionada}_${mesSeleccionado}_${new Date().toISOString().split('T')[0]}`);
-  };
-
-  const handleExportVisualImage = () => {
-    exportToVisualImage('trabajos-export-container', `trabajos_${empresaSeleccionada}_${mesSeleccionado}_${new Date().toISOString().split('T')[0]}`);
-  };
-
   // FUNCIÓN MEJORADA: Verifica en AMBOS inventarios
   const verificarIMEIEnInventario = (imei) => {
     if (!imei || imei.trim() === '') return null;
@@ -375,24 +365,13 @@ const Trabajos = ({
               <Plus size={20} /> Agregar
             </button>
             <button
-              onClick={() => exportToCSV(trabajosFiltrados, `trabajos_${empresaSeleccionada}_${mesSeleccionado}`)}
+              onClick={() => exportToCSV(
+                trabajosFiltrados.map(({ mes, empresa, ...r }) => r),
+                `trabajos_${empresaSeleccionada}_${mesSeleccionado}`
+              )}
               className="btn btn-success"
             >
               <Download size={20} /> Excel
-            </button>
-            <button
-              onClick={handleExportVisualPDF}
-              className="btn btn-danger"
-              title="Exportar como se ve en la app (PDF)"
-            >
-              <FileImage size={20} /> PDF Visual
-            </button>
-            <button
-              onClick={handleExportVisualImage}
-              className="btn btn-purple"
-              title="Exportar como se ve en la app (Imagen)"
-            >
-              <FileImage size={20} /> Imagen
             </button>
           </div>
 
