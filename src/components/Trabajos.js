@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Plus, Home, Edit2, Trash2, AlertCircle, FileImage } from 'lucide-react';
+import { Download, Plus, Home, Edit2, Trash2, AlertCircle, FileImage, ChevronUp, ChevronDown } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
 import { exportToVisualImage } from '../utils/visualExportUtils';
 
@@ -284,7 +284,18 @@ const Trabajos = ({
   const totales = calcularTotales();
 
   const handleExportVisualImage = async () => {
-    await exportToVisualImage('tabla-trabajos', `trabajos_${empresaSeleccionada}_${mesSeleccionado}`);
+    await exportToVisualImage('trabajos-export-container', `trabajos_${empresaSeleccionada}_${mesSeleccionado}`);
+  };
+
+  const moverTrabajo = (trabajo, dir) => {
+    const filtIds = trabajosFiltrados.map(t => t.id);
+    const fi = trabajosFiltrados.findIndex(t => t.id === trabajo.id);
+    const ni = fi + dir;
+    if (ni < 0 || ni >= trabajosFiltrados.length) return;
+    const nf = [...trabajosFiltrados];
+    [nf[fi], nf[ni]] = [nf[ni], nf[fi]];
+    let idx = 0;
+    setTrabajos(trabajos.map(t => filtIds.includes(t.id) ? nf[idx++] : t));
   };
 
   // FUNCIÓN MEJORADA: Verifica en AMBOS inventarios
@@ -714,15 +725,31 @@ const Trabajos = ({
                         <td className="right">${Number(trabajo.valorPesos).toLocaleString()}</td>
                         <td className="center">
                           <div className="table-actions">
-                            <button 
-                              onClick={() => handleEdit(trabajo)} 
+                            <button
+                              onClick={() => moverTrabajo(trabajo, -1)}
+                              className="action-btn"
+                              title="Subir"
+                              style={{ opacity: trabajosFiltrados.indexOf(trabajo) === 0 ? 0.3 : 1 }}
+                            >
+                              <ChevronUp size={16} />
+                            </button>
+                            <button
+                              onClick={() => moverTrabajo(trabajo, 1)}
+                              className="action-btn"
+                              title="Bajar"
+                              style={{ opacity: trabajosFiltrados.indexOf(trabajo) === trabajosFiltrados.length - 1 ? 0.3 : 1 }}
+                            >
+                              <ChevronDown size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleEdit(trabajo)}
                               className="action-btn edit"
                               title="Editar"
                             >
                               <Edit2 size={18} />
                             </button>
-                            <button 
-                              onClick={() => handleDelete(trabajo.id)} 
+                            <button
+                              onClick={() => handleDelete(trabajo.id)}
                               className="action-btn delete"
                               title="Eliminar"
                             >
