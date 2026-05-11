@@ -527,34 +527,43 @@ const Trabajos = ({
                   ))}
                 </select>
 
-                {/* PPU IN */}
+                {/* PPU IN — oculto en Desinstalación */}
+                {formData.servicio !== 'Desinstalación' && (
                 <div style={{ position: 'relative' }}>
                   <input
                     type="text"
                     placeholder="PPU IN"
                     value={formData.ppuIn}
-                    onChange={(e) => setFormData({...formData, ppuIn: e.target.value.toUpperCase()})}
+                    onChange={(e) => setFormData({...formData, ppuIn: e.target.value.toUpperCase().slice(0,6)})}
                     className="form-input"
+                    maxLength={6}
                     style={{ textTransform: 'uppercase' }}
                   />
                 </div>
+                )}
 
-                {/* PPU OUT */}
+                {/* PPU OUT — oculto en Instalación */}
+                {formData.servicio !== 'Instalación' && (
                 <div style={{ position: 'relative' }}>
                   <input
                     type="text"
                     placeholder="PPU OUT"
                     value={formData.ppuOut}
-                    onChange={(e) => setFormData({...formData, ppuOut: e.target.value.toUpperCase()})}
+                    onChange={(e) => setFormData({...formData, ppuOut: e.target.value.toUpperCase().slice(0,6)})}
                     className="form-input"
+                    maxLength={6}
                     style={{ textTransform: 'uppercase' }}
                   />
                 </div>
+                )}
 
-                {/* IMEI IN con indicador mejorado */}
+                {/* IMEI IN — oculto en Desinstalación */}
+                {formData.servicio !== 'Desinstalación' && (
                 <div style={{ position: 'relative' }}>
                   <input
-                    type="text"
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     placeholder="IMEI IN"
                     value={formData.imeiIn}
                     onChange={(e) => setFormData({...formData, imeiIn: e.target.value})}
@@ -581,11 +590,15 @@ const Trabajos = ({
                     </span>
                   )}
                 </div>
+                )}
 
-                {/* IMEI OUT con indicador mejorado */}
+                {/* IMEI OUT — oculto en Instalación */}
+                {formData.servicio !== 'Instalación' && (
                 <div style={{ position: 'relative' }}>
                   <input
-                    type="text"
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     placeholder="IMEI OUT"
                     value={formData.imeiOut}
                     onChange={(e) => setFormData({...formData, imeiOut: e.target.value})}
@@ -612,6 +625,7 @@ const Trabajos = ({
                     </span>
                   )}
                 </div>
+                )}
 
                 <input
                   type="number"
