@@ -294,7 +294,7 @@ const downloadPDF = async (elementId, filename) => {
 };
 
 // ── Componente principal ──────────────────────────────────────────────────────
-const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, clientes, otPendiente, setOtPendiente, otPendiente2, setOtPendiente2 }) => {
+const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, clientes, otQueue, setOtQueue }) => {
   const [step,setStep] = useState('list');
   const [otsList,setOtsList] = useState([]);
   const [sessionOTs,setSessionOTs] = useState([]);
@@ -392,39 +392,19 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, cliente
   const comunasDisp=currentOT.ciudad?(COMUNAS[currentOT.ciudad]||[currentOT.ciudad]):[];
   const isVF=currentOT.tipoServicio==='Visita Fallida';
 
-  const cargarDraftOT = () => {
-    const { _empresa, ...otData } = otPendiente;
+  const cargarDesdeQueue = (item) => {
+    const { _empresa, ...otData } = item;
     setSessionEmpresa(_empresa || empresaSeleccionada);
     setSessionOTs([]);
     setCurrentOT(otData);
     setClienteData({ nombre: '', rut: '' });
     setAceptacion(false);
     setFirma(null);
-    setOtPendiente(null);
+    setOtQueue(prev => prev.filter(q => q !== item));
     setStep('form');
   };
 
-  const cargarDraftOT2 = () => {
-    const { _empresa, ...otData } = otPendiente2;
-    setSessionEmpresa(_empresa || empresaSeleccionada);
-    setSessionOTs([]);
-    setCurrentOT(otData);
-    setClienteData({ nombre: '', rut: '' });
-    setAceptacion(false);
-    setFirma(null);
-    setOtPendiente2(null);
-    setStep('form');
-  };
-
-  // Agregar OT de Desinstalación sin borrar la sesión actual (usado desde confirm step)
-  const agregarOTDesinst = () => {
-    const { _empresa, ...otData } = otPendiente2;
-    setCurrentOT(otData);
-    setAceptacion(false);
-    setFirma(null);
-    setOtPendiente2(null);
-    setStep('form');
-  };
+  const quitarDeQueue = (item) => setOtQueue(prev => prev.filter(q => q !== item));
 
   // ── LIST ──────────────────────────────────────────────────────────────────
   if(step==='list') return (
@@ -439,32 +419,19 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, cliente
             <h1 className="page-title">Órdenes de Trabajo</h1>
             <button className="btn btn-success" onClick={startSession}><Plus size={14}/> Nueva OT</button>
           </div>
-          {otPendiente && (
-            <div className="ot-banner-warn" style={{background:'#fffbeb',border:'1px solid #fcd34d',borderRadius:8,padding:'10px 14px',marginBottom:6,display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+          {otQueue && otQueue.map((item, i) => (
+            <div key={i} className="ot-banner-warn" style={{background:'#fffbeb',border:'1px solid #fcd34d',borderRadius:8,padding:'10px 14px',marginBottom:6,display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
               <span style={{fontFamily:'Quantico',fontSize:'0.7em',textTransform:'uppercase',color:'#92400e',flex:1}}>
-                📋 OT {otPendiente.tipoServicio} — {otPendiente._empresa} | {otPendiente.ppu||'Sin PPU'}
+                📋 {item.tipoServicio} — {item._empresa} | {item.ppu||'Sin PPU'} | {item.nombreCliente||item.cliente||''}
               </span>
-              <button className="btn btn-primary" style={{fontSize:'0.7em',padding:'4px 12px'}} onClick={cargarDraftOT}>
-                Completar →
+              <button className="btn btn-primary" style={{fontSize:'0.7em',padding:'4px 12px'}} onClick={()=>cargarDesdeQueue(item)}>
+                ✓
               </button>
-              <button className="btn btn-secondary" style={{fontSize:'0.7em',padding:'4px 8px'}} onClick={()=>setOtPendiente(null)}>
+              <button className="btn btn-secondary" style={{fontSize:'0.7em',padding:'4px 8px'}} onClick={()=>quitarDeQueue(item)}>
                 ✕
               </button>
             </div>
-          )}
-          {otPendiente2 && (
-            <div className="ot-banner-warn" style={{background:'#fff7ed',border:'1px solid #fed7aa',borderRadius:8,padding:'10px 14px',marginBottom:12,display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
-              <span style={{fontFamily:'Quantico',fontSize:'0.7em',textTransform:'uppercase',color:'#9a3412',flex:1}}>
-                📋 OT {otPendiente2.tipoServicio} — {otPendiente2._empresa} | {otPendiente2.ppu||'Sin PPU'}
-              </span>
-              <button className="btn btn-success" style={{fontSize:'0.7em',padding:'4px 12px'}} onClick={cargarDraftOT2}>
-                Completar →
-              </button>
-              <button className="btn btn-secondary" style={{fontSize:'0.7em',padding:'4px 8px'}} onClick={()=>setOtPendiente2(null)}>
-                ✕
-              </button>
-            </div>
-          )}
+          ))}
           <div className="ot-filter-bar">
             <div style={{position:'relative',flex:1}}>
               <Search size={13} style={{position:'absolute',left:8,top:'50%',transform:'translateY(-50%)',color:'#9ca3af'}}/>
@@ -673,26 +640,11 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, cliente
       <div className="ot-confirm-card">
         <Check size={40} color="#16a34a"/>
         <h2 className="ot-confirm-title">OT Guardada</h2>
-        {otPendiente2 ? (
-          <>
-            <p className="ot-confirm-sub">
-              OT de <strong>{sessionOTs[sessionOTs.length-1]?.tipoServicio||'Instalación'}</strong> guardada.<br/>
-              ¿Crear también la OT de <strong>Desinstalación</strong>?
-            </p>
-            <div className="ot-confirm-actions">
-              <button className="btn btn-primary" style={{fontSize:'0.85em',padding:'10px 20px'}} onClick={agregarOTDesinst}><Plus size={15}/> OT Desinstalación</button>
-              <button className="btn btn-success" style={{fontSize:'0.85em',padding:'10px 20px'}} onClick={()=>{setOtPendiente2(null);setStep('cliente');}}><Check size={15}/> No, ir a Firma</button>
-            </div>
-          </>
-        ) : (
-          <>
-            <p className="ot-confirm-sub">{sessionOTs.length} OT{sessionOTs.length!==1?'s':''} en esta sesión.<br/>¿Necesitas crear otra OT?<br/><small>(Ubicación y técnico se copiarán)</small></p>
-            <div className="ot-confirm-actions">
-              <button className="btn btn-primary" style={{fontSize:'0.85em',padding:'10px 20px'}} onClick={addAnotherOT}><Plus size={15}/> Agregar otra OT</button>
-              <button className="btn btn-success" style={{fontSize:'0.85em',padding:'10px 20px'}} onClick={()=>setStep('cliente')}><Check size={15}/> Datos del cliente</button>
-            </div>
-          </>
-        )}
+        <p className="ot-confirm-sub">{sessionOTs.length} OT{sessionOTs.length!==1?'s':''} en esta sesión.<br/>¿Necesitas crear otra OT?<br/><small>(Ubicación y técnico se copiarán)</small></p>
+        <div className="ot-confirm-actions">
+          <button className="btn btn-primary" style={{fontSize:'0.85em',padding:'10px 20px'}} onClick={addAnotherOT}><Plus size={15}/> Agregar otra OT</button>
+          <button className="btn btn-success" style={{fontSize:'0.85em',padding:'10px 20px'}} onClick={()=>setStep('cliente')}><Check size={15}/> Datos del cliente</button>
+        </div>
       </div>
     </div>
   );

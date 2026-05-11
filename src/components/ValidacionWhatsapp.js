@@ -93,7 +93,7 @@ const ValidacionWhatsapp = ({
   equiposRetirados, setEquiposRetirados,
   equiposMalos, setEquiposMalos,
   trabajos, setTrabajos,
-  mesSeleccionado, setOtPendiente, setOtPendiente2
+  mesSeleccionado, setOtQueue
 }) => {
   const [form, setForm] = useState({ ...VACIO });
   const [showPpuOut, setShowPpuOut] = useState(false);
@@ -122,6 +122,7 @@ const ValidacionWhatsapp = ({
         form.perifericos.length ? `Periféricos: ${form.perifericos.join(', ')}` : ''
       ].filter(Boolean).join(' | '),
       _empresa: form.empresa,
+      nombreCliente: form.cliente,
     };
   };
 
@@ -139,6 +140,7 @@ const ValidacionWhatsapp = ({
     checklist: Object.fromEntries(CL_ITEMS.map(k => [k, { estado: 'NA', nota: '' }])),
     observaciones: [form.detalles, form.trabajo].filter(Boolean).join(' | '),
     _empresa: form.empresa,
+    nombreCliente: form.cliente,
   });
 
   const verificarGPS = imei => {
@@ -439,7 +441,7 @@ const ValidacionWhatsapp = ({
 
             {draftedOT && (
               <div style={{ marginTop:12, display:'flex', flexDirection:'column', gap:8 }}>
-                <div style={{ padding:'8px 12px', background:'#f0fdf4', border:'1px solid #86efac', borderRadius:8, fontFamily:'Quantico', fontSize:'0.65em', color:'#166534', textTransform:'uppercase' }}>
+                <div className="val-preview" style={{ padding:'8px 12px', backgroundColor:'#f0fdf4', border:'1px solid #86efac', borderRadius:8, fontFamily:'Quantico', fontSize:'0.65em', color:'#166534', textTransform:'uppercase' }}>
                   ✓ Datos registrados en trabajos del mes
                 </div>
                 <div className="val-banner" style={{ padding:'10px 14px', background:'#fffbeb', border:'1px solid #fcd34d', borderRadius:8, display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
@@ -448,10 +450,10 @@ const ValidacionWhatsapp = ({
                   </span>
                   <button className="btn btn-primary" style={{ fontSize:'0.7em', padding:'4px 10px' }}
                     onClick={() => {
-                      if (setOtPendiente) setOtPendiente(draftedOT.inst);
-                      if (draftedOT.desinst && setOtPendiente2) setOtPendiente2(draftedOT.desinst);
+                      const toAdd = [draftedOT.inst];
+                      if (draftedOT.desinst) toAdd.push(draftedOT.desinst);
+                      if (setOtQueue) setOtQueue(prev => [...prev, ...toAdd]);
                       setDraftedOT(null);
-                      setCurrentView('ordenes');
                     }}>
                     Sí →
                   </button>
