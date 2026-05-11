@@ -32,8 +32,7 @@ const App = () => {
     const m = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     return `${m[n.getMonth()]} ${n.getFullYear()}`;
   });
-  const [otPendiente, setOtPendiente] = useState(null);
-  const [otPendiente2, setOtPendiente2] = useState(null);
+  const [otQueue, setOtQueue] = useState([]);
   const [darkMode, setDarkMode] = useState(() => {
     const s = localStorage.getItem('theme');
     return s !== null ? s === 'dark' : true;
@@ -136,8 +135,7 @@ const App = () => {
       {currentView === 'ordenes' && (
         <OrdenesTrabajo setCurrentView={setCurrentView} empresas={empresas}
           empresaSeleccionada={empresaSeleccionada} setEmpresaSeleccionada={setEmpresaSeleccionada}
-          clientes={clientes} otPendiente={otPendiente} setOtPendiente={setOtPendiente}
-          otPendiente2={otPendiente2} setOtPendiente2={setOtPendiente2} />
+          clientes={clientes} otQueue={otQueue} setOtQueue={setOtQueue} />
       )}
 
       {currentView === 'escaner' && (
@@ -155,7 +153,7 @@ const App = () => {
           equiposMalos={equiposMalos} setEquiposMalos={setEquiposMalos}
           trabajos={trabajos} setTrabajos={setTrabajos}
           clientes={clientes} setClientes={setClientes}
-          mesSeleccionado={mesSeleccionado} setOtPendiente={setOtPendiente} setOtPendiente2={setOtPendiente2} />
+          mesSeleccionado={mesSeleccionado} setOtQueue={setOtQueue} />
       )}
     </div>
   );
