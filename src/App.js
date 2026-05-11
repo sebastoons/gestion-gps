@@ -16,6 +16,9 @@ const normalizeEmpresa = (e) => {
 };
 const norm = item => ({ ...item, empresa: normalizeEmpresa(item.empresa) });
 
+const saveLocal = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(_) {} };
+const readLocal = (k) => { try { const s = localStorage.getItem(k); return s ? JSON.parse(s) : null; } catch(_) { return null; } };
+
 const App = () => {
   const [currentView, setCurrentView] = useState('home');
   const [trabajos, setTrabajos] = useState([]);
@@ -55,23 +58,37 @@ const App = () => {
         loadTable('equipos_malos'),
         loadTable('clientes'),
       ]);
-      // Si alguna tabla falló (null), no cargamos ni sincronizamos
+      // Si alguna tabla falló (null), caer a localStorage y NO disparar sync
       if (t === null || en === null || er === null || em === null) {
-        console.error('Error al cargar datos de Supabase. Los datos locales se mantienen.');
-        setLoaded(true); // permite uso offline pero NO dispara sync
+        console.error('Error al cargar datos de Supabase. Usando caché local.');
+        skipSync.current = { trabajos: true, equiposNuevos: true, equiposRetirados: true, equiposMalos: true, clientes: true };
+        const lt = readLocal('trabajos'); if (lt?.length) setTrabajos(lt.map(norm));
+        const len = readLocal('equipos_nuevos'); if (len?.length) setEquiposNuevos(len.map(norm));
+        const ler = readLocal('equipos_retirados'); if (ler?.length) setEquiposRetirados(ler.map(norm));
+        const lem = readLocal('equipos_malos'); if (lem?.length) setEquiposMalos(lem.map(norm));
+        const lcl = readLocal('clientes'); if (lcl?.length) setClientes(lcl);
+        setLoaded(true);
         return;
       }
-      // Marcar skip para que la carga inicial no dispare sync hacia Supabase
-      skipSync.current = { trabajos: true, equiposNuevos: true, equiposRetirados: true, equiposMalos: true, clientes: true };
-      setTrabajos(t.map(norm));
-      setEquiposNuevos(en.map(norm));
-      setEquiposRetirados(er.map(norm));
-      setEquiposMalos(em.map(norm));
+      // Si Supabase devuelve vacío pero localStorage tiene datos, usarlos y re-sincronizar
+      // (skip=true solo si Supabase trajo datos, de lo contrario el efecto sync repoblará Supabase)
+      const merge = (sd, lk) => sd.length > 0
+        ? { data: sd, skip: true }
+        : { data: readLocal(lk) || [], skip: false };
+      const mT = merge(t, 'trabajos');
+      const mEn = merge(en, 'equipos_nuevos');
+      const mEr = merge(er, 'equipos_retirados');
+      const mEm = merge(em, 'equipos_malos');
+      skipSync.current = { trabajos: mT.skip, equiposNuevos: mEn.skip, equiposRetirados: mEr.skip, equiposMalos: mEm.skip, clientes: true };
+      setTrabajos(mT.data.map(norm));
+      setEquiposNuevos(mEn.data.map(norm));
+      setEquiposRetirados(mEr.data.map(norm));
+      setEquiposMalos(mEm.data.map(norm));
       if (cl !== null && cl.length > 0) {
         setClientes(cl);
       } else {
-        const stored = localStorage.getItem('clientes');
-        if (stored) try { setClientes(JSON.parse(stored)); } catch(_) {}
+        const lcl = readLocal('clientes');
+        if (lcl?.length) setClientes(lcl);
       }
       setLoaded(true);
     };
@@ -113,6 +130,13 @@ const App = () => {
     const t = setTimeout(() => syncTable('clientes', clientes), 1500);
     return () => clearTimeout(t);
   }, [clientes, loaded]);
+
+  // Backup inmediato a localStorage (sin debounce) — protege contra cierre brusco o error de red
+  useEffect(() => { if (loaded) saveLocal('trabajos', trabajos); }, [trabajos, loaded]);
+  useEffect(() => { if (loaded) saveLocal('equipos_nuevos', equiposNuevos); }, [equiposNuevos, loaded]);
+  useEffect(() => { if (loaded) saveLocal('equipos_retirados', equiposRetirados); }, [equiposRetirados, loaded]);
+  useEffect(() => { if (loaded) saveLocal('equipos_malos', equiposMalos); }, [equiposMalos, loaded]);
+  useEffect(() => { if (loaded) saveLocal('clientes', clientes); }, [clientes, loaded]);
 
   // Realtime: recibe cambios de otros dispositivos en vivo
   useEffect(() => {
