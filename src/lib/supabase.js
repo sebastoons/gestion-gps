@@ -7,11 +7,12 @@ export const supabase = createClient(
 
 export const loadTable = async (name) => {
   const { data, error } = await supabase.from(name).select('data');
-  if (error) { console.error(`load ${name}:`, error); return []; }
+  if (error) { console.error(`load ${name}:`, error); return null; }
   return data.map(r => r.data);
 };
 
 export const syncTable = async (name, items) => {
+  if (!Array.isArray(items)) return;
   const { error: de } = await supabase.from(name).delete().neq('id', '__x__');
   if (de) { console.error(`delete ${name}:`, de); return; }
   if (!items.length) return;
