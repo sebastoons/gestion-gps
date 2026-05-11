@@ -229,11 +229,36 @@ const Trabajos = ({
     } else {
       const prefix = empresaSeleccionada === 'Location World' ? 'LW' : 'U';
       const trabajosDeEmpresa = trabajos.filter(t => t.empresa === empresaSeleccionada);
-      const count = trabajosDeEmpresa.length + 1;
-      const newId = `${prefix}${String(count).padStart(3, '0')}`;
-      setTrabajos([...trabajos, { ...formData, id: newId, empresa: empresaSeleccionada, mes: mesSeleccionado }]);
-      descontarEquipos(formData.imeiIn, formData.imeiOut);
-      agregarClienteSiNoExiste(formData.nombreCliente);
+      const count = trabajosDeEmpresa.length;
+
+      // Reinstalación con ambas PPU → split en Desinstalación + Instalación
+      if (formData.servicio === 'Reinstalación' && formData.ppuIn && formData.ppuOut) {
+        const ufDes = 0.5;
+        const ufInst = formData.accesorios.includes('ON BATT') ? 0.6 : 0.8;
+        const idDes = `${prefix}${String(count + 1).padStart(3, '0')}`;
+        const idInst = `${prefix}${String(count + 2).padStart(3, '0')}`;
+        setTrabajos(prev => [...prev,
+          {
+            ...formData, id: idDes, empresa: empresaSeleccionada, mes: mesSeleccionado,
+            servicio: 'Desinstalación', ppuIn: '', ppuOut: formData.ppuOut,
+            imeiIn: '', imeiOut: formData.imeiOut, accesorios: [],
+            valorUF: ufDes.toString(), valorPesos: Math.round(ufDes * valorUFMes).toString()
+          },
+          {
+            ...formData, id: idInst, empresa: empresaSeleccionada, mes: mesSeleccionado,
+            servicio: 'Instalación', ppuIn: formData.ppuIn, ppuOut: '',
+            imeiIn: formData.imeiIn, imeiOut: '',
+            valorUF: ufInst.toString(), valorPesos: Math.round(ufInst * valorUFMes).toString()
+          }
+        ]);
+        descontarEquipos(formData.imeiIn, formData.imeiOut);
+        agregarClienteSiNoExiste(formData.nombreCliente);
+      } else {
+        const newId = `${prefix}${String(count + 1).padStart(3, '0')}`;
+        setTrabajos([...trabajos, { ...formData, id: newId, empresa: empresaSeleccionada, mes: mesSeleccionado }]);
+        descontarEquipos(formData.imeiIn, formData.imeiOut);
+        agregarClienteSiNoExiste(formData.nombreCliente);
+      }
     }
 
     setShowForm(false);
