@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Home, Edit2, Save, X, FileText, Camera } from 'lucide-react';
+import { Home, Edit2, Save, X, FileText, Camera, Trash2, Plus } from 'lucide-react';
 import '../styles/ValoresTrabajos.css';
 
 const ValoresTrabajos = ({ setCurrentView }) => {
@@ -85,6 +85,9 @@ const ValoresTrabajos = ({ setCurrentView }) => {
     setEditedInfo({...infoAdicional});
     setIsEditing(false);
   };
+
+  const eliminarServicio = (idx) => setEditedServicios(prev => prev.filter((_, i) => i !== idx));
+  const agregarServicio = () => setEditedServicios(prev => [...prev, { detalle: 'NUEVO SERVICIO', uf: 0 }]);
 
   const exportToPDF = async () => {
     try {
@@ -279,6 +282,7 @@ const ValoresTrabajos = ({ setCurrentView }) => {
                   <tr>
                     <th className="text-left">Detalle</th>
                     <th className="text-center">UF</th>
+                    {isEditing && <th></th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -317,11 +321,30 @@ const ValoresTrabajos = ({ setCurrentView }) => {
                           <span className="valores-uf-valor">{servicio.uf}</span>
                         )}
                       </td>
+                      {isEditing && (
+                        <td className="text-center">
+                          <button
+                            onClick={() => eliminarServicio(index)}
+                            title="Eliminar fila"
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '4px' }}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+            {isEditing && (
+              <button
+                onClick={agregarServicio}
+                style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: '1px dashed #3b82f6', borderRadius: '6px', color: '#3b82f6', padding: '6px 14px', cursor: 'pointer', fontSize: '0.8em', fontFamily: 'Quantico' }}
+              >
+                <Plus size={14} /> Agregar fila
+              </button>
+            )}
           </div>
 
           <div className="valores-info-adicional">
