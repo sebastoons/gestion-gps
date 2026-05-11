@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Home from './components/Home';
 import Trabajos from './components/Trabajos';
 import Equipos from './components/Equipos';
@@ -7,7 +7,7 @@ import ValidacionWhatsapp from './components/ValidacionWhatsapp';
 import OrdenesTrabajo from './components/OrdenesTrabajo';
 import EscanerGPS from './components/EscanerGPS';
 import { Sun, Moon } from 'lucide-react';
-import { loadTable, syncTable } from './lib/supabase';
+import { supabase, loadTable, syncTable } from './lib/supabase';
 import './styles/Common.css';
 
 const normalizeEmpresa = (e) => {
@@ -24,6 +24,8 @@ const App = () => {
   const [equiposMalos, setEquiposMalos] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [loaded, setLoaded] = useState(false);
+  // skipSync: prevents the initial load from triggering a sync back to Supabase
+  const skipSync = useRef({ trabajos: false, equiposNuevos: false, equiposRetirados: false, equiposMalos: false, clientes: false });
 
   const [empresas] = useState(['Entel', 'UGPS']);
   const [empresaSeleccionada, setEmpresaSeleccionada] = useState('Entel');
@@ -53,52 +55,82 @@ const App = () => {
         loadTable('equipos_malos'),
         loadTable('clientes'),
       ]);
+      // Si alguna tabla falló (null), no cargamos ni sincronizamos
+      if (t === null || en === null || er === null || em === null) {
+        console.error('Error al cargar datos de Supabase. Los datos locales se mantienen.');
+        setLoaded(true); // permite uso offline pero NO dispara sync
+        return;
+      }
+      // Marcar skip para que la carga inicial no dispare sync hacia Supabase
+      skipSync.current = { trabajos: true, equiposNuevos: true, equiposRetirados: true, equiposMalos: true, clientes: true };
       setTrabajos(t.map(norm));
       setEquiposNuevos(en.map(norm));
       setEquiposRetirados(er.map(norm));
       setEquiposMalos(em.map(norm));
-      if (cl.length > 0) {
+      if (cl !== null && cl.length > 0) {
         setClientes(cl);
       } else {
-        // Migrar desde localStorage si Supabase está vacío
         const stored = localStorage.getItem('clientes');
-        if (stored) setClientes(JSON.parse(stored));
+        if (stored) try { setClientes(JSON.parse(stored)); } catch(_) {}
       }
       setLoaded(true);
     };
     loadData();
   }, []);
 
-  // Sincronizar a Supabase con debounce (1.5s tras último cambio)
+  // Sincronizar a Supabase — solo cuando el usuario cambia datos (no en carga inicial)
   useEffect(() => {
     if (!loaded) return;
+    if (skipSync.current.trabajos) { skipSync.current.trabajos = false; return; }
     const t = setTimeout(() => syncTable('trabajos', trabajos), 1500);
     return () => clearTimeout(t);
   }, [trabajos, loaded]);
 
   useEffect(() => {
     if (!loaded) return;
+    if (skipSync.current.equiposNuevos) { skipSync.current.equiposNuevos = false; return; }
     const t = setTimeout(() => syncTable('equipos_nuevos', equiposNuevos), 1500);
     return () => clearTimeout(t);
   }, [equiposNuevos, loaded]);
 
   useEffect(() => {
     if (!loaded) return;
+    if (skipSync.current.equiposRetirados) { skipSync.current.equiposRetirados = false; return; }
     const t = setTimeout(() => syncTable('equipos_retirados', equiposRetirados), 1500);
     return () => clearTimeout(t);
   }, [equiposRetirados, loaded]);
 
   useEffect(() => {
     if (!loaded) return;
+    if (skipSync.current.equiposMalos) { skipSync.current.equiposMalos = false; return; }
     const t = setTimeout(() => syncTable('equipos_malos', equiposMalos), 1500);
     return () => clearTimeout(t);
   }, [equiposMalos, loaded]);
 
   useEffect(() => {
     if (!loaded) return;
+    if (skipSync.current.clientes) { skipSync.current.clientes = false; return; }
     const t = setTimeout(() => syncTable('clientes', clientes), 1500);
     return () => clearTimeout(t);
   }, [clientes, loaded]);
+
+  // Realtime: recibe cambios de otros dispositivos en vivo
+  useEffect(() => {
+    if (!loaded) return;
+    const ch = supabase.channel('live_sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'trabajos' },
+        async () => { const d = await loadTable('trabajos'); if (!d) return; skipSync.current.trabajos = true; setTrabajos(d.map(norm)); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'equipos_nuevos' },
+        async () => { const d = await loadTable('equipos_nuevos'); if (!d) return; skipSync.current.equiposNuevos = true; setEquiposNuevos(d.map(norm)); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'equipos_retirados' },
+        async () => { const d = await loadTable('equipos_retirados'); if (!d) return; skipSync.current.equiposRetirados = true; setEquiposRetirados(d.map(norm)); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'equipos_malos' },
+        async () => { const d = await loadTable('equipos_malos'); if (!d) return; skipSync.current.equiposMalos = true; setEquiposMalos(d.map(norm)); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'clientes' },
+        async () => { const d = await loadTable('clientes'); if (!d) return; skipSync.current.clientes = true; setClientes(d); })
+      .subscribe();
+    return () => supabase.removeChannel(ch);
+  }, [loaded]);
 
   return (
     <div className="font-sans">
