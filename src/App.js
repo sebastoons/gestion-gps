@@ -29,6 +29,8 @@ const App = () => {
   const [loaded, setLoaded] = useState(false);
   // skipSync: prevents the initial load from triggering a sync back to Supabase
   const skipSync = useRef({ trabajos: false, equiposNuevos: false, equiposRetirados: false, equiposMalos: false, clientes: false });
+  const loadedRef = useRef(false);
+  const dataRef = useRef({});
 
   const [empresas] = useState(['Entel', 'UGPS']);
   const [empresaSeleccionada, setEmpresaSeleccionada] = useState('Entel');
@@ -99,35 +101,35 @@ const App = () => {
   useEffect(() => {
     if (!loaded) return;
     if (skipSync.current.trabajos) { skipSync.current.trabajos = false; return; }
-    const t = setTimeout(() => syncTable('trabajos', trabajos), 1500);
+    const t = setTimeout(() => syncTable('trabajos', trabajos), 300);
     return () => clearTimeout(t);
   }, [trabajos, loaded]);
 
   useEffect(() => {
     if (!loaded) return;
     if (skipSync.current.equiposNuevos) { skipSync.current.equiposNuevos = false; return; }
-    const t = setTimeout(() => syncTable('equipos_nuevos', equiposNuevos), 1500);
+    const t = setTimeout(() => syncTable('equipos_nuevos', equiposNuevos), 300);
     return () => clearTimeout(t);
   }, [equiposNuevos, loaded]);
 
   useEffect(() => {
     if (!loaded) return;
     if (skipSync.current.equiposRetirados) { skipSync.current.equiposRetirados = false; return; }
-    const t = setTimeout(() => syncTable('equipos_retirados', equiposRetirados), 1500);
+    const t = setTimeout(() => syncTable('equipos_retirados', equiposRetirados), 300);
     return () => clearTimeout(t);
   }, [equiposRetirados, loaded]);
 
   useEffect(() => {
     if (!loaded) return;
     if (skipSync.current.equiposMalos) { skipSync.current.equiposMalos = false; return; }
-    const t = setTimeout(() => syncTable('equipos_malos', equiposMalos), 1500);
+    const t = setTimeout(() => syncTable('equipos_malos', equiposMalos), 300);
     return () => clearTimeout(t);
   }, [equiposMalos, loaded]);
 
   useEffect(() => {
     if (!loaded) return;
     if (skipSync.current.clientes) { skipSync.current.clientes = false; return; }
-    const t = setTimeout(() => syncTable('clientes', clientes), 1500);
+    const t = setTimeout(() => syncTable('clientes', clientes), 300);
     return () => clearTimeout(t);
   }, [clientes, loaded]);
 
@@ -137,6 +139,31 @@ const App = () => {
   useEffect(() => { if (loaded) saveLocal('equipos_retirados', equiposRetirados); }, [equiposRetirados, loaded]);
   useEffect(() => { if (loaded) saveLocal('equipos_malos', equiposMalos); }, [equiposMalos, loaded]);
   useEffect(() => { if (loaded) saveLocal('clientes', clientes); }, [clientes, loaded]);
+
+  // Mantener refs actualizados con el estado más reciente (para usar en beforeunload)
+  useEffect(() => { if (loaded) loadedRef.current = true; }, [loaded]);
+  useEffect(() => {
+    dataRef.current = { trabajos, equiposNuevos, equiposRetirados, equiposMalos, clientes };
+  }, [trabajos, equiposNuevos, equiposRetirados, equiposMalos, clientes]);
+
+  // Forzar sync al cerrar/cambiar de pestaña — garantiza que el otro dispositivo vea datos actualizados
+  useEffect(() => {
+    const forceSync = () => {
+      if (!loadedRef.current) return;
+      const d = dataRef.current;
+      syncTable('trabajos', d.trabajos || []);
+      syncTable('equipos_nuevos', d.equiposNuevos || []);
+      syncTable('equipos_retirados', d.equiposRetirados || []);
+      syncTable('equipos_malos', d.equiposMalos || []);
+      syncTable('clientes', d.clientes || []);
+    };
+    window.addEventListener('pagehide', forceSync);
+    window.addEventListener('beforeunload', forceSync);
+    return () => {
+      window.removeEventListener('pagehide', forceSync);
+      window.removeEventListener('beforeunload', forceSync);
+    };
+  }, []);
 
   // Realtime: recibe cambios de otros dispositivos en vivo
   useEffect(() => {
