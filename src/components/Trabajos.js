@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Plus, Home, Edit2, Trash2, AlertCircle, FileImage, ChevronUp, ChevronDown } from 'lucide-react';
+import { Download, Plus, Home, Edit2, Trash2, AlertCircle, FileImage, ChevronUp, ChevronDown, RefreshCw } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
 import { exportToVisualImage } from '../utils/visualExportUtils';
 
@@ -416,6 +416,13 @@ const Trabajos = ({
             </button>
             <button onClick={handleExportVisualImage} className="btn btn-secondary">
               <FileImage size={20} /> Imagen
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              className="btn btn-secondary"
+              title="Recargar datos desde la nube"
+            >
+              <RefreshCw size={20} /> Actualizar
             </button>
             <button
               onClick={() => {
