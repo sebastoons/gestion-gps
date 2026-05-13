@@ -227,7 +227,7 @@ const Trabajos = ({
       setTrabajos(trabajos.map(t => t.id === editingItem.id ? { ...formData, id: editingItem.id } : t));
       setEditingItem(null);
     } else {
-      const prefix = empresaSeleccionada === 'Location World' ? 'LW' : 'U';
+      const prefix = empresaSeleccionada === 'UGPS' ? 'U' : 'E';
       const trabajosDeEmpresa = trabajos.filter(t => t.empresa === empresaSeleccionada);
       const count = trabajosDeEmpresa.length;
 
