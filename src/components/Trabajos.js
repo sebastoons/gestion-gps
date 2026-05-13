@@ -136,8 +136,8 @@ const Trabajos = ({
     const subtotal = totalPesos + totalValorKm;
     const iva = subtotal * 0.19;
     const total = subtotal + iva;
-    const retencion = Math.round(subtotal * 0.1525);
-    const totalBoleta = subtotal + retencion;
+    const totalBoleta = Math.round(subtotal / (1 - 0.1525));
+    const retencion = totalBoleta - subtotal;
 
     const totalUFFormateado = totalUF % 1 === 0 ? totalUF : parseFloat(totalUF.toFixed(2));
 
