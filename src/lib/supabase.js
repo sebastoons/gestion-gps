@@ -11,22 +11,18 @@ export const loadTable = async (name) => {
   return data.map(r => r.data);
 };
 
+// Upsert: agrega o actualiza items. No borra nada (las bajas usan deleteFromTable).
 export const syncTable = async (name, items) => {
-  if (!Array.isArray(items)) return;
+  if (!Array.isArray(items) || !items.length) return;
+  const { error } = await supabase.from(name)
+    .upsert(items.map(i => ({ id: i.id, data: i })), { onConflict: 'id' });
+  if (error) console.error(`sync ${name}:`, error);
+};
 
-  // Leer estado remoto primero para no borrar datos de otro dispositivo
-  const { data: remote } = await supabase.from(name).select('id, data');
-  const localIds = new Set(items.map(i => i.id));
-  const remoteExtra = (remote || []).map(r => r.data).filter(r => !localIds.has(r.id));
-  const merged = [...items, ...remoteExtra];
-
-  if (!merged.length) {
-    await supabase.from(name).delete().neq('id', '__x__');
-    return;
-  }
-  const { error: de } = await supabase.from(name).delete().neq('id', '__x__');
-  if (de) { console.error(`delete ${name}:`, de); return; }
-  const { error: ie } = await supabase.from(name)
-    .upsert(merged.map(i => ({ id: i.id, data: i })), { onConflict: 'id' });
-  if (ie) console.error(`upsert ${name}:`, ie);
+// Baja explícita: elimina uno o varios IDs de Supabase.
+export const deleteFromTable = async (name, ids) => {
+  const list = Array.isArray(ids) ? ids : [ids];
+  if (!list.length) return;
+  const { error } = await supabase.from(name).delete().in('id', list);
+  if (error) console.error(`delete ${name}:`, error);
 };

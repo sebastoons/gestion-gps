@@ -16,9 +16,6 @@ const normalizeEmpresa = (e) => {
 };
 const norm = item => ({ ...item, empresa: normalizeEmpresa(item.empresa) });
 
-const saveLocal = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(_) {} };
-const readLocal = (k) => { try { const s = localStorage.getItem(k); return s ? JSON.parse(s) : null; } catch(_) { return null; } };
-
 const App = () => {
   const [currentView, setCurrentView] = useState('home');
   const [trabajos, setTrabajos] = useState([]);
@@ -27,10 +24,7 @@ const App = () => {
   const [equiposMalos, setEquiposMalos] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [loaded, setLoaded] = useState(false);
-  // skipSync: prevents the initial load from triggering a sync back to Supabase
   const skipSync = useRef({ trabajos: false, equiposNuevos: false, equiposRetirados: false, equiposMalos: false, clientes: false });
-  const loadedRef = useRef(false);
-  const dataRef = useRef({});
 
   const [empresas] = useState(['Entel', 'UGPS']);
   const [empresaSeleccionada, setEmpresaSeleccionada] = useState('Entel');
@@ -50,7 +44,7 @@ const App = () => {
     localStorage.setItem('theme', darkMode ? 'dark' : 'light');
   }, [darkMode]);
 
-  // Cargar desde Supabase al iniciar
+  // Cargar desde Supabase al iniciar — única fuente de verdad
   useEffect(() => {
     const loadData = async () => {
       const [t, en, er, em, cl] = await Promise.all([
@@ -60,50 +54,23 @@ const App = () => {
         loadTable('equipos_malos'),
         loadTable('clientes'),
       ]);
-      // Si alguna tabla falló (null), caer a localStorage y NO disparar sync
       if (t === null || en === null || er === null || em === null) {
-        console.error('Error al cargar datos de Supabase. Usando caché local.');
-        skipSync.current = { trabajos: true, equiposNuevos: true, equiposRetirados: true, equiposMalos: true, clientes: true };
-        const lt = readLocal('trabajos'); if (lt?.length) setTrabajos(lt.map(norm));
-        const len = readLocal('equipos_nuevos'); if (len?.length) setEquiposNuevos(len.map(norm));
-        const ler = readLocal('equipos_retirados'); if (ler?.length) setEquiposRetirados(ler.map(norm));
-        const lem = readLocal('equipos_malos'); if (lem?.length) setEquiposMalos(lem.map(norm));
-        const lcl = readLocal('clientes'); if (lcl?.length) setClientes(lcl);
+        console.error('Error al cargar datos de Supabase. Verifica tu conexión.');
         setLoaded(true);
         return;
       }
-      // Mezclar Supabase con localStorage: si hay items locales no presentes en Supabase
-      // (ej: datos del teléfono que no llegaron aún), incorporarlos y re-sincronizar.
-      const merge = (sd, lk) => {
-        const local = readLocal(lk) || [];
-        if (sd.length === 0 && local.length === 0) return { data: [], skip: true };
-        if (sd.length === 0) return { data: local, skip: false };
-        const supaIds = new Set(sd.map(i => i.id));
-        const extra = local.filter(i => !supaIds.has(i.id));
-        if (extra.length === 0) return { data: sd, skip: true };
-        return { data: [...sd, ...extra], skip: false }; // re-sincroniza con datos fusionados
-      };
-      const mT = merge(t, 'trabajos');
-      const mEn = merge(en, 'equipos_nuevos');
-      const mEr = merge(er, 'equipos_retirados');
-      const mEm = merge(em, 'equipos_malos');
-      skipSync.current = { trabajos: mT.skip, equiposNuevos: mEn.skip, equiposRetirados: mEr.skip, equiposMalos: mEm.skip, clientes: true };
-      setTrabajos(mT.data.map(norm));
-      setEquiposNuevos(mEn.data.map(norm));
-      setEquiposRetirados(mEr.data.map(norm));
-      setEquiposMalos(mEm.data.map(norm));
-      if (cl !== null && cl.length > 0) {
-        setClientes(cl);
-      } else {
-        const lcl = readLocal('clientes');
-        if (lcl?.length) setClientes(lcl);
-      }
+      skipSync.current = { trabajos: true, equiposNuevos: true, equiposRetirados: true, equiposMalos: true, clientes: true };
+      setTrabajos(t.map(norm));
+      setEquiposNuevos(en.map(norm));
+      setEquiposRetirados(er.map(norm));
+      setEquiposMalos(em.map(norm));
+      if (cl?.length) setClientes(cl);
       setLoaded(true);
     };
     loadData();
   }, []);
 
-  // Sincronizar a Supabase — solo cuando el usuario cambia datos (no en carga inicial)
+  // Sincronizar adiciones/ediciones a Supabase (upsert, no borra)
   useEffect(() => {
     if (!loaded) return;
     if (skipSync.current.trabajos) { skipSync.current.trabajos = false; return; }
@@ -138,38 +105,6 @@ const App = () => {
     const t = setTimeout(() => syncTable('clientes', clientes), 300);
     return () => clearTimeout(t);
   }, [clientes, loaded]);
-
-  // Backup inmediato a localStorage (sin debounce) — protege contra cierre brusco o error de red
-  useEffect(() => { if (loaded) saveLocal('trabajos', trabajos); }, [trabajos, loaded]);
-  useEffect(() => { if (loaded) saveLocal('equipos_nuevos', equiposNuevos); }, [equiposNuevos, loaded]);
-  useEffect(() => { if (loaded) saveLocal('equipos_retirados', equiposRetirados); }, [equiposRetirados, loaded]);
-  useEffect(() => { if (loaded) saveLocal('equipos_malos', equiposMalos); }, [equiposMalos, loaded]);
-  useEffect(() => { if (loaded) saveLocal('clientes', clientes); }, [clientes, loaded]);
-
-  // Mantener refs actualizados con el estado más reciente (para usar en beforeunload)
-  useEffect(() => { if (loaded) loadedRef.current = true; }, [loaded]);
-  useEffect(() => {
-    dataRef.current = { trabajos, equiposNuevos, equiposRetirados, equiposMalos, clientes };
-  }, [trabajos, equiposNuevos, equiposRetirados, equiposMalos, clientes]);
-
-  // Forzar sync al cerrar/cambiar de pestaña — garantiza que el otro dispositivo vea datos actualizados
-  useEffect(() => {
-    const forceSync = () => {
-      if (!loadedRef.current) return;
-      const d = dataRef.current;
-      syncTable('trabajos', d.trabajos || []);
-      syncTable('equipos_nuevos', d.equiposNuevos || []);
-      syncTable('equipos_retirados', d.equiposRetirados || []);
-      syncTable('equipos_malos', d.equiposMalos || []);
-      syncTable('clientes', d.clientes || []);
-    };
-    window.addEventListener('pagehide', forceSync);
-    window.addEventListener('beforeunload', forceSync);
-    return () => {
-      window.removeEventListener('pagehide', forceSync);
-      window.removeEventListener('beforeunload', forceSync);
-    };
-  }, []);
 
   // Realtime: recibe cambios de otros dispositivos en vivo
   useEffect(() => {

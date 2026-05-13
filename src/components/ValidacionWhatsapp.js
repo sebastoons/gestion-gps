@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Home } from 'lucide-react';
 import { ChevronDown } from 'lucide-react';
+import { deleteFromTable } from '../lib/supabase';
 
 const COSTOS = {
   'Instalación': 0.8, 'Desinstalación': 0.5,
@@ -186,8 +187,9 @@ const ValidacionWhatsapp = ({
     const gpsIn = form.gpsIn?.trim();
     const gpsOut = showGpsOut ? form.gpsOut?.trim() : '';
     const quitarInventario = imei => {
-      if (equiposNuevos.find(e => e.imei === imei)) setEquiposNuevos(prev => prev.filter(e => e.imei !== imei));
-      else if (equiposRetirados.find(e => e.imei === imei)) setEquiposRetirados(prev => prev.filter(e => e.imei !== imei));
+      const enNuevos = equiposNuevos.find(e => e.imei === imei);
+      if (enNuevos) { deleteFromTable('equipos_nuevos', enNuevos.id); setEquiposNuevos(prev => prev.filter(e => e.imei !== imei)); }
+      else { const enRet = equiposRetirados.find(e => e.imei === imei); if (enRet) { deleteFromTable('equipos_retirados', enRet.id); setEquiposRetirados(prev => prev.filter(e => e.imei !== imei)); } }
     };
     if (servicio === 'Instalación' || servicio === 'Reinstalación') {
       if (gpsIn) quitarInventario(gpsIn);

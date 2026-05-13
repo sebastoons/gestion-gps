@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Download, Plus, Edit2, Trash2, Home, Camera, X, AlertTriangle } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
+import { deleteFromTable } from '../lib/supabase';
 import BarcodeScanner from './BarcodeScanner';
 import '../styles/Scanner.css';
 
@@ -182,6 +183,8 @@ const Equipos = ({
   };
 
   const handleDelete = () => {
+    const tableMap = { nuevos: 'equipos_nuevos', retirados: 'equipos_retirados', malos: 'equipos_malos' };
+    deleteFromTable(tableMap[equipoView], itemToDelete);
     if (equipoView === 'nuevos') setEquiposNuevos(equiposNuevos.filter(e => e.id !== itemToDelete));
     if (equipoView === 'retirados') setEquiposRetirados(equiposRetirados.filter(e => e.id !== itemToDelete));
     if (equipoView === 'malos') setEquiposMalos(equiposMalos.filter(e => e.id !== itemToDelete));
