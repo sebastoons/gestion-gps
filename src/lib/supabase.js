@@ -13,9 +13,20 @@ export const loadTable = async (name) => {
 
 export const syncTable = async (name, items) => {
   if (!Array.isArray(items)) return;
+
+  // Leer estado remoto primero para no borrar datos de otro dispositivo
+  const { data: remote } = await supabase.from(name).select('id, data');
+  const localIds = new Set(items.map(i => i.id));
+  const remoteExtra = (remote || []).map(r => r.data).filter(r => !localIds.has(r.id));
+  const merged = [...items, ...remoteExtra];
+
+  if (!merged.length) {
+    await supabase.from(name).delete().neq('id', '__x__');
+    return;
+  }
   const { error: de } = await supabase.from(name).delete().neq('id', '__x__');
   if (de) { console.error(`delete ${name}:`, de); return; }
-  if (!items.length) return;
-  const { error: ie } = await supabase.from(name).insert(items.map(i => ({ id: i.id, data: i })));
-  if (ie) console.error(`insert ${name}:`, ie);
+  const { error: ie } = await supabase.from(name)
+    .upsert(merged.map(i => ({ id: i.id, data: i })), { onConflict: 'id' });
+  if (ie) console.error(`upsert ${name}:`, ie);
 };

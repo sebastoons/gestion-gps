@@ -72,11 +72,17 @@ const App = () => {
         setLoaded(true);
         return;
       }
-      // Si Supabase devuelve vacío pero localStorage tiene datos, usarlos y re-sincronizar
-      // (skip=true solo si Supabase trajo datos, de lo contrario el efecto sync repoblará Supabase)
-      const merge = (sd, lk) => sd.length > 0
-        ? { data: sd, skip: true }
-        : { data: readLocal(lk) || [], skip: false };
+      // Mezclar Supabase con localStorage: si hay items locales no presentes en Supabase
+      // (ej: datos del teléfono que no llegaron aún), incorporarlos y re-sincronizar.
+      const merge = (sd, lk) => {
+        const local = readLocal(lk) || [];
+        if (sd.length === 0 && local.length === 0) return { data: [], skip: true };
+        if (sd.length === 0) return { data: local, skip: false };
+        const supaIds = new Set(sd.map(i => i.id));
+        const extra = local.filter(i => !supaIds.has(i.id));
+        if (extra.length === 0) return { data: sd, skip: true };
+        return { data: [...sd, ...extra], skip: false }; // re-sincroniza con datos fusionados
+      };
       const mT = merge(t, 'trabajos');
       const mEn = merge(en, 'equipos_nuevos');
       const mEr = merge(er, 'equipos_retirados');
