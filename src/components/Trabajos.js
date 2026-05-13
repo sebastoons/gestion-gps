@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Download, Plus, Home, Edit2, Trash2, AlertCircle, FileImage, ChevronUp, ChevronDown, RefreshCw } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
 import { exportToVisualImage } from '../utils/visualExportUtils';
-import { markDeleted } from '../lib/supabase';
+import { deleteFromTable } from '../lib/supabase';
 
 const Trabajos = ({
   setCurrentView,
@@ -143,24 +143,14 @@ const Trabajos = ({
       );
       
       if (equipoNuevo) {
-        // Eliminar de equipos nuevos
-        const nuevosEquiposNuevos = equiposNuevos.filter(
-          e => !(e.imei === imeiInLimpio && e.empresa === empresaSeleccionada)
-        );
-        setEquiposNuevos(nuevosEquiposNuevos);
+        deleteFromTable('equipos_nuevos', equipoNuevo.id);
+        setEquiposNuevos(equiposNuevos.filter(e => !(e.imei === imeiInLimpio && e.empresa === empresaSeleccionada)));
         mensajesDescuento.push(`✓ Equipo NUEVO (${imeiInLimpio}) descontado del inventario`);
       } else {
-        // Si no está en nuevos, buscar en retirados
-        const equipoRetirado = equiposRetirados.find(
-          e => e.imei === imeiInLimpio && e.empresa === empresaSeleccionada
-        );
-        
+        const equipoRetirado = equiposRetirados.find(e => e.imei === imeiInLimpio && e.empresa === empresaSeleccionada);
         if (equipoRetirado) {
-          // Eliminar de equipos retirados
-          const nuevosEquiposRetirados = equiposRetirados.filter(
-            e => !(e.imei === imeiInLimpio && e.empresa === empresaSeleccionada)
-          );
-          setEquiposRetirados(nuevosEquiposRetirados);
+          deleteFromTable('equipos_retirados', equipoRetirado.id);
+          setEquiposRetirados(equiposRetirados.filter(e => !(e.imei === imeiInLimpio && e.empresa === empresaSeleccionada)));
           mensajesDescuento.push(`✓ Equipo RETIRADO (${imeiInLimpio}) descontado del inventario`);
         }
       }
@@ -176,24 +166,14 @@ const Trabajos = ({
       );
       
       if (equipoRetirado) {
-        // Eliminar de equipos retirados
-        const nuevosEquiposRetirados = equiposRetirados.filter(
-          e => !(e.imei === imeiOutLimpio && e.empresa === empresaSeleccionada)
-        );
-        setEquiposRetirados(nuevosEquiposRetirados);
+        deleteFromTable('equipos_retirados', equipoRetirado.id);
+        setEquiposRetirados(equiposRetirados.filter(e => !(e.imei === imeiOutLimpio && e.empresa === empresaSeleccionada)));
         mensajesDescuento.push(`✓ Equipo RETIRADO (${imeiOutLimpio}) descontado del inventario`);
       } else {
-        // Si no está en retirados, buscar en nuevos
-        const equipoNuevo = equiposNuevos.find(
-          e => e.imei === imeiOutLimpio && e.empresa === empresaSeleccionada
-        );
-        
+        const equipoNuevo = equiposNuevos.find(e => e.imei === imeiOutLimpio && e.empresa === empresaSeleccionada);
         if (equipoNuevo) {
-          // Eliminar de equipos nuevos
-          const nuevosEquiposNuevos = equiposNuevos.filter(
-            e => !(e.imei === imeiOutLimpio && e.empresa === empresaSeleccionada)
-          );
-          setEquiposNuevos(nuevosEquiposNuevos);
+          deleteFromTable('equipos_nuevos', equipoNuevo.id);
+          setEquiposNuevos(equiposNuevos.filter(e => !(e.imei === imeiOutLimpio && e.empresa === empresaSeleccionada)));
           mensajesDescuento.push(`✓ Equipo NUEVO (${imeiOutLimpio}) descontado del inventario`);
         }
       }
@@ -278,7 +258,7 @@ const Trabajos = ({
 
   const handleDelete = (id) => {
     if (window.confirm('¿Estás seguro de eliminar este trabajo?')) {
-      markDeleted('trabajos', id);
+      deleteFromTable('trabajos', id);
       setTrabajos(trabajos.filter(t => t.id !== id));
     }
   };
@@ -429,7 +409,7 @@ const Trabajos = ({
             <button
               onClick={() => {
                 if (!window.confirm(`¿Eliminar TODOS los trabajos de ${empresaSeleccionada} — ${mesSeleccionado}?\n\nEsta acción no se puede deshacer.`)) return;
-                markDeleted('trabajos', trabajosFiltrados.map(t => t.id));
+                deleteFromTable('trabajos', trabajosFiltrados.map(t => t.id));
                 setTrabajos(prev => prev.filter(t => !(t.empresa === empresaSeleccionada && t.mes === mesSeleccionado)));
               }}
               className="btn btn-danger"
