@@ -25,6 +25,7 @@ const Trabajos = ({
   const [accesoriosOpen, setAccesoriosOpen] = useState(false);
   const accesoriosRef = useRef(null);
   const [valorUFMes, setValorUFMes] = useState(39000);
+  const [tipoDocumento, setTipoDocumento] = useState(() => localStorage.getItem('tipoDocumento') || 'factura');
   const [formData, setFormData] = useState({
     id: '',
     nombreCliente: '',
@@ -135,10 +136,12 @@ const Trabajos = ({
     const subtotal = totalPesos + totalValorKm;
     const iva = subtotal * 0.19;
     const total = subtotal + iva;
+    const retencion = Math.round(subtotal * 0.1525);
+    const totalBoleta = subtotal + retencion;
 
     const totalUFFormateado = totalUF % 1 === 0 ? totalUF : parseFloat(totalUF.toFixed(2));
 
-    return { totalUF: totalUFFormateado, totalPesos, totalKm, totalValorKm, subtotal, iva, total };
+    return { totalUF: totalUFFormateado, totalPesos, totalKm, totalValorKm, subtotal, iva, total, retencion, totalBoleta };
   };
 
   // FUNCIÓN MEJORADA: Busca en AMBOS inventarios (nuevos Y retirados)
@@ -750,7 +753,19 @@ const Trabajos = ({
 
             {trabajosFiltrados.length > 0 && (
               <div className="summary-container">
-                <h3 className="summary-title">Resumen del Mes</h3>
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                  <h3 className="summary-title" style={{ margin: 0 }}>Resumen del Mes</h3>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <button
+                      className={`btn ${tipoDocumento === 'factura' ? 'btn-primary' : 'btn-secondary'}`}
+                      onClick={() => { setTipoDocumento('factura'); localStorage.setItem('tipoDocumento', 'factura'); }}
+                    >Factura</button>
+                    <button
+                      className={`btn ${tipoDocumento === 'boleta' ? 'btn-primary' : 'btn-secondary'}`}
+                      onClick={() => { setTipoDocumento('boleta'); localStorage.setItem('tipoDocumento', 'boleta'); }}
+                    >Boleta</button>
+                  </div>
+                </div>
                 <div className="summary-grid">
                   <div className="summary-card">
                     <span className="summary-label">Total UF</span>
@@ -771,16 +786,20 @@ const Trabajos = ({
                 </div>
                 <div className="summary-total">
                   <div className="summary-total-card">
-                    <span className="summary-total-label">Subtotal</span>
+                    <span className="summary-total-label">{tipoDocumento === 'boleta' ? 'Líquido' : 'Subtotal'}</span>
                     <div className="summary-total-value">${totales.subtotal.toLocaleString()}</div>
                   </div>
                   <div className="summary-total-card">
-                    <span className="summary-total-label">IVA (19%)</span>
-                    <div className="summary-total-value">${Math.round(totales.iva).toLocaleString()}</div>
+                    <span className="summary-total-label">{tipoDocumento === 'boleta' ? 'Retención (15.25%)' : 'IVA (19%)'}</span>
+                    <div className="summary-total-value">
+                      ${tipoDocumento === 'boleta' ? totales.retencion.toLocaleString() : Math.round(totales.iva).toLocaleString()}
+                    </div>
                   </div>
                   <div className="summary-total-card highlight">
-                    <span className="summary-total-label">TOTAL</span>
-                    <div className="summary-total-value">${Math.round(totales.total).toLocaleString()}</div>
+                    <span className="summary-total-label">{tipoDocumento === 'boleta' ? 'Total Boleta' : 'Total'}</span>
+                    <div className="summary-total-value">
+                      ${tipoDocumento === 'boleta' ? totales.totalBoleta.toLocaleString() : Math.round(totales.total).toLocaleString()}
+                    </div>
                   </div>
                 </div>
               </div>
