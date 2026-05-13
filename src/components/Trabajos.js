@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Download, Plus, Home, Edit2, Trash2, AlertCircle, FileImage, ChevronUp, ChevronDown, RefreshCw } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
 import { exportToVisualImage } from '../utils/visualExportUtils';
+import { markDeleted } from '../lib/supabase';
 
 const Trabajos = ({
   setCurrentView,
@@ -277,6 +278,7 @@ const Trabajos = ({
 
   const handleDelete = (id) => {
     if (window.confirm('¿Estás seguro de eliminar este trabajo?')) {
+      markDeleted('trabajos', id);
       setTrabajos(trabajos.filter(t => t.id !== id));
     }
   };
@@ -427,6 +429,7 @@ const Trabajos = ({
             <button
               onClick={() => {
                 if (!window.confirm(`¿Eliminar TODOS los trabajos de ${empresaSeleccionada} — ${mesSeleccionado}?\n\nEsta acción no se puede deshacer.`)) return;
+                markDeleted('trabajos', trabajosFiltrados.map(t => t.id));
                 setTrabajos(prev => prev.filter(t => !(t.empresa === empresaSeleccionada && t.mes === mesSeleccionado)));
               }}
               className="btn btn-danger"

@@ -11,13 +11,33 @@ export const loadTable = async (name) => {
   return data.map(r => r.data);
 };
 
+// Tombstone: registra IDs eliminados para que syncTable no los restaure desde otro dispositivo
+const getDeletedIds = (tableName) => {
+  try { return new Set(JSON.parse(localStorage.getItem(`_del_${tableName}`) || '[]')); }
+  catch { return new Set(); }
+};
+
+export const markDeleted = (tableName, ids) => {
+  try {
+    const key = `_del_${tableName}`;
+    const list = JSON.parse(localStorage.getItem(key) || '[]');
+    const toAdd = Array.isArray(ids) ? ids : [ids];
+    const merged = [...new Set([...list, ...toAdd])];
+    localStorage.setItem(key, JSON.stringify(merged));
+  } catch {}
+};
+
 export const syncTable = async (name, items) => {
   if (!Array.isArray(items)) return;
 
-  // Leer estado remoto primero para no borrar datos de otro dispositivo
+  // Leer estado remoto para preservar datos de otros dispositivos,
+  // pero excluir IDs que este dispositivo eliminó explícitamente (tombstone)
+  const deletedIds = getDeletedIds(name);
   const { data: remote } = await supabase.from(name).select('id, data');
   const localIds = new Set(items.map(i => i.id));
-  const remoteExtra = (remote || []).map(r => r.data).filter(r => !localIds.has(r.id));
+  const remoteExtra = (remote || [])
+    .map(r => r.data)
+    .filter(r => !localIds.has(r.id) && !deletedIds.has(r.id));
   const merged = [...items, ...remoteExtra];
 
   if (!merged.length) {
