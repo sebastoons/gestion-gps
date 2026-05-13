@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Download, Plus, Home, Edit2, Trash2, AlertCircle, FileImage, ChevronUp, ChevronDown } from 'lucide-react';
+import { Download, Plus, Home, Edit2, Trash2, AlertCircle, FileImage, ChevronDown } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
 import { exportToVisualImage } from '../utils/visualExportUtils';
 import { deleteFromTable } from '../lib/supabase';
@@ -121,17 +121,10 @@ const Trabajos = ({
     'sensor puerta': 0.4
   };
 
-  // FILTRAR Y ORDENAR TRABAJOS POR EMPRESA Y MES
-  // El campo `pos` guarda el orden personalizado del usuario en Supabase.
-  // Sin pos (datos viejos), se mantiene el orden relativo del array.
+  // FILTRAR Y ORDENAR TRABAJOS POR EMPRESA Y MES — orden por ID
   const trabajosFiltrados = trabajos
     .filter(t => t.empresa === empresaSeleccionada && t.mes === mesSeleccionado)
-    .sort((a, b) => {
-      if (a.pos !== undefined && b.pos !== undefined) return a.pos - b.pos;
-      if (a.pos !== undefined) return -1;
-      if (b.pos !== undefined) return 1;
-      return 0;
-    });
+    .sort((a, b) => a.id.localeCompare(b.id));
 
   const calcularTotales = () => {
     const totalUF = trabajosFiltrados.reduce((sum, t) => sum + (parseFloat(t.valorUF) || 0), 0);
@@ -230,9 +223,6 @@ const Trabajos = ({
       const prefix = empresaSeleccionada === 'UGPS' ? 'U' : 'E';
       const trabajosDeEmpresa = trabajos.filter(t => t.empresa === empresaSeleccionada);
       const count = trabajosDeEmpresa.length;
-      const nextPos = trabajosFiltrados.length > 0
-        ? Math.max(...trabajosFiltrados.map(t => t.pos ?? 0)) + 1
-        : 0;
 
       // Reinstalación con ambas PPU → split en Desinstalación + Instalación
       if (formData.servicio === 'Reinstalación' && formData.ppuIn && formData.ppuOut) {
@@ -242,13 +232,13 @@ const Trabajos = ({
         const idInst = `${prefix}${String(count + 2).padStart(3, '0')}`;
         setTrabajos(prev => [...prev,
           {
-            ...formData, id: idDes, pos: nextPos, empresa: empresaSeleccionada, mes: mesSeleccionado,
+            ...formData, id: idDes, empresa: empresaSeleccionada, mes: mesSeleccionado,
             servicio: 'Desinstalación', ppuIn: '', ppuOut: formData.ppuOut,
             imeiIn: '', imeiOut: formData.imeiOut, accesorios: [],
             valorUF: ufDes.toString(), valorPesos: Math.round(ufDes * valorUFMes).toString()
           },
           {
-            ...formData, id: idInst, pos: nextPos + 1, empresa: empresaSeleccionada, mes: mesSeleccionado,
+            ...formData, id: idInst, empresa: empresaSeleccionada, mes: mesSeleccionado,
             servicio: 'Instalación', ppuIn: formData.ppuIn, ppuOut: '',
             imeiIn: formData.imeiIn, imeiOut: '',
             valorUF: ufInst.toString(), valorPesos: Math.round(ufInst * valorUFMes).toString()
@@ -258,7 +248,7 @@ const Trabajos = ({
         agregarClienteSiNoExiste(formData.nombreCliente);
       } else {
         const newId = `${prefix}${String(count + 1).padStart(3, '0')}`;
-        setTrabajos([...trabajos, { ...formData, id: newId, pos: nextPos, empresa: empresaSeleccionada, mes: mesSeleccionado }]);
+        setTrabajos([...trabajos, { ...formData, id: newId, empresa: empresaSeleccionada, mes: mesSeleccionado }]);
         descontarEquipos(formData.imeiIn, formData.imeiOut);
         agregarClienteSiNoExiste(formData.nombreCliente);
       }
@@ -289,21 +279,6 @@ const Trabajos = ({
 
   const handleExportVisualImage = async () => {
     await exportToVisualImage('trabajos-export-container', `trabajos_${empresaSeleccionada}_${mesSeleccionado}`);
-  };
-
-  const moverTrabajo = (trabajo, dir) => {
-    const fi = trabajosFiltrados.findIndex(t => t.id === trabajo.id);
-    const ni = fi + dir;
-    if (ni < 0 || ni >= trabajosFiltrados.length) return;
-    const idA = trabajosFiltrados[fi].id;
-    const idB = trabajosFiltrados[ni].id;
-    const posA = trabajosFiltrados[fi].pos ?? fi;
-    const posB = trabajosFiltrados[ni].pos ?? ni;
-    setTrabajos(prev => prev.map(t => {
-      if (t.id === idA) return { ...t, pos: posB };
-      if (t.id === idB) return { ...t, pos: posA };
-      return t;
-    }));
   };
 
   // FUNCIÓN MEJORADA: Verifica en AMBOS inventarios
@@ -750,22 +725,6 @@ const Trabajos = ({
                         <td className="right">${Number(trabajo.valorPesos).toLocaleString()}</td>
                         <td className="center">
                           <div className="table-actions">
-                            <button
-                              onClick={() => moverTrabajo(trabajo, -1)}
-                              className="action-btn"
-                              title="Subir"
-                              style={{ opacity: trabajosFiltrados.indexOf(trabajo) === 0 ? 0.3 : 1 }}
-                            >
-                              <ChevronUp size={16} />
-                            </button>
-                            <button
-                              onClick={() => moverTrabajo(trabajo, 1)}
-                              className="action-btn"
-                              title="Bajar"
-                              style={{ opacity: trabajosFiltrados.indexOf(trabajo) === trabajosFiltrados.length - 1 ? 0.3 : 1 }}
-                            >
-                              <ChevronDown size={16} />
-                            </button>
                             <button
                               onClick={() => handleEdit(trabajo)}
                               className="action-btn edit"
