@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Download, Plus, Home, Edit2, Trash2, AlertCircle, FileImage, ChevronUp, ChevronDown, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Download, Plus, Home, Edit2, Trash2, AlertCircle, FileImage, ChevronUp, ChevronDown } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
 import { exportToVisualImage } from '../utils/visualExportUtils';
 import { deleteFromTable } from '../lib/supabase';
@@ -22,6 +22,8 @@ const Trabajos = ({
 }) => {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [accesoriosOpen, setAccesoriosOpen] = useState(false);
+  const accesoriosRef = useRef(null);
   const [valorUFMes, setValorUFMes] = useState(39000);
   const [formData, setFormData] = useState({
     id: '',
@@ -96,6 +98,16 @@ const Trabajos = ({
       valorPesos: totalPesos.toString()
     }));
   }, [formData.servicio, formData.accesorios, valorUFMes]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (accesoriosRef.current && !accesoriosRef.current.contains(e.target)) {
+        setAccesoriosOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const accesoriosDisponibles = {
     'ON BATT': 0.6,
@@ -317,7 +329,7 @@ const Trabajos = ({
             </button>
           </div>
 
-          <div className="filter-container">
+          <div className="filter-container three-cols">
             <div>
               <label className="filter-label">Empresa</label>
               <select
@@ -398,13 +410,6 @@ const Trabajos = ({
             </button>
             <button onClick={handleExportVisualImage} className="btn btn-secondary">
               <FileImage size={20} /> Imagen
-            </button>
-            <button
-              onClick={() => window.location.reload()}
-              className="btn btn-secondary"
-              title="Recargar datos desde la nube"
-            >
-              <RefreshCw size={20} /> Actualizar
             </button>
             <button
               onClick={() => {
@@ -511,22 +516,38 @@ const Trabajos = ({
                   <option>Visita Fallida</option>
                 </select>
                 
-                <select
-                  multiple
-                  value={formData.accesorios}
-                  onChange={(e) => {
-                    const selected = Array.from(e.target.selectedOptions, option => option.value);
-                    setFormData({...formData, accesorios: selected});
-                  }}
-                  className="form-select"
-                  style={{ minHeight: '80px' }}
-                >
-                  {Object.keys(accesoriosDisponibles).map(accesorio => (
-                    <option key={accesorio} value={accesorio}>
-                      {accesorio}
-                    </option>
-                  ))}
-                </select>
+                <div ref={accesoriosRef} style={{ position: 'relative' }}>
+                  <button
+                    type="button"
+                    className="form-input acc-trigger"
+                    onClick={() => setAccesoriosOpen(o => !o)}
+                  >
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, textAlign: 'left' }}>
+                      {formData.accesorios.length === 0 ? 'Accesorios' : formData.accesorios.join(', ')}
+                    </span>
+                    <ChevronDown size={14} style={{ flexShrink: 0, transform: accesoriosOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                  </button>
+                  {accesoriosOpen && (
+                    <div className="acc-menu">
+                      {Object.keys(accesoriosDisponibles).map(acc => (
+                        <label key={acc} className="acc-item">
+                          <input
+                            type="checkbox"
+                            checked={formData.accesorios.includes(acc)}
+                            onChange={() => setFormData(prev => ({
+                              ...prev,
+                              accesorios: prev.accesorios.includes(acc)
+                                ? prev.accesorios.filter(a => a !== acc)
+                                : [...prev.accesorios, acc]
+                            }))}
+                          />
+                          <span style={{ flex: 1 }}>{acc}</span>
+                          <span className="acc-uf">+{accesoriosDisponibles[acc]}UF</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
                 {/* PPU IN — oculto en Desinstalación */}
                 {formData.servicio !== 'Desinstalación' && (
