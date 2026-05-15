@@ -192,24 +192,6 @@ const Equipos = ({
     setItemToDelete(null);
   };
 
-  const getEstadoColor = (estado) => {
-    switch(estado) {
-      case 'disponible': return 'green';
-      case 'asignado': return 'orange';
-      case 'perdido': return 'red';
-      default: return 'gray';
-    }
-  };
-
-  const getEstadoTexto = (estado) => {
-    switch(estado) {
-      case 'disponible': return 'Disponible';
-      case 'asignado': return 'Asignado';
-      case 'perdido': return 'Perdido';
-      default: return estado;
-    }
-  };
-
   const currentData = getEquiposByView();
 
   const contarEquiposPorEmpresa = (tipo) => {
