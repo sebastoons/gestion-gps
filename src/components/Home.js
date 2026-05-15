@@ -61,14 +61,12 @@ const Home = ({ setCurrentView, darkMode, setDarkMode }) => {
             <p className="card-description">Crea y gestiona OT por vehículo</p>
           </button>
 
-          <button onClick={() => setCurrentView('escaner')} className="home-card featured">
+          <button onClick={() => setCurrentView('escaner')} className="home-card">
             <div className="card-icon-wrap teal">
-              <QrCode size={26} color="#2dd4bf" />
+              <QrCode size={24} color="#2dd4bf" />
             </div>
-            <div className="featured-text">
-              <h2 className="card-title">Escáner GPS</h2>
-              <p className="card-description">Escanea y registra equipos al inventario por código de barras o QR</p>
-            </div>
+            <h2 className="card-title">Escáner GPS</h2>
+            <p className="card-description">Escanea y registra equipos al inventario</p>
           </button>
         </div>
       </div>

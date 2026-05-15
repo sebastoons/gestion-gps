@@ -482,7 +482,6 @@ const Equipos = ({
                     <th>ID</th>
                     <th>Fecha Recepción</th>
                     <th>IMEI</th>
-                    <th className="center">Estado</th>
                     <th>Cliente Asignado</th>
                     <th className="center">Acciones</th>
                   </tr>
@@ -490,7 +489,7 @@ const Equipos = ({
                 <tbody>
                   {currentData.length === 0 ? (
                     <tr>
-                      <td colSpan="6" className="empty-state">
+                      <td colSpan="5" className="empty-state">
                         No hay equipos nuevos registrados para {empresaSeleccionada}
                       </td>
                     </tr>
@@ -500,12 +499,6 @@ const Equipos = ({
                         <td>{equipo.id}</td>
                         <td>{equipo.fechaRecepcion}</td>
                         <td className="text-mono">{equipo.imei}</td>
-                        <td className="center">
-                          <div className="status-badge-equipos">
-                            <div className={`status-dot ${getEstadoColor(equipo.estado)}`}></div>
-                            <span className="status-text">{getEstadoTexto(equipo.estado)}</span>
-                          </div>
-                        </td>
                         <td>{equipo.nombreCliente || '-'}</td>
                         <td className="center">
                           <div className="table-actions">
