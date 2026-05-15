@@ -37,6 +37,7 @@ const EscanerGPS = ({
   const [form, setForm] = useState({
     imei: '', tipo: 'Nuevo', empresa: 'Entel',
     fecha: new Date().toISOString().split('T')[0],
+    nombreDispositivo: '',
   });
 
   useEffect(() => {
@@ -45,18 +46,24 @@ const EscanerGPS = ({
     const id = 'qr-vid-' + scanKey;
     setCamError('');
     let cancelled = false;
+    let qr = null;
 
     const tryStart = async (constraints) => {
-      const qr = new Html5Qrcode(id, { formatsToSupport: FORMATS, verbose: false });
+      qr = new Html5Qrcode(id, { formatsToSupport: FORMATS, verbose: false });
       qrRef.current = qr;
       await qr.start(
         constraints,
-        { fps: 20, qrbox: { width: 290, height: 95 }, aspectRatio: 1.6, disableFlip: true },
+        { fps: 12, qrbox: { width: 240, height: 80 } },
         (text) => {
           if (cancelled) return;
-          qr.stop().catch(() => {});
-          setForm(f => ({ ...f, imei: text.trim() }));
-          setPhase('confirm');
+          qr.stop().then(() => {
+            qrRef.current = null;
+            setForm(f => ({ ...f, imei: text.trim() }));
+            setPhase('confirm');
+          }).catch(() => {
+            setForm(f => ({ ...f, imei: text.trim() }));
+            setPhase('confirm');
+          });
         },
         () => {}
       );
@@ -68,7 +75,7 @@ const EscanerGPS = ({
       } catch {
         try {
           await tryStart({ facingMode: 'environment' });
-        } catch (e2) {
+        } catch {
           if (!cancelled) setCamError('Sin acceso a cámara. Usa ingreso manual.');
         }
       }
@@ -80,18 +87,23 @@ const EscanerGPS = ({
     };
   }, [phase, scanKey]);
 
-  const reiniciar = () => { setScanKey(k => k + 1); setForm(f => ({ ...f, imei: '' })); setPhase('scanning'); };
+  const reiniciar = () => {
+    setScanKey(k => k + 1);
+    setForm(f => ({ ...f, imei: '', nombreDispositivo: '' }));
+    setPhase('scanning');
+  };
 
   const guardar = () => {
     const imei = form.imei?.trim();
     if (!imei) { alert('IMEI requerido'); return; }
-    const { tipo, empresa, fecha } = form;
+    const { tipo, empresa, fecha, nombreDispositivo } = form;
+    const base = { imei, empresa, fecha, nombreDispositivo: nombreDispositivo.trim() };
     if (tipo === 'Nuevo') {
-      setEquiposNuevos(prev => [...prev, { id: `N${String(prev.length + 1).padStart(3, '0')}`, imei, empresa, fecha, asignado: false }]);
+      setEquiposNuevos(prev => [...prev, { id: `N${String(prev.length + 1).padStart(3, '0')}`, ...base, asignado: false }]);
     } else if (tipo === 'Retirado') {
-      setEquiposRetirados(prev => [...prev, { id: `R${String(prev.length + 1).padStart(3, '0')}`, imei, empresa, fecha, cliente: '' }]);
+      setEquiposRetirados(prev => [...prev, { id: `R${String(prev.length + 1).padStart(3, '0')}`, ...base, cliente: '' }]);
     } else {
-      setEquiposMalos(prev => [...prev, { id: `M${String(prev.length + 1).padStart(3, '0')}`, imei, empresa, asignado: false, nombreCliente: '' }]);
+      setEquiposMalos(prev => [...prev, { id: `M${String(prev.length + 1).padStart(3, '0')}`, ...base, asignado: false, nombreCliente: '' }]);
     }
     setPhase('saved');
     setTimeout(reiniciar, 1800);
@@ -113,7 +125,7 @@ const EscanerGPS = ({
 
           {phase === 'scanning' && (
             <div>
-              <p style={{ fontFamily: 'Quantico', fontSize: '0.65em', color: '#6b7280', textTransform: 'uppercase', marginBottom: 12, textAlign: 'center' }}>
+              <p style={{ fontFamily: 'Quantico', fontSize: '0.65em', color: '#6b7280', textTransform: 'uppercase', marginBottom: 10, textAlign: 'center' }}>
                 Apunta la cámara al código de barras del IMEI
               </p>
 
@@ -131,21 +143,21 @@ const EscanerGPS = ({
               </div>
 
               {camError && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '8px 12px', margin: '12px auto', maxWidth: 420 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '8px 12px', margin: '10px auto', maxWidth: 340 }}>
                   <AlertCircle size={14} color="#dc2626" />
                   <span style={{ fontFamily: 'Quantico', fontSize: '0.6em', color: '#dc2626', textTransform: 'uppercase' }}>{camError}</span>
                 </div>
               )}
 
-              <div style={{ margin: '14px auto', maxWidth: 420 }}>
+              <div style={{ margin: '12px auto', maxWidth: 340 }}>
                 <label style={lbl}>O ingresa el IMEI manualmente</label>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <input className="form-input" value={form.imei}
+                  <input className="form-input" value={form.imei} type="tel" inputMode="numeric"
                     onChange={e => setForm(f => ({ ...f, imei: e.target.value }))}
                     placeholder="IMEI del equipo..." />
                   <button className="btn btn-primary"
                     onClick={() => { if (form.imei.trim()) setPhase('confirm'); }}>
-                    Confirmar
+                    OK
                   </button>
                 </div>
               </div>
@@ -153,16 +165,23 @@ const EscanerGPS = ({
           )}
 
           {phase === 'confirm' && (
-            <div style={{ maxWidth: 380, margin: '0 auto' }}>
-              <div style={{ background: '#f0fdf4', border: '2px solid #86efac', borderRadius: 12, padding: 16, marginBottom: 20, textAlign: 'center' }}>
-                <p style={{ fontFamily: 'Quantico', fontSize: '0.6em', color: '#374151', textTransform: 'uppercase', marginBottom: 6 }}>IMEI detectado</p>
-                <p style={{ fontFamily: 'Quantico', fontSize: '1.1em', fontWeight: 'bold', color: '#065f46', letterSpacing: 2, marginBottom: 8 }}>{form.imei}</p>
+            <div style={{ maxWidth: 360, margin: '0 auto' }}>
+              <div style={{ background: '#f0fdf4', border: '2px solid #86efac', borderRadius: 12, padding: 14, marginBottom: 16, textAlign: 'center' }}>
+                <p style={{ fontFamily: 'Quantico', fontSize: '0.6em', color: '#374151', textTransform: 'uppercase', marginBottom: 4 }}>IMEI detectado</p>
+                <p style={{ fontFamily: 'Quantico', fontSize: '1em', fontWeight: 'bold', color: '#065f46', letterSpacing: 2, marginBottom: 8 }}>{form.imei}</p>
                 <input className="form-input" value={form.imei}
                   onChange={e => setForm(f => ({ ...f, imei: e.target.value }))}
                   style={{ textAlign: 'center', fontWeight: 'bold' }} />
               </div>
 
-              <div style={{ display: 'grid', gap: 12 }}>
+              <div style={{ display: 'grid', gap: 10 }}>
+                <div>
+                  <label style={lbl}>Nombre del dispositivo GPS</label>
+                  <input className="form-input" value={form.nombreDispositivo}
+                    onChange={e => setForm(f => ({ ...f, nombreDispositivo: e.target.value }))}
+                    placeholder="Ej: Teltonika FMB920..." />
+                </div>
+
                 <div>
                   <label style={lbl}>Tipo de equipo</label>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
@@ -182,6 +201,7 @@ const EscanerGPS = ({
                     })}
                   </div>
                 </div>
+
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   <div>
                     <label style={lbl}>Empresa</label>
@@ -196,7 +216,7 @@ const EscanerGPS = ({
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 10, marginTop: 18, justifyContent: 'center', flexWrap: 'wrap' }}>
                 <button className="btn btn-secondary" onClick={reiniciar}>
                   <RefreshCw size={14} /> Volver a escanear
                 </button>
