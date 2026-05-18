@@ -1039,6 +1039,7 @@
 }
 .scanner-box video { width: 100% !important; height: auto !important; display: block; object-fit: cover; }
 .scanner-box canvas { display: none !important; }
+.scanner-box #qr-shaded-region { display: none !important; }
 .scanner-overlay {
   position: absolute; inset: 0; pointer-events: none; z-index: 10;
   display: flex; align-items: center; justify-content: center;
