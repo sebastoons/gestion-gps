@@ -6,6 +6,7 @@ import ValoresTrabajos from './components/ValoresTrabajos';
 import ValidacionWhatsapp from './components/ValidacionWhatsapp';
 import OrdenesTrabajo from './components/OrdenesTrabajo';
 import EscanerGPS from './components/EscanerGPS';
+import Materiales from './components/Materiales';
 import { Sun, Moon } from 'lucide-react';
 import { supabase, loadTable, syncTable } from './lib/supabase';
 import './styles/Common.css';
@@ -23,8 +24,10 @@ const App = () => {
   const [equiposRetirados, setEquiposRetirados] = useState([]);
   const [equiposMalos, setEquiposMalos] = useState([]);
   const [clientes, setClientes] = useState([]);
+  const [materiales, setMateriales] = useState([]);
   const [loaded, setLoaded] = useState(false);
-  const skipSync = useRef({ trabajos: false, equiposNuevos: false, equiposRetirados: false, equiposMalos: false, clientes: false });
+  const skipSync = useRef({ trabajos: false, equiposNuevos: false, equiposRetirados: false, equiposMalos: false, clientes: false, materiales: false });
+  const [escanerReturn, setEscanerReturn] = useState('home');
 
   const [empresas] = useState(['Entel', 'UGPS']);
   const [empresaSeleccionada, setEmpresaSeleccionada] = useState('Entel');
@@ -47,24 +50,26 @@ const App = () => {
   // Cargar desde Supabase al iniciar — única fuente de verdad
   useEffect(() => {
     const loadData = async () => {
-      const [t, en, er, em, cl] = await Promise.all([
+      const [t, en, er, em, cl, mat] = await Promise.all([
         loadTable('trabajos'),
         loadTable('equipos_nuevos'),
         loadTable('equipos_retirados'),
         loadTable('equipos_malos'),
         loadTable('clientes'),
+        loadTable('materiales'),
       ]);
       if (t === null || en === null || er === null || em === null) {
         console.error('Error al cargar datos de Supabase. Verifica tu conexión.');
         setLoaded(true);
         return;
       }
-      skipSync.current = { trabajos: true, equiposNuevos: true, equiposRetirados: true, equiposMalos: true, clientes: true };
+      skipSync.current = { trabajos: true, equiposNuevos: true, equiposRetirados: true, equiposMalos: true, clientes: true, materiales: true };
       setTrabajos(t.map(norm));
       setEquiposNuevos(en.map(norm));
       setEquiposRetirados(er.map(norm));
       setEquiposMalos(em.map(norm));
       if (cl?.length) setClientes(cl);
+      if (mat?.length) setMateriales(mat);
       setLoaded(true);
     };
     loadData();
@@ -106,6 +111,13 @@ const App = () => {
     return () => clearTimeout(t);
   }, [clientes, loaded]);
 
+  useEffect(() => {
+    if (!loaded) return;
+    if (skipSync.current.materiales) { skipSync.current.materiales = false; return; }
+    const t = setTimeout(() => syncTable('materiales', materiales), 300);
+    return () => clearTimeout(t);
+  }, [materiales, loaded]);
+
   // Realtime: recibe cambios de otros dispositivos en vivo
   useEffect(() => {
     if (!loaded) return;
@@ -120,6 +132,8 @@ const App = () => {
         async () => { const d = await loadTable('equipos_malos'); if (!d) return; skipSync.current.equiposMalos = true; setEquiposMalos(d.map(norm)); })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'clientes' },
         async () => { const d = await loadTable('clientes'); if (!d) return; skipSync.current.clientes = true; setClientes(d); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'materiales' },
+        async () => { const d = await loadTable('materiales'); if (!d) return; skipSync.current.materiales = true; setMateriales(d); })
       .subscribe();
     return () => supabase.removeChannel(ch);
   }, [loaded]);
@@ -151,7 +165,8 @@ const App = () => {
           equiposNuevos={equiposNuevos} setEquiposNuevos={setEquiposNuevos}
           equiposRetirados={equiposRetirados} setEquiposRetirados={setEquiposRetirados}
           equiposMalos={equiposMalos} setEquiposMalos={setEquiposMalos}
-          empresas={empresas} empresaSeleccionada={empresaSeleccionada} setEmpresaSeleccionada={setEmpresaSeleccionada} />
+          empresas={empresas} empresaSeleccionada={empresaSeleccionada} setEmpresaSeleccionada={setEmpresaSeleccionada}
+          onOpenScanner={() => { setEscanerReturn('equipos'); setCurrentView('escaner'); }} />
       )}
 
       {currentView === 'valores' && <ValoresTrabajos setCurrentView={setCurrentView} />}
@@ -163,7 +178,7 @@ const App = () => {
       )}
 
       {currentView === 'escaner' && (
-        <EscanerGPS setCurrentView={setCurrentView}
+        <EscanerGPS setCurrentView={setCurrentView} returnView={escanerReturn}
           equiposNuevos={equiposNuevos} setEquiposNuevos={setEquiposNuevos}
           equiposRetirados={equiposRetirados} setEquiposRetirados={setEquiposRetirados}
           equiposMalos={equiposMalos} setEquiposMalos={setEquiposMalos}
@@ -177,7 +192,14 @@ const App = () => {
           equiposMalos={equiposMalos} setEquiposMalos={setEquiposMalos}
           trabajos={trabajos} setTrabajos={setTrabajos}
           clientes={clientes} setClientes={setClientes}
+          materiales={materiales} setMateriales={setMateriales}
           mesSeleccionado={mesSeleccionado} setOtQueue={setOtQueue} />
+      )}
+
+      {currentView === 'materiales' && (
+        <Materiales setCurrentView={setCurrentView}
+          materiales={materiales} setMateriales={setMateriales}
+          empresas={empresas} empresaSeleccionada={empresaSeleccionada} setEmpresaSeleccionada={setEmpresaSeleccionada} />
       )}
     </div>
   );

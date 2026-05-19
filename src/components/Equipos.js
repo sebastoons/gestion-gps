@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Download, Plus, Edit2, Trash2, Home, Camera, X, AlertTriangle } from 'lucide-react';
+import { Download, Plus, Edit2, Trash2, Home, Camera, X, AlertTriangle, QrCode } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
 import { deleteFromTable } from '../lib/supabase';
 import BarcodeScanner from './BarcodeScanner';
 import '../styles/Scanner.css';
 
-const Equipos = ({ 
+const Equipos = ({
   setCurrentView,
   equiposNuevos,
   setEquiposNuevos,
@@ -15,7 +15,8 @@ const Equipos = ({
   setEquiposMalos,
   empresas,
   empresaSeleccionada,
-  setEmpresaSeleccionada
+  setEmpresaSeleccionada,
+  onOpenScanner,
 }) => {
   const [equipoView, setEquipoView] = useState('nuevos');
   const [showForm, setShowForm] = useState(false);
@@ -279,6 +280,11 @@ const Equipos = ({
             >
               <Plus size={20} /> Agregar Equipo
             </button>
+            {onOpenScanner && (
+              <button onClick={onOpenScanner} className="btn btn-secondary">
+                <QrCode size={20} /> Escáner GPS
+              </button>
+            )}
             <button
               onClick={() => exportToCSV(currentData, `equipos_${equipoView}_${empresaSeleccionada}_${new Date().toISOString().split('T')[0]}`)}
               className="btn btn-success"
