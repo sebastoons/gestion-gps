@@ -131,15 +131,6 @@ const EscanerGPS = ({
 
               <div className="scanner-box">
                 <div id={'qr-vid-' + scanKey} style={{ width: '100%' }} />
-                <div className="scanner-overlay">
-                  <div className="scanner-frame">
-                    <div className="scanner-corner tl" />
-                    <div className="scanner-corner tr" />
-                    <div className="scanner-corner bl" />
-                    <div className="scanner-corner br" />
-                    <div className="scan-line" />
-                  </div>
-                </div>
               </div>
 
               {camError && (
