@@ -1037,15 +1037,12 @@
   background: #111;
   min-height: 180px;
 }
-.scanner-box video { width: 100% !important; height: auto !important; display: block; object-fit: cover; }
+.scanner-box video { width: 100% !important; height: auto !important; display: block; }
 .scanner-box canvas { display: none !important; }
-/* Oculta todos los overlays/shading que genera Html5Qrcode internamente */
+/* Elimina el box-shadow 9999px y cualquier fondo oscuro que inyecta Html5Qrcode */
+.scanner-box div[style*="box-shadow"] { box-shadow: none !important; }
+.scanner-box div[style*="background"] { background: transparent !important; }
 .scanner-box #qr-shaded-region { display: none !important; }
-.scanner-box [id*="__scan_region"] > div { display: none !important; }
-.scanner-box [id*="__dashboard"] { display: none !important; }
-.scanner-box div[style*="background:rgba(0"] { display: none !important; }
-.scanner-box div[style*="background: rgba(0"] { display: none !important; }
-.scanner-box div[style*="background-color: rgba(0"] { display: none !important; }
 .scanner-overlay {
   position: absolute; inset: 0; pointer-events: none; z-index: 10;
   display: flex; align-items: center; justify-content: center;
