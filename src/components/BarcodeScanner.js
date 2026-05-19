@@ -27,7 +27,7 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
   useEffect(() => {
     const startScanner = async () => {
       try {
-        const qr = new Html5Qrcode('barcode-scanner-modal');
+        const qr = new Html5Qrcode('barcode-scanner');
         html5QrcodeRef.current = qr;
 
         const config = {
@@ -81,7 +81,7 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
           <p>• Mantén el dispositivo estable</p>
         </div>
 
-        <div id="barcode-scanner-modal" ref={scannerDivRef}></div>
+        <div id="barcode-scanner" ref={scannerDivRef}></div>
 
         <div className="scanner-manual-option">
           <p>¿Problemas con el escáner?</p>
