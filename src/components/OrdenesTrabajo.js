@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Download, Search, ChevronLeft, X, Trash2, Check, Home as HomeIcon, ChevronDown } from 'lucide-react';
-import { supabase, loadTable, syncTable } from '../lib/supabase';
+import { Plus, Download, Search, ChevronLeft, X, Trash2, Check, Home as HomeIcon, ChevronDown, FileImage } from 'lucide-react';
+import { supabase, loadTable, syncTable, deleteFromTable } from '../lib/supabase';
 import '../styles/OrdenesTrabajo.css';
 
 const REGIONES = [
@@ -293,6 +293,18 @@ const downloadPDF = async (elementId, filename) => {
   } catch(e){ console.error(e); alert('Error al generar PDF.'); }
 };
 
+const downloadImage = async (elementId, filename) => {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  try {
+    const canvas = await window.html2canvas(el,{scale:2,backgroundColor:'#fff',useCORS:true,logging:false});
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/jpeg', 0.92);
+    a.download = `${filename}.jpg`;
+    a.click();
+  } catch(e){ console.error(e); alert('Error al generar imagen.'); }
+};
+
 // ── Componente principal ──────────────────────────────────────────────────────
 const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, clientes, otQueue, setOtQueue }) => {
   const [step,setStep] = useState('list');
@@ -376,8 +388,18 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, cliente
     setTimeout(()=>downloadPDF('ot-preview-wrap',`OT-${emp}-${new Date().toISOString().split('T')[0]}`),800);
   };
 
-  const downloadHistoryOT=async ot=>{setHistoryOT(ot);setDownloading(true);await new Promise(r=>setTimeout(r,600));await downloadPDF('ot-history-render',`OT-${ot.numero}`);setDownloading(false);setHistoryOT(null);};
-  const deleteOT=id=>{if(!window.confirm('¿Eliminar esta OT?'))return;saveOTs(otsList.filter(o=>o.id!==id));};
+  const downloadHistoryItem = async (ot, mode) => {
+    setHistoryOT(ot); setDownloading(true);
+    await new Promise(r=>setTimeout(r,600));
+    if (mode==='img') await downloadImage('ot-history-render',`OT-${ot.numero}`);
+    else await downloadPDF('ot-history-render',`OT-${ot.numero}`);
+    setDownloading(false); setHistoryOT(null);
+  };
+  const deleteOT = id => {
+    if (!window.confirm('¿Eliminar esta OT?')) return;
+    deleteFromTable('ordenes_trabajo', id);
+    setOtsList(prev => prev.filter(o => o.id !== id));
+  };
   const setOTField=(f,v)=>setCurrentOT(p=>({...p,[f]:v}));
   const setChecklist=(item,estado)=>setCurrentOT(p=>({...p,checklist:{...p.checklist,[item]:{estado,nota:''}}}));
 
@@ -454,7 +476,8 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, cliente
                     <td style={{fontWeight:700}}>{ot.numero}</td><td>{ot.empresa}</td><td>{ot.fecha}</td>
                     <td>{ot.cliente}</td><td>{ot.ppu}</td><td>{ot.tipoServicio}</td><td>{ot.tecnico}</td>
                     <td><div className="table-actions">
-                      <button className="btn btn-primary" style={{fontSize:'0.6em',padding:'3px 7px'}} onClick={()=>downloadHistoryOT(ot)} disabled={downloading}><Download size={11}/> PDF</button>
+                      <button className="btn btn-primary" style={{fontSize:'0.6em',padding:'3px 7px'}} onClick={()=>downloadHistoryItem(ot,'pdf')} disabled={downloading}><Download size={11}/> PDF</button>
+                      <button className="btn btn-secondary" style={{fontSize:'0.6em',padding:'3px 7px'}} onClick={()=>downloadHistoryItem(ot,'img')} disabled={downloading}><FileImage size={11}/> JPG</button>
                       <button className="action-btn delete" onClick={()=>deleteOT(ot.id)}><Trash2 size={14}/></button>
                     </div></td>
                   </tr>
@@ -726,6 +749,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, cliente
           <div className="page-header"><h1 className="page-title">OT — {sessionEmpresa}</h1></div>
           <div style={{display:'flex',gap:8,justifyContent:'center',marginBottom:14,flexWrap:'wrap'}}>
             <button className="btn btn-primary" onClick={()=>downloadPDF('ot-preview-wrap',`OT-${sessionEmpresa}-${new Date().toISOString().split('T')[0]}`)}><Download size={14}/> PDF</button>
+            <button className="btn btn-secondary" onClick={()=>downloadImage('ot-preview-wrap',`OT-${sessionEmpresa}-${new Date().toISOString().split('T')[0]}`)}><FileImage size={14}/> JPG</button>
             <button className="btn btn-success" onClick={()=>setStep('list')}><Check size={14}/> Historial</button>
             <button className="btn btn-secondary" onClick={()=>setCurrentView('home')}><HomeIcon size={14}/> Inicio</button>
           </div>
