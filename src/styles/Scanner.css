@@ -80,15 +80,16 @@
   text-transform: uppercase;
 }
 
-#barcode-scanner {
+#barcode-scanner, .barcode-scanner-inner {
   margin: 1.5rem 0;
   border-radius: 0.5rem;
   overflow: hidden;
   position: relative;
+  pointer-events: none;
 }
 
 /* Estilos para el componente html5-qrcode */
-#barcode-scanner video {
+#barcode-scanner video, .barcode-scanner-inner video {
   border-radius: 0.5rem;
   width: 100% !important;
   max-height: 400px;

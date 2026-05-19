@@ -3,7 +3,7 @@ import { Html5Qrcode } from 'html5-qrcode';
 import { X } from 'lucide-react';
 
 const BarcodeScanner = ({ onScanSuccess, onClose }) => {
-  const scannerDivRef = useRef(null);
+  const scannerId = useRef('bs_' + Math.random().toString(36).slice(2)).current;
   const html5QrcodeRef = useRef(null);
   const isScanningRef = useRef(false);
   const onScanSuccessRef = useRef(onScanSuccess);
@@ -25,24 +25,17 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
   };
 
   useEffect(() => {
+    const id = scannerId;
     const startScanner = async () => {
       try {
-        const qr = new Html5Qrcode('barcode-scanner');
+        const qr = new Html5Qrcode(id);
         html5QrcodeRef.current = qr;
-
-        const config = {
-          fps: 10,
-          qrbox: { width: 260, height: 90 },
-          formatsToSupport: [0, 1, 2, 3, 4, 5, 6, 7, 8],
-        };
-
+        const config = { fps: 10, qrbox: { width: 260, height: 90 }, formatsToSupport: [0,1,2,3,4,5,6,7,8] };
         const onDecode = async (text) => {
-          const val = text.trim();
           await stopScanner();
-          onScanSuccessRef.current(val);
+          onScanSuccessRef.current(text.trim());
           onCloseRef.current();
         };
-
         try {
           await qr.start({ facingMode: { exact: 'environment' } }, config, onDecode, () => {});
         } catch {
@@ -50,13 +43,11 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
         }
         isScanningRef.current = true;
       } catch (err) {
-        console.error('Error al iniciar escáner:', err);
+        console.error('Scanner error:', err);
         onCloseRef.current();
       }
     };
-
     startScanner();
-
     return () => {
       if (html5QrcodeRef.current && isScanningRef.current) {
         html5QrcodeRef.current.stop().catch(() => {});
@@ -74,15 +65,15 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
             <X size={24} />
           </button>
         </div>
-
         <div className="scanner-instructions">
-          <p>• Coloca el código de barras dentro del recuadro</p>
-          <p>• Asegúrate de tener buena iluminación</p>
-          <p>• Mantén el dispositivo estable</p>
+          <p>• Coloca el código dentro del recuadro</p>
+          <p>• Buena iluminación y dispositivo estable</p>
         </div>
-
-        <div id="barcode-scanner" ref={scannerDivRef}></div>
-
+        <div
+          id={scannerId}
+          className="barcode-scanner-inner"
+          style={{ pointerEvents: 'none' }}
+        ></div>
         <div className="scanner-manual-option">
           <p>¿Problemas con el escáner?</p>
           <button onClick={handleClose} className="btn btn-secondary">
