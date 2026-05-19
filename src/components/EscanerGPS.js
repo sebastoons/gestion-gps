@@ -25,6 +25,7 @@ const lbl = {
 
 const EscanerGPS = ({
   setCurrentView,
+  returnView = 'home',
   equiposNuevos, setEquiposNuevos,
   equiposRetirados, setEquiposRetirados,
   equiposMalos, setEquiposMalos,
@@ -118,8 +119,8 @@ const EscanerGPS = ({
               <img src="/logo_solo.svg" alt="Logo" className="page-logo" />
               <h2 className="page-title">Escáner GPS</h2>
             </div>
-            <button onClick={() => setCurrentView('home')} className="btn btn-secondary">
-              <HomeIcon size={18} /> Inicio
+            <button onClick={() => setCurrentView(returnView)} className="btn btn-secondary">
+              <HomeIcon size={18} /> {returnView === 'home' ? 'Inicio' : 'Volver'}
             </button>
           </div>
 

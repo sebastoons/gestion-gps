@@ -94,6 +94,7 @@ const ValidacionWhatsapp = ({
   equiposRetirados, setEquiposRetirados,
   equiposMalos, setEquiposMalos,
   trabajos, setTrabajos,
+  materiales, setMateriales,
   mesSeleccionado, setOtQueue
 }) => {
   const [form, setForm] = useState({ ...VACIO });
@@ -191,8 +192,20 @@ const ValidacionWhatsapp = ({
       if (enNuevos) { deleteFromTable('equipos_nuevos', enNuevos.id); setEquiposNuevos(prev => prev.filter(e => e.imei !== imei)); }
       else { const enRet = equiposRetirados.find(e => e.imei === imei); if (enRet) { deleteFromTable('equipos_retirados', enRet.id); setEquiposRetirados(prev => prev.filter(e => e.imei !== imei)); } }
     };
+    const descontarMateriales = (perifericos, empresa) => {
+      if (!materiales?.length) return;
+      perifericos.forEach(peri => {
+        const norm = peri.toLowerCase();
+        const match = materiales.find(m => m.empresa === empresa && m.tipo.toLowerCase() === norm);
+        if (match) {
+          deleteFromTable('materiales', match.id);
+          setMateriales(prev => prev.filter(m => m.id !== match.id));
+        }
+      });
+    };
     if (servicio === 'Instalación' || servicio === 'Reinstalación') {
       if (gpsIn) quitarInventario(gpsIn);
+      if (form.perifericos.length > 0) descontarMateriales(form.perifericos, form.empresa);
     } else if (servicio === 'Desinstalación') {
       if (gpsOut) {
         if (dest === 'Malo') {

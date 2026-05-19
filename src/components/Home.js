@@ -1,5 +1,5 @@
 import React from 'react';
-import { Briefcase, Package, DollarSign, MessageCircle, ClipboardList, QrCode, Sun, Moon } from 'lucide-react';
+import { Briefcase, Package, DollarSign, MessageCircle, ClipboardList, Archive, Sun, Moon } from 'lucide-react';
 import '../styles/Home.css';
 
 const Home = ({ setCurrentView, darkMode, setDarkMode }) => {
@@ -61,12 +61,12 @@ const Home = ({ setCurrentView, darkMode, setDarkMode }) => {
             <p className="card-description">Crea y gestiona OT por vehículo</p>
           </button>
 
-          <button onClick={() => setCurrentView('escaner')} className="home-card">
+          <button onClick={() => setCurrentView('materiales')} className="home-card">
             <div className="card-icon-wrap teal">
-              <QrCode size={24} color="#2dd4bf" />
+              <Archive size={24} color="#2dd4bf" />
             </div>
-            <h2 className="card-title">Escáner GPS</h2>
-            <p className="card-description">Escanea y registra equipos al inventario</p>
+            <h2 className="card-title">Materiales</h2>
+            <p className="card-description">Inventario de accesorios y materiales GPS</p>
           </button>
         </div>
       </div>
