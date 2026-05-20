@@ -1043,33 +1043,6 @@
 .scanner-box div[style*="box-shadow"] { box-shadow: none !important; }
 .scanner-box div[style*="background"] { background: transparent !important; }
 .scanner-box #qr-shaded-region { display: none !important; }
-.scanner-overlay {
-  position: absolute; inset: 0; pointer-events: none; z-index: 10;
-  display: flex; align-items: center; justify-content: center;
-}
-.scanner-frame {
-  position: relative;
-  width: 82%; height: 38%;
-}
-.scanner-corner {
-  position: absolute; width: 22px; height: 22px;
-}
-.scanner-corner.tl { top: 0; left: 0; border-top: 3px solid #2dd4bf; border-left: 3px solid #2dd4bf; border-radius: 4px 0 0 0; }
-.scanner-corner.tr { top: 0; right: 0; border-top: 3px solid #2dd4bf; border-right: 3px solid #2dd4bf; border-radius: 0 4px 0 0; }
-.scanner-corner.bl { bottom: 0; left: 0; border-bottom: 3px solid #2dd4bf; border-left: 3px solid #2dd4bf; border-radius: 0 0 0 4px; }
-.scanner-corner.br { bottom: 0; right: 0; border-bottom: 3px solid #2dd4bf; border-right: 3px solid #2dd4bf; border-radius: 0 0 4px 0; }
-.scan-line {
-  position: absolute; left: 0; right: 0; height: 2px;
-  background: linear-gradient(90deg, transparent 0%, #2dd4bf 30%, #5eead4 50%, #2dd4bf 70%, transparent 100%);
-  box-shadow: 0 0 8px #2dd4bf;
-  animation: scanMove 1.8s ease-in-out infinite;
-}
-@keyframes scanMove {
-  0%   { top: 5%;  opacity: 0; }
-  10%  { opacity: 1; }
-  90%  { opacity: 1; }
-  100% { top: 95%; opacity: 0; }
-}
 
 /* ── Dark mode: global form element override ── */
 body.dark input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="color"]):not([type="range"]),
