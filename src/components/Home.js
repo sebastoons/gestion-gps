@@ -1,5 +1,5 @@
 import React from 'react';
-import { Briefcase, Package, DollarSign, MessageCircle, ClipboardList, Archive, Sun, Moon } from 'lucide-react';
+import { Briefcase, Archive, DollarSign, MessageCircle, ClipboardList, Sun, Moon } from 'lucide-react';
 import '../styles/Home.css';
 
 const Home = ({ setCurrentView, darkMode, setDarkMode }) => {
@@ -29,12 +29,12 @@ const Home = ({ setCurrentView, darkMode, setDarkMode }) => {
             <p className="card-description">Gestiona trabajos realizados por empresa</p>
           </button>
 
-          <button onClick={() => setCurrentView('equipos')} className="home-card">
-            <div className="card-icon-wrap green">
-              <Package size={24} color="#4ade80" />
+          <button onClick={() => setCurrentView('materiales')} className="home-card">
+            <div className="card-icon-wrap teal">
+              <Archive size={24} color="#2dd4bf" />
             </div>
-            <h2 className="card-title">Equipos GPS</h2>
-            <p className="card-description">Inventario nuevo, retirado y malo</p>
+            <h2 className="card-title">Inventario GPS</h2>
+            <p className="card-description">Equipos y materiales por empresa</p>
           </button>
 
           <button onClick={() => setCurrentView('valores')} className="home-card">
@@ -61,13 +61,6 @@ const Home = ({ setCurrentView, darkMode, setDarkMode }) => {
             <p className="card-description">Crea y gestiona OT por vehículo</p>
           </button>
 
-          <button onClick={() => setCurrentView('materiales')} className="home-card">
-            <div className="card-icon-wrap teal">
-              <Archive size={24} color="#2dd4bf" />
-            </div>
-            <h2 className="card-title">Materiales</h2>
-            <p className="card-description">Inventario de accesorios y materiales GPS</p>
-          </button>
         </div>
       </div>
     </div>

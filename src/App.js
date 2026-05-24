@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Home from './components/Home';
 import Trabajos from './components/Trabajos';
-import Equipos from './components/Equipos';
 import ValoresTrabajos from './components/ValoresTrabajos';
 import ValidacionWhatsapp from './components/ValidacionWhatsapp';
 import OrdenesTrabajo from './components/OrdenesTrabajo';
@@ -160,15 +159,6 @@ const App = () => {
           clientes={clientes} setClientes={setClientes} />
       )}
 
-      {currentView === 'equipos' && (
-        <Equipos setCurrentView={setCurrentView}
-          equiposNuevos={equiposNuevos} setEquiposNuevos={setEquiposNuevos}
-          equiposRetirados={equiposRetirados} setEquiposRetirados={setEquiposRetirados}
-          equiposMalos={equiposMalos} setEquiposMalos={setEquiposMalos}
-          empresas={empresas} empresaSeleccionada={empresaSeleccionada} setEmpresaSeleccionada={setEmpresaSeleccionada}
-          onOpenScanner={() => { setEscanerReturn('equipos'); setCurrentView('escaner'); }} />
-      )}
-
       {currentView === 'valores' && <ValoresTrabajos setCurrentView={setCurrentView} />}
 
       {currentView === 'ordenes' && (
@@ -196,10 +186,14 @@ const App = () => {
           mesSeleccionado={mesSeleccionado} setOtQueue={setOtQueue} />
       )}
 
-      {currentView === 'materiales' && (
+      {(currentView === 'materiales' || currentView === 'equipos') && (
         <Materiales setCurrentView={setCurrentView}
+          equiposNuevos={equiposNuevos} setEquiposNuevos={setEquiposNuevos}
+          equiposRetirados={equiposRetirados} setEquiposRetirados={setEquiposRetirados}
+          equiposMalos={equiposMalos} setEquiposMalos={setEquiposMalos}
           materiales={materiales} setMateriales={setMateriales}
-          empresas={empresas} empresaSeleccionada={empresaSeleccionada} setEmpresaSeleccionada={setEmpresaSeleccionada} />
+          empresas={empresas} empresaSeleccionada={empresaSeleccionada} setEmpresaSeleccionada={setEmpresaSeleccionada}
+          onOpenScanner={() => { setEscanerReturn('materiales'); setCurrentView('escaner'); }} />
       )}
     </div>
   );
