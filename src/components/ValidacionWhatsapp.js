@@ -8,7 +8,7 @@ const COSTOS = {
   'Mantención': 0.7, 'Reinstalación': 0.8, 'Visita Fallida': 0.5
 };
 
-const PERIFERICOS = ['ON BATT','edata','dallas','buzzer','sos','inmovilizador','GPS externo','sensor T°','sensor puerta','cipia','dashcam','Básico'];
+const PERIFERICOS = ['ON BATT','edata','dallas','buzzer','sos','inmovilizador 12v','inmovilizador 24v','GPS externo','sensor T°','sensor puerta','cipia','dashcam','Básico'];
 
 const MARCAS_VAL = [
   'Alfa Romeo','Audi','BAIC','BMW','BYD','Changan','Chery','Chevrolet','Citroën',

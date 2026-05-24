@@ -30,7 +30,7 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
       try {
         const qr = new Html5Qrcode(id);
         html5QrcodeRef.current = qr;
-        const config = { fps: 10, qrbox: { width: 260, height: 90 }, formatsToSupport: [0,1,2,3,4,5,6,7,8] };
+        const config = { fps: 12, qrbox: { width: 260, height: 90 }, formatsToSupport: [0,1,2,3,4,5,6,7,8] };
         const onDecode = async (text) => {
           await stopScanner();
           onScanSuccessRef.current(text.trim());
@@ -65,20 +65,28 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
             <X size={24} />
           </button>
         </div>
-        <div className="scanner-instructions">
-          <p>• Coloca el código dentro del recuadro</p>
-          <p>• Buena iluminación y dispositivo estable</p>
+
+        <p style={{ fontFamily:'Quantico', fontSize:'0.6em', textTransform:'uppercase', color:'#6b7280', textAlign:'center', margin:'0 0 8px' }}>
+          Centra el código de barras dentro del recuadro
+        </p>
+
+        {/* Scanner + frame overlay */}
+        <div style={{ position:'relative' }}>
+          <div id={scannerId} className="barcode-scanner-inner" style={{ pointerEvents:'none' }}></div>
+          <div className="scan-frame-overlay">
+            <div className="scan-frame-box">
+              <span className="sc-corner sc-tl" />
+              <span className="sc-corner sc-tr" />
+              <span className="sc-corner sc-bl" />
+              <span className="sc-corner sc-br" />
+              <span className="sc-line" />
+            </div>
+          </div>
         </div>
-        <div
-          id={scannerId}
-          className="barcode-scanner-inner"
-          style={{ pointerEvents: 'none' }}
-        ></div>
+
         <div className="scanner-manual-option">
           <p>¿Problemas con el escáner?</p>
-          <button onClick={handleClose} className="btn btn-secondary">
-            Ingresar manualmente
-          </button>
+          <button onClick={handleClose} className="btn btn-secondary">Ingresar manualmente</button>
         </div>
       </div>
     </div>
