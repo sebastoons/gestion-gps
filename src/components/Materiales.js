@@ -19,6 +19,7 @@ const Materiales = ({
   const [form, setForm] = useState({
     tipo: 'ON BATT',
     serial: '',
+    cantidad: 1,
     fecha: new Date().toISOString().split('T')[0],
   });
 
@@ -26,10 +27,18 @@ const Materiales = ({
   const count = tipo => filtrados.filter(m => m.tipo === tipo).length;
 
   const guardar = () => {
-    const id = `MAT${Date.now()}`;
-    setMateriales(prev => [...prev, { ...form, id, empresa: empresaSeleccionada }]);
+    const cantidad = Math.max(1, parseInt(form.cantidad) || 1);
+    const base = Date.now();
+    const nuevos = Array.from({ length: cantidad }, (_, i) => ({
+      tipo: form.tipo,
+      serial: cantidad === 1 ? form.serial : '',
+      fecha: form.fecha,
+      id: `MAT${base + i}`,
+      empresa: empresaSeleccionada,
+    }));
+    setMateriales(prev => [...prev, ...nuevos]);
     setShowForm(false);
-    setForm({ tipo: 'ON BATT', serial: '', fecha: new Date().toISOString().split('T')[0] });
+    setForm({ tipo: 'ON BATT', serial: '', cantidad: 1, fecha: new Date().toISOString().split('T')[0] });
   };
 
   const eliminar = id => {
@@ -86,16 +95,10 @@ const Materiales = ({
                   </select>
                 </div>
                 <div>
-                  <label className="filter-label">Serial / Código (opcional)</label>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <input type="text" placeholder="N/A" value={form.serial}
-                      onChange={e => setForm(f => ({ ...f, serial: e.target.value }))}
-                      className="form-input" style={{ flex: 1 }} />
-                    <button type="button" onClick={() => setShowScanner(true)} className="btn btn-primary"
-                      style={{ padding: '0.5rem', minWidth: 'auto' }} title="Escanear código">
-                      <Camera size={20} />
-                    </button>
-                  </div>
+                  <label className="filter-label">Cantidad</label>
+                  <input type="number" min="1" max="99" value={form.cantidad}
+                    onChange={e => setForm(f => ({ ...f, cantidad: e.target.value }))}
+                    className="form-input" />
                 </div>
                 <div>
                   <label className="filter-label">Fecha</label>
@@ -103,9 +106,25 @@ const Materiales = ({
                     onChange={e => setForm(f => ({ ...f, fecha: e.target.value }))}
                     className="form-input" />
                 </div>
+                {parseInt(form.cantidad) === 1 && (
+                  <div style={{ gridColumn: 'span 3' }}>
+                    <label className="filter-label">Serial / Código (opcional)</label>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <input type="text" placeholder="N/A" value={form.serial}
+                        onChange={e => setForm(f => ({ ...f, serial: e.target.value }))}
+                        className="form-input" style={{ flex: 1 }} />
+                      <button type="button" onClick={() => setShowScanner(true)} className="btn btn-primary"
+                        style={{ padding: '0.5rem', minWidth: 'auto' }} title="Escanear código">
+                        <Camera size={20} />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="form-actions">
-                <button onClick={guardar} className="btn btn-success">Guardar</button>
+                <button onClick={guardar} className="btn btn-success">
+                  Guardar{parseInt(form.cantidad) > 1 ? ` (${form.cantidad})` : ''}
+                </button>
                 <button onClick={() => setShowForm(false)} className="btn btn-secondary">Cancelar</button>
               </div>
             </div>
