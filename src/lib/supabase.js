@@ -12,11 +12,13 @@ export const loadTable = async (name) => {
 };
 
 // Upsert: agrega o actualiza items. No borra nada (las bajas usan deleteFromTable).
+// Retorna el error de Supabase o null si OK.
 export const syncTable = async (name, items) => {
-  if (!Array.isArray(items) || !items.length) return;
+  if (!Array.isArray(items) || !items.length) return null;
   const { error } = await supabase.from(name)
     .upsert(items.map(i => ({ id: i.id, data: i })), { onConflict: 'id' });
-  if (error) console.error(`sync ${name}:`, error);
+  if (error) { console.error(`sync ${name}:`, error); return error; }
+  return null;
 };
 
 // Baja explícita: elimina uno o varios IDs de Supabase.

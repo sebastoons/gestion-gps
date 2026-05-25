@@ -27,6 +27,7 @@ const App = () => {
   const [loaded, setLoaded] = useState(false);
   const skipSync = useRef({ trabajos: false, equiposNuevos: false, equiposRetirados: false, equiposMalos: false, clientes: false, materiales: false });
   const [escanerReturn, setEscanerReturn] = useState('home');
+  const [materError, setMaterError] = useState(null);
 
   const [empresas] = useState(['Entel', 'UGPS']);
   const [empresaSeleccionada, setEmpresaSeleccionada] = useState('Entel');
@@ -68,7 +69,8 @@ const App = () => {
       setEquiposRetirados(er.map(norm));
       setEquiposMalos(em.map(norm));
       if (cl?.length) setClientes(cl);
-      if (mat?.length) setMateriales(mat);
+      if (mat === null) setMaterError('load');
+      else if (mat.length) setMateriales(mat);
       setLoaded(true);
     };
     loadData();
@@ -113,8 +115,14 @@ const App = () => {
   useEffect(() => {
     if (!loaded) return;
     if (skipSync.current.materiales) { skipSync.current.materiales = false; return; }
-    const t = setTimeout(() => syncTable('materiales', materiales), 300);
-    return () => clearTimeout(t);
+    let active = true;
+    const t = setTimeout(async () => {
+      const err = await syncTable('materiales', materiales);
+      if (!active) return;
+      if (err) setMaterError(prev => prev || 'sync');
+      else setMaterError(null);
+    }, 300);
+    return () => { active = false; clearTimeout(t); };
   }, [materiales, loaded]);
 
   // Realtime: recibe cambios de otros dispositivos en vivo
@@ -132,7 +140,7 @@ const App = () => {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'clientes' },
         async () => { const d = await loadTable('clientes'); if (!d) return; skipSync.current.clientes = true; setClientes(d); })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'materiales' },
-        async () => { const d = await loadTable('materiales'); if (!d) return; skipSync.current.materiales = true; setMateriales(d); })
+        async () => { const d = await loadTable('materiales'); if (!d) return; if (d.length > 0) { skipSync.current.materiales = true; setMateriales(d); } })
       .subscribe();
     return () => supabase.removeChannel(ch);
   }, [loaded]);
@@ -193,7 +201,8 @@ const App = () => {
           equiposMalos={equiposMalos} setEquiposMalos={setEquiposMalos}
           materiales={materiales} setMateriales={setMateriales}
           empresas={empresas} empresaSeleccionada={empresaSeleccionada} setEmpresaSeleccionada={setEmpresaSeleccionada}
-          onOpenScanner={() => { setEscanerReturn('materiales'); setCurrentView('escaner'); }} />
+          onOpenScanner={() => { setEscanerReturn('materiales'); setCurrentView('escaner'); }}
+          dbError={materError} />
       )}
     </div>
   );
