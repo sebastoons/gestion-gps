@@ -140,7 +140,7 @@ const App = () => {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'clientes' },
         async () => { const d = await loadTable('clientes'); if (!d) return; skipSync.current.clientes = true; setClientes(d); })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'materiales' },
-        async () => { const d = await loadTable('materiales'); if (!d) return; skipSync.current.materiales = true; setMateriales(d); })
+        async () => { const d = await loadTable('materiales'); if (!d) return; if (d.length > 0) { skipSync.current.materiales = true; setMateriales(d); } })
       .subscribe();
     return () => supabase.removeChannel(ch);
   }, [loaded]);
