@@ -30,7 +30,16 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
       try {
         const qr = new Html5Qrcode(id);
         html5QrcodeRef.current = qr;
-        const config = { fps: 12, qrbox: { width: 260, height: 90 }, formatsToSupport: [0,1,2,3,4,5,6,7,8] };
+        const config = {
+          fps: 15,
+          qrbox: { width: 280, height: 100 },
+          formatsToSupport: [0,1,2,3,4,5,6,7,8],
+          videoConstraints: {
+            facingMode: { ideal: 'environment' },
+            width:  { ideal: 1920, min: 1280 },
+            height: { ideal: 1080, min: 720 },
+          },
+        };
         const onDecode = async (text) => {
           await stopScanner();
           onScanSuccessRef.current(text.trim());
