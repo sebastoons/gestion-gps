@@ -38,6 +38,8 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
             facingMode: { ideal: 'environment' },
             width:  { ideal: 1920, min: 1280 },
             height: { ideal: 1080, min: 720 },
+            focusMode: 'continuous',
+            advanced: [{ focusMode: 'continuous' }],
           },
         };
         const onDecode = async (text) => {
@@ -51,6 +53,12 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
           await qr.start({ facingMode: 'environment' }, config, onDecode, () => {});
         }
         isScanningRef.current = true;
+        // Forzar auto-foco continuo en el track activo
+        try {
+          await qr.applyVideoConstraints({
+            advanced: [{ focusMode: 'continuous' }],
+          });
+        } catch (_) {}
       } catch (err) {
         console.error('Scanner error:', err);
         onCloseRef.current();
