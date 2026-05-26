@@ -92,8 +92,9 @@
 #barcode-scanner video, .barcode-scanner-inner video {
   border-radius: 0.5rem;
   width: 100% !important;
-  max-height: 400px;
-  object-fit: cover;
+  max-height: 420px;
+  object-fit: contain;
+  background: #000;
 }
 
 #barcode-scanner__dashboard_section {
