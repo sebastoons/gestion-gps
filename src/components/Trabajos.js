@@ -74,14 +74,15 @@ const Trabajos = ({
 
     const accesoriosDisponibles = {
       'ON BATT': 0.6,
-      'edata': 0.6,
-      'dallas': 0.4,
-      'buzzer': 0.4,
-      'sos': 0.4,
-      'inmovilizador': 0.4,
-      'GPS externo': 0.3,
-      'sensor T°': 0.4,
-      'sensor puerta': 0.4
+      'Edata': 0.6,
+      'Dallas': 0.4,
+      'Buzzer': 0.4,
+      'SOS': 0.4,
+      'Inmovilizador 12v': 0.4,
+      'Inmovilizador 24v': 0.4,
+      'GPS Externo': 0.3,
+      'Sensor T°': 0.4,
+      'Sensor Puerta': 0.4
     };
 
     const costoServicio = costosServicios[formData.servicio] || 0;
@@ -112,14 +113,15 @@ const Trabajos = ({
 
   const accesoriosDisponibles = {
     'ON BATT': 0.6,
-    'edata': 0.6,
-    'dallas': 0.4,
-    'buzzer': 0.4,
-    'sos': 0.4,
-    'inmovilizador': 0.4,
-    'GPS externo': 0.3,
-    'sensor T°': 0.4,
-    'sensor puerta': 0.4
+    'Edata': 0.6,
+    'Dallas': 0.4,
+    'Buzzer': 0.4,
+    'SOS': 0.4,
+    'Inmovilizador 12v': 0.4,
+    'Inmovilizador 24v': 0.4,
+    'GPS Externo': 0.3,
+    'Sensor T°': 0.4,
+    'Sensor Puerta': 0.4
   };
 
   // FILTRAR Y ORDENAR TRABAJOS POR EMPRESA Y MES — orden por ID
