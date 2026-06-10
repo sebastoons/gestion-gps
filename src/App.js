@@ -191,7 +191,8 @@ const App = () => {
           trabajos={trabajos} setTrabajos={setTrabajos}
           clientes={clientes} setClientes={setClientes}
           materiales={materiales} setMateriales={setMateriales}
-          mesSeleccionado={mesSeleccionado} setOtQueue={setOtQueue} />
+          mesSeleccionado={mesSeleccionado} setOtQueue={setOtQueue}
+          empresaSeleccionada={empresaSeleccionada} />
       )}
 
       {(currentView === 'materiales' || currentView === 'equipos') && (
