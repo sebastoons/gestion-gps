@@ -306,7 +306,7 @@ const downloadImage = async (elementId, filename) => {
 };
 
 // ── Componente principal ──────────────────────────────────────────────────────
-const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, clientes, otQueue, setOtQueue }) => {
+const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, clientes, otQueue, setOtQueue, pendingOT, setPendingOT }) => {
   const [step,setStep] = useState('list');
   const [otsList,setOtsList] = useState([]);
   const [sessionOTs,setSessionOTs] = useState([]);
@@ -441,6 +441,26 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, cliente
             <h1 className="page-title">Órdenes de Trabajo</h1>
             <button className="btn btn-success" onClick={startSession}><Plus size={14}/> Nueva OT</button>
           </div>
+          {pendingOT && (
+            <div style={{background:'#fef3c7',border:'2px solid #f59e0b',borderRadius:8,padding:'10px 14px',marginBottom:8,display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+              <span style={{fontFamily:'Quantico',fontSize:'0.7em',textTransform:'uppercase',color:'#78350f',flex:1}}>
+                🔔 OT PENDIENTE — {pendingOT.inst.tipoServicio} | {pendingOT.inst._empresa} | {pendingOT.inst.ppu||'Sin PPU'} | {pendingOT.inst.nombreCliente||''}
+              </span>
+              <button className="btn btn-primary" style={{fontSize:'0.7em',padding:'4px 12px'}}
+                onClick={()=>{
+                  const toAdd = [pendingOT.inst];
+                  if (pendingOT.desinst) toAdd.push(pendingOT.desinst);
+                  if (setOtQueue) setOtQueue(prev=>[...prev,...toAdd]);
+                  if (setPendingOT) setPendingOT(null);
+                }}>
+                Crear OT ✓
+              </button>
+              <button className="btn btn-secondary" style={{fontSize:'0.7em',padding:'4px 8px'}}
+                onClick={()=>{ if (setPendingOT) setPendingOT(null); }}>
+                ✕
+              </button>
+            </div>
+          )}
           {otQueue && otQueue.map((item, i) => (
             <div key={i} className="ot-banner-warn" style={{background:'#fffbeb',border:'1px solid #fcd34d',borderRadius:8,padding:'10px 14px',marginBottom:6,display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
               <span style={{fontFamily:'Quantico',fontSize:'0.7em',textTransform:'uppercase',color:'#92400e',flex:1}}>
