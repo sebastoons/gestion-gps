@@ -30,6 +30,12 @@ const VACIO = {
   destinoDesinstalacion: 'Retirado'
 };
 
+const COSTOS_PERIFERICOS = {
+  'ON BATT': 0.6, 'edata': 0.6, 'dallas': 0.4, 'buzzer': 0.4, 'sos': 0.4,
+  'inmovilizador 12v': 0.4, 'inmovilizador 24v': 0.4,
+  'GPS externo': 0.3, 'sensor T°': 0.4, 'sensor puerta': 0.4,
+};
+
 const MESES_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
 const getMesFacturacion = (fechaStr, empresa) => {
@@ -95,9 +101,10 @@ const ValidacionWhatsapp = ({
   equiposMalos, setEquiposMalos,
   trabajos, setTrabajos,
   materiales, setMateriales,
-  mesSeleccionado, setOtQueue
+  mesSeleccionado, setOtQueue,
+  empresaSeleccionada,
 }) => {
-  const [form, setForm] = useState({ ...VACIO });
+  const [form, setForm] = useState(() => ({ ...VACIO, empresa: empresaSeleccionada || 'Entel' }));
   const [showPpuOut, setShowPpuOut] = useState(false);
   const [showGpsOut, setShowGpsOut] = useState(false);
   const [draftedOT, setDraftedOT] = useState(null); // { inst, desinst|null }
@@ -231,7 +238,9 @@ const ValidacionWhatsapp = ({
         const count = prev.filter(t => t.empresa === emp).length;
         const id1 = `${prefix}${String(count + 1).padStart(3,'0')}`;
         const id2 = `${prefix}${String(count + 2).padStart(3,'0')}`;
-        const ufInst = form.perifericos.includes('ON BATT') ? 0.6 : COSTOS['Instalación'];
+        const costoPerif = form.perifericos.reduce((sum, p) => sum + (COSTOS_PERIFERICOS[p] || 0), 0);
+        const ufInstBase = form.perifericos.includes('ON BATT') ? 0.6 : COSTOS['Instalación'];
+        const ufInst = ufInstBase + costoPerif;
         const ufDes = COSTOS['Desinstalación'];
         return [...prev,
           {
@@ -254,8 +263,10 @@ const ValidacionWhatsapp = ({
       });
     } else {
       const newId = `${prefix}${String(trabajos.filter(t => t.empresa === emp).length + 1).padStart(3,'0')}`;
-      let uf = COSTOS[form.servicio] || 0.8;
-      if (form.servicio === 'Instalación' && form.perifericos.includes('ON BATT')) uf = 0.6;
+      const costoPerif = form.perifericos.reduce((sum, p) => sum + (COSTOS_PERIFERICOS[p] || 0), 0);
+      const baseUF = (form.servicio === 'Instalación' && form.perifericos.includes('ON BATT'))
+        ? 0.6 : (COSTOS[form.servicio] || 0.8);
+      const uf = baseUF + costoPerif;
       setTrabajos(prev => [...prev, {
         id: newId, nombreCliente: form.cliente, fecha: form.fecha,
         servicio: form.servicio, accesorios: form.perifericos,
