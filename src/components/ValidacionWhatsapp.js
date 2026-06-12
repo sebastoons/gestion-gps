@@ -102,12 +102,12 @@ const ValidacionWhatsapp = ({
   trabajos, setTrabajos,
   materiales, setMateriales,
   mesSeleccionado, setOtQueue,
-  empresaSeleccionada,
+  empresaSeleccionada, setEmpresaSeleccionada,
+  pendingOT, setPendingOT,
 }) => {
   const [form, setForm] = useState(() => ({ ...VACIO, empresa: empresaSeleccionada || 'Entel' }));
   const [showPpuOut, setShowPpuOut] = useState(false);
   const [showGpsOut, setShowGpsOut] = useState(false);
-  const [draftedOT, setDraftedOT] = useState(null); // { inst, desinst|null }
 
   const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : '';
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
@@ -287,7 +287,7 @@ const ValidacionWhatsapp = ({
     const esReinst = form.servicio === 'Reinstalación';
     procesarEquipos();
     agregarATrabajos();
-    setDraftedOT({ inst: crearDraftOT(), desinst: esReinst ? crearDraftOTDesinst() : null });
+    if (setPendingOT) setPendingOT({ inst: crearDraftOT(), desinst: esReinst ? crearDraftOTDesinst() : null });
     setForm(prev => ({
       ...VACIO,
       cliente: prev.cliente,
@@ -345,7 +345,7 @@ const ValidacionWhatsapp = ({
             <div className="form-grid three-cols">
               <div>
                 <label style={lbl}>EMPRESA</label>
-                <select className="form-select" value={form.empresa} onChange={e => set('empresa', e.target.value)}>
+                <select className="form-select" value={form.empresa} onChange={e => { set('empresa', e.target.value); if (setEmpresaSeleccionada) setEmpresaSeleccionada(e.target.value); }}>
                   <option>Entel</option><option>UGPS</option>
                 </select>
               </div>
@@ -465,26 +465,27 @@ const ValidacionWhatsapp = ({
               </button>
             </div>
 
-            {draftedOT && (
+            {pendingOT && (
               <div style={{ marginTop:12, display:'flex', flexDirection:'column', gap:8 }}>
                 <div className="val-preview" style={{ padding:'8px 12px', backgroundColor:'#f0fdf4', border:'1px solid #86efac', borderRadius:8, fontFamily:'Quantico', fontSize:'0.65em', color:'#166534', textTransform:'uppercase' }}>
                   ✓ Datos registrados en trabajos del mes
                 </div>
                 <div className="val-banner" style={{ padding:'10px 14px', background:'#fffbeb', border:'1px solid #fcd34d', borderRadius:8, display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
                   <span style={{ fontFamily:'Quantico', fontSize:'0.7em', color:'#92400e', flex:1 }}>
-                    📋 ¿Crear OT de {draftedOT.inst.tipoServicio}?
+                    📋 ¿Crear OT de {pendingOT.inst.tipoServicio}?
                   </span>
                   <button className="btn btn-primary" style={{ fontSize:'0.7em', padding:'4px 10px' }}
                     onClick={() => {
-                      const toAdd = [draftedOT.inst];
-                      if (draftedOT.desinst) toAdd.push(draftedOT.desinst);
+                      const toAdd = [pendingOT.inst];
+                      if (pendingOT.desinst) toAdd.push(pendingOT.desinst);
                       if (setOtQueue) setOtQueue(prev => [...prev, ...toAdd]);
-                      setDraftedOT(null);
+                      if (setPendingOT) setPendingOT(null);
+                      setCurrentView('ordenes');
                     }}>
                     Sí →
                   </button>
                   <button className="btn btn-secondary" style={{ fontSize:'0.7em', padding:'4px 8px' }}
-                    onClick={() => setDraftedOT(null)}>No</button>
+                    onClick={() => { if (setPendingOT) setPendingOT(null); }}>✕</button>
                 </div>
               </div>
             )}

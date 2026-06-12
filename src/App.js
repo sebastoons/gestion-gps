@@ -37,6 +37,7 @@ const App = () => {
     return `${m[n.getMonth()]} ${n.getFullYear()}`;
   });
   const [otQueue, setOtQueue] = useState([]);
+  const [pendingOT, setPendingOT] = useState(null);
   const [darkMode, setDarkMode] = useState(() => {
     const s = localStorage.getItem('theme');
     return s !== null ? s === 'dark' : true;
@@ -172,7 +173,8 @@ const App = () => {
       {currentView === 'ordenes' && (
         <OrdenesTrabajo setCurrentView={setCurrentView} empresas={empresas}
           empresaSeleccionada={empresaSeleccionada} setEmpresaSeleccionada={setEmpresaSeleccionada}
-          clientes={clientes} otQueue={otQueue} setOtQueue={setOtQueue} />
+          clientes={clientes} otQueue={otQueue} setOtQueue={setOtQueue}
+          pendingOT={pendingOT} setPendingOT={setPendingOT} />
       )}
 
       {currentView === 'escaner' && (
@@ -192,7 +194,8 @@ const App = () => {
           clientes={clientes} setClientes={setClientes}
           materiales={materiales} setMateriales={setMateriales}
           mesSeleccionado={mesSeleccionado} setOtQueue={setOtQueue}
-          empresaSeleccionada={empresaSeleccionada} />
+          empresaSeleccionada={empresaSeleccionada} setEmpresaSeleccionada={setEmpresaSeleccionada}
+          pendingOT={pendingOT} setPendingOT={setPendingOT} />
       )}
 
       {(currentView === 'materiales' || currentView === 'equipos') && (
