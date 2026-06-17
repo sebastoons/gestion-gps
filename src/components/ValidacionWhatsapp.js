@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Home } from 'lucide-react';
 import { ChevronDown } from 'lucide-react';
-import { deleteFromTable } from '../lib/supabase';
+import { deleteFromTable, syncTable } from '../lib/supabase';
 
 const COSTOS = {
   'Instalación': 0.8, 'Desinstalación': 0.5,
@@ -227,54 +227,52 @@ const ValidacionWhatsapp = ({
     }
   };
 
-  const agregarATrabajos = () => {
+  const agregarATrabajos = async () => {
     const emp = form.empresa;
-    const prefix = emp === 'UGPS' ? 'U' : 'E';
+    const prefix = (emp[0] || 'X').toUpperCase();
     const mes = getMesFacturacion(form.fecha, emp) || mesSeleccionado;
+    const costoPerif = form.perifericos.reduce((sum, p) => sum + (COSTOS_PERIFERICOS[p] || 0), 0);
 
     if (form.servicio === 'Reinstalación') {
-      // Split into separate Desinstalación + Instalación entries
-      setTrabajos(prev => {
-        const count = prev.filter(t => t.empresa === emp).length;
-        const id1 = `${prefix}${String(count + 1).padStart(3,'0')}`;
-        const id2 = `${prefix}${String(count + 2).padStart(3,'0')}`;
-        const costoPerif = form.perifericos.reduce((sum, p) => sum + (COSTOS_PERIFERICOS[p] || 0), 0);
-        const ufInstBase = form.perifericos.includes('ON BATT') ? 0.6 : COSTOS['Instalación'];
-        const ufInst = ufInstBase + costoPerif;
-        const ufDes = COSTOS['Desinstalación'];
-        return [...prev,
-          {
-            id: id1, nombreCliente: form.cliente, fecha: form.fecha,
-            servicio: 'Desinstalación', accesorios: [],
-            ppuIn: '', ppuOut: showPpuOut ? form.ppuVinOut.toUpperCase() : '',
-            imeiIn: '', imeiOut: showGpsOut ? form.gpsOut : '',
-            km: '', valorUF: ufDes.toString(), valorPesos: Math.round(ufDes * 39000).toString(),
-            empresa: emp, mes
-          },
-          {
-            id: id2, nombreCliente: form.cliente, fecha: form.fecha,
-            servicio: 'Instalación', accesorios: form.perifericos,
-            ppuIn: form.ppuVinIn.toUpperCase(), ppuOut: '',
-            imeiIn: form.gpsIn, imeiOut: '',
-            km: '', valorUF: ufInst.toString(), valorPesos: Math.round(ufInst * 39000).toString(),
-            empresa: emp, mes
-          }
-        ];
-      });
+      const count = trabajos.filter(t => t.empresa === emp).length;
+      const id1 = `${prefix}${String(count + 1).padStart(3,'0')}`;
+      const id2 = `${prefix}${String(count + 2).padStart(3,'0')}`;
+      const ufInstBase = form.perifericos.includes('ON BATT') ? 0.6 : COSTOS['Instalación'];
+      const ufInst = ufInstBase + costoPerif;
+      const ufDes = COSTOS['Desinstalación'];
+      const job1 = {
+        id: id1, nombreCliente: form.cliente, fecha: form.fecha,
+        servicio: 'Desinstalación', accesorios: [],
+        ppuIn: '', ppuOut: showPpuOut ? form.ppuVinOut.toUpperCase() : '',
+        imeiIn: '', imeiOut: showGpsOut ? form.gpsOut : '',
+        km: '', valorUF: ufDes.toString(), valorPesos: Math.round(ufDes * 39000).toString(),
+        empresa: emp, mes
+      };
+      const job2 = {
+        id: id2, nombreCliente: form.cliente, fecha: form.fecha,
+        servicio: 'Instalación', accesorios: form.perifericos,
+        ppuIn: form.ppuVinIn.toUpperCase(), ppuOut: '',
+        imeiIn: form.gpsIn, imeiOut: '',
+        km: '', valorUF: ufInst.toString(), valorPesos: Math.round(ufInst * 39000).toString(),
+        empresa: emp, mes
+      };
+      setTrabajos(prev => [...prev, job1, job2]);
+      await syncTable('trabajos', [job1, job2]);
     } else {
       const newId = `${prefix}${String(trabajos.filter(t => t.empresa === emp).length + 1).padStart(3,'0')}`;
-      const costoPerif = form.perifericos.reduce((sum, p) => sum + (COSTOS_PERIFERICOS[p] || 0), 0);
       const baseUF = (form.servicio === 'Instalación' && form.perifericos.includes('ON BATT'))
         ? 0.6 : (COSTOS[form.servicio] || 0.8);
       const uf = baseUF + costoPerif;
-      setTrabajos(prev => [...prev, {
+      const newJob = {
         id: newId, nombreCliente: form.cliente, fecha: form.fecha,
         servicio: form.servicio, accesorios: form.perifericos,
         ppuIn: form.ppuVinIn.toUpperCase(), ppuOut: showPpuOut ? form.ppuVinOut.toUpperCase() : '',
         imeiIn: form.gpsIn, imeiOut: showGpsOut ? form.gpsOut : '',
         km: '', valorUF: uf.toString(), valorPesos: Math.round(uf * 39000).toString(),
         empresa: emp, mes
-      }]);
+      };
+      setTrabajos(prev => [...prev, newJob]);
+      await syncTable('trabajos', [newJob]);
     }
   };
 
@@ -283,10 +281,10 @@ const ValidacionWhatsapp = ({
     return true;
   };
 
-  const ejecutarAcciones = () => {
+  const ejecutarAcciones = async () => {
     const esReinst = form.servicio === 'Reinstalación';
     procesarEquipos();
-    agregarATrabajos();
+    await agregarATrabajos();
     if (setPendingOT) setPendingOT({ inst: crearDraftOT(), desinst: esReinst ? crearDraftOTDesinst() : null });
     setForm(prev => ({
       ...VACIO,
@@ -301,17 +299,20 @@ const ValidacionWhatsapp = ({
     setShowGpsOut(false);
   };
 
-  const handleEnviar = () => {
+  const handleEnviar = async () => {
     if (!validar()) return;
     const msg = generarMensaje();
-    ejecutarAcciones();
+    await ejecutarAcciones();
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
   const handleCopiar = () => {
     if (!validar()) return;
     const msg = generarMensaje();
-    const copiar = () => { ejecutarAcciones(); alert(`✓ Copiado y registrado en trabajos ${form.empresa}`); };
+    const copiar = async () => {
+      await ejecutarAcciones();
+      alert(`✓ Copiado y registrado en trabajos ${form.empresa}`);
+    };
     if (navigator.clipboard) {
       navigator.clipboard.writeText(msg).then(copiar).catch(() => { const ta=document.createElement('textarea');ta.value=msg;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);copiar(); });
     } else { const ta=document.createElement('textarea');ta.value=msg;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);copiar(); }

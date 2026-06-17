@@ -6,9 +6,50 @@ import ValidacionWhatsapp from './components/ValidacionWhatsapp';
 import OrdenesTrabajo from './components/OrdenesTrabajo';
 import EscanerGPS from './components/EscanerGPS';
 import Materiales from './components/Materiales';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, X, Plus } from 'lucide-react';
 import { supabase, loadTable, syncTable } from './lib/supabase';
 import './styles/Common.css';
+
+// ── Gestión de empresas ───────────────────────────────────────────────────────
+const EmpresasModal = ({ empresas, setEmpresas, onClose }) => {
+  const [newName, setNewName] = useState('');
+  const add = () => {
+    const n = newName.trim();
+    if (!n || empresas.includes(n)) return;
+    setEmpresas(prev => [...prev, n]);
+    setNewName('');
+  };
+  return (
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', zIndex:9000, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
+      <div style={{ background:'white', borderRadius:12, padding:24, width:'100%', maxWidth:360, boxShadow:'0 20px 40px rgba(0,0,0,0.3)' }} className="dark-modal">
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
+          <span style={{ fontFamily:'Changa', fontWeight:'bold', fontSize:'1em', textTransform:'uppercase' }}>Gestionar Empresas</span>
+          <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:'#6b7280' }}><X size={18}/></button>
+        </div>
+        <div style={{ display:'flex', flexDirection:'column', gap:8, marginBottom:16 }}>
+          {empresas.map(e => (
+            <div key={e} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 12px', background:'#f3f4f6', borderRadius:8 }}>
+              <span style={{ fontFamily:'Quantico', fontSize:'0.85em', fontWeight:'bold' }}>{e}</span>
+              {empresas.length > 1 && (
+                <button onClick={() => setEmpresas(prev => prev.filter(x => x !== e))}
+                  style={{ background:'none', border:'none', cursor:'pointer', color:'#dc2626' }}><X size={14}/></button>
+              )}
+            </div>
+          ))}
+        </div>
+        <div style={{ display:'flex', gap:8 }}>
+          <input value={newName} onChange={e => setNewName(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && add()}
+            placeholder="Nueva empresa..."
+            style={{ flex:1, padding:'8px 10px', border:'1px solid #d1d5db', borderRadius:8, fontFamily:'Quantico', fontSize:'0.8em' }} />
+          <button onClick={add} className="btn btn-primary" style={{ fontSize:'0.8em', padding:'6px 12px' }}>
+            <Plus size={13}/> Agregar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const normalizeEmpresa = (e) => {
   if (!e || e === 'Location World' || e === 'LW' || e === 'LW ENTEL') return 'Entel';
@@ -29,8 +70,13 @@ const App = () => {
   const [escanerReturn, setEscanerReturn] = useState('home');
   const [materError, setMaterError] = useState(null);
 
-  const [empresas] = useState(['Entel', 'UGPS']);
-  const [empresaSeleccionada, setEmpresaSeleccionada] = useState('Entel');
+  const [empresas, setEmpresas] = useState(() => {
+    try { const s = localStorage.getItem('empresas'); return s ? JSON.parse(s) : ['UGPS']; } catch { return ['UGPS']; }
+  });
+  const [showEmpresasModal, setShowEmpresasModal] = useState(false);
+  const [empresaSeleccionada, setEmpresaSeleccionada] = useState(() => {
+    try { const s = localStorage.getItem('empresas'); const list = s ? JSON.parse(s) : ['UGPS']; return list[0] || 'UGPS'; } catch { return 'UGPS'; }
+  });
   const [mesSeleccionado, setMesSeleccionado] = useState(() => {
     const n = new Date();
     const m = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -47,6 +93,13 @@ const App = () => {
     document.body.classList.toggle('dark', darkMode);
     localStorage.setItem('theme', darkMode ? 'dark' : 'light');
   }, [darkMode]);
+
+  useEffect(() => {
+    localStorage.setItem('empresas', JSON.stringify(empresas));
+    if (empresas.length > 0 && !empresas.includes(empresaSeleccionada)) {
+      setEmpresaSeleccionada(empresas[0]);
+    }
+  }, [empresas, empresaSeleccionada]);
 
   // Cargar desde Supabase al iniciar — única fuente de verdad
   useEffect(() => {
@@ -157,7 +210,12 @@ const App = () => {
         </div>
       )}
 
-      {currentView === 'home' && <Home setCurrentView={setCurrentView} darkMode={darkMode} setDarkMode={setDarkMode} />}
+      {showEmpresasModal && (
+        <EmpresasModal empresas={empresas} setEmpresas={setEmpresas} onClose={() => setShowEmpresasModal(false)} />
+      )}
+
+      {currentView === 'home' && <Home setCurrentView={setCurrentView} darkMode={darkMode} setDarkMode={setDarkMode}
+        empresas={empresas} onManageEmpresas={() => setShowEmpresasModal(true)} />}
 
       {currentView === 'trabajos' && (
         <Trabajos setCurrentView={setCurrentView} trabajos={trabajos} setTrabajos={setTrabajos}
