@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Download, Plus, Home, Edit2, Trash2, AlertCircle, FileImage, ChevronDown } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
 import { exportToVisualImage } from '../utils/visualExportUtils';
-import { deleteFromTable } from '../lib/supabase';
+import { deleteFromTable, syncTable } from '../lib/supabase';
 
 const Trabajos = ({
   setCurrentView,
@@ -215,17 +215,19 @@ const Trabajos = ({
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.nombreCliente || !formData.fecha) {
       alert('Por favor completa los campos obligatorios');
       return;
     }
 
     if (editingItem) {
-      setTrabajos(trabajos.map(t => t.id === editingItem.id ? { ...formData, id: editingItem.id } : t));
+      const updated = { ...formData, id: editingItem.id };
+      setTrabajos(trabajos.map(t => t.id === editingItem.id ? updated : t));
+      await syncTable('trabajos', [updated]);
       setEditingItem(null);
     } else {
-      const prefix = empresaSeleccionada === 'UGPS' ? 'U' : 'E';
+      const prefix = (empresaSeleccionada[0] || 'X').toUpperCase();
       const trabajosDeEmpresa = trabajos.filter(t => t.empresa === empresaSeleccionada);
       const count = trabajosDeEmpresa.length;
 
@@ -235,25 +237,27 @@ const Trabajos = ({
         const ufInst = formData.accesorios.includes('ON BATT') ? 0.6 : 0.8;
         const idDes = `${prefix}${String(count + 1).padStart(3, '0')}`;
         const idInst = `${prefix}${String(count + 2).padStart(3, '0')}`;
-        setTrabajos(prev => [...prev,
-          {
-            ...formData, id: idDes, empresa: empresaSeleccionada, mes: mesSeleccionado,
-            servicio: 'Desinstalación', ppuIn: '', ppuOut: formData.ppuOut,
-            imeiIn: '', imeiOut: formData.imeiOut, accesorios: [],
-            valorUF: ufDes.toString(), valorPesos: Math.round(ufDes * valorUFMes).toString()
-          },
-          {
-            ...formData, id: idInst, empresa: empresaSeleccionada, mes: mesSeleccionado,
-            servicio: 'Instalación', ppuIn: formData.ppuIn, ppuOut: '',
-            imeiIn: formData.imeiIn, imeiOut: '',
-            valorUF: ufInst.toString(), valorPesos: Math.round(ufInst * valorUFMes).toString()
-          }
-        ]);
+        const job1 = {
+          ...formData, id: idDes, empresa: empresaSeleccionada, mes: mesSeleccionado,
+          servicio: 'Desinstalación', ppuIn: '', ppuOut: formData.ppuOut,
+          imeiIn: '', imeiOut: formData.imeiOut, accesorios: [],
+          valorUF: ufDes.toString(), valorPesos: Math.round(ufDes * valorUFMes).toString()
+        };
+        const job2 = {
+          ...formData, id: idInst, empresa: empresaSeleccionada, mes: mesSeleccionado,
+          servicio: 'Instalación', ppuIn: formData.ppuIn, ppuOut: '',
+          imeiIn: formData.imeiIn, imeiOut: '',
+          valorUF: ufInst.toString(), valorPesos: Math.round(ufInst * valorUFMes).toString()
+        };
+        setTrabajos(prev => [...prev, job1, job2]);
+        await syncTable('trabajos', [job1, job2]);
         descontarEquipos(formData.imeiIn, formData.imeiOut);
         agregarClienteSiNoExiste(formData.nombreCliente);
       } else {
         const newId = `${prefix}${String(count + 1).padStart(3, '0')}`;
-        setTrabajos([...trabajos, { ...formData, id: newId, empresa: empresaSeleccionada, mes: mesSeleccionado }]);
+        const newJob = { ...formData, id: newId, empresa: empresaSeleccionada, mes: mesSeleccionado };
+        setTrabajos([...trabajos, newJob]);
+        await syncTable('trabajos', [newJob]);
         descontarEquipos(formData.imeiIn, formData.imeiOut);
         agregarClienteSiNoExiste(formData.nombreCliente);
       }
