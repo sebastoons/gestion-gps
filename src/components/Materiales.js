@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Home, Plus, Trash2, Camera, Download, Edit2, X, AlertTriangle, QrCode } from 'lucide-react';
-import { deleteFromTable } from '../lib/supabase';
+import { deleteFromTable, nextEquipoId } from '../lib/localStore';
 import { exportToCSV } from '../utils/exportUtils';
 import BarcodeScanner from './BarcodeScanner';
 import '../styles/Scanner.css';
@@ -81,8 +81,6 @@ const Materiales = ({
       : new Set(data.map(d => d.id)));
   };
 
-  const pfx = (b) => emp === 'UGPS' ? `U${b}` : `E${b}`;
-
   const resetForms = () => {
     setFormN({ fechaRecepcion:TODAY, imei:'', estado:'disponible', nombreCliente:'' });
     setFormR({ fecha:TODAY, cliente:'', imei:'' });
@@ -122,7 +120,7 @@ const Materiales = ({
     if (editingId) {
       setEquiposNuevos(prev => prev.map(e => e.id===editingId ? {...formN,id:editingId,empresa:emp} : e));
     } else {
-      setEquiposNuevos(prev => [...prev, {...formN, id:`${pfx('N')}${String(filtN.length+1).padStart(3,'0')}`, empresa:emp}]);
+      setEquiposNuevos(prev => [...prev, {...formN, id: nextEquipoId('equipos_nuevos', emp, equiposNuevos, 'N'), empresa:emp}]);
     }
     setShowForm(false); setEditingId(null);
   };
@@ -132,7 +130,7 @@ const Materiales = ({
     if (editingId) {
       setEquiposRetirados(prev => prev.map(e => e.id===editingId ? {...formR,id:editingId,empresa:emp} : e));
     } else {
-      setEquiposRetirados(prev => [...prev, {...formR, id:`${pfx('R')}${String(filtR.length+1).padStart(3,'0')}`, empresa:emp}]);
+      setEquiposRetirados(prev => [...prev, {...formR, id: nextEquipoId('equipos_retirados', emp, equiposRetirados, 'R'), empresa:emp}]);
     }
     setShowForm(false); setEditingId(null);
   };
@@ -142,7 +140,7 @@ const Materiales = ({
     if (editingId) {
       setEquiposMalos(prev => prev.map(e => e.id===editingId ? {...formMl,id:editingId,empresa:emp} : e));
     } else {
-      setEquiposMalos(prev => [...prev, {...formMl, id:`${pfx('M')}${String(filtMl.length+1).padStart(3,'0')}`, empresa:emp}]);
+      setEquiposMalos(prev => [...prev, {...formMl, id: nextEquipoId('equipos_malos', emp, equiposMalos, 'M'), empresa:emp}]);
     }
     setShowForm(false); setEditingId(null);
   };
@@ -244,12 +242,10 @@ const Materiales = ({
               <AlertTriangle size={18} color="#dc2626" style={{flexShrink:0,marginTop:2}}/>
               <div>
                 <p style={{fontFamily:'Changa',fontWeight:'bold',color:'#dc2626',fontSize:'0.75em',textTransform:'uppercase',margin:0}}>
-                  Error de base de datos — los materiales no se están guardando
+                  Error de almacenamiento — los materiales no se están guardando
                 </p>
                 <p style={{fontFamily:'Quantico',color:'#7f1d1d',fontSize:'0.6em',textTransform:'uppercase',margin:'4px 0 0'}}>
-                  {dbError === 'load'
-                    ? 'No se pudo cargar la tabla "materiales". Créala en Supabase con columnas: id (text, PK) y data (jsonb), luego activa RLS con política de lectura/escritura pública.'
-                    : 'Error al guardar en Supabase. Verifica que la tabla "materiales" existe con columnas id (text PK) y data (jsonb), y que las políticas RLS permiten INSERT y UPDATE.'}
+                  No se pudo guardar en el almacenamiento local del dispositivo. Es posible que el espacio disponible esté lleno — libera espacio o exporta un respaldo y limpia datos antiguos desde Inicio → Respaldo.
                 </p>
               </div>
             </div>

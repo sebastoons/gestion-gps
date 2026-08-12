@@ -6,8 +6,8 @@ import ValidacionWhatsapp from './components/ValidacionWhatsapp';
 import OrdenesTrabajo from './components/OrdenesTrabajo';
 import EscanerGPS from './components/EscanerGPS';
 import Materiales from './components/Materiales';
-import { Sun, Moon, X, Plus } from 'lucide-react';
-import { supabase, loadTable, syncTable } from './lib/supabase';
+import { Sun, Moon, X, Plus, Download, Upload } from 'lucide-react';
+import { loadTable, syncTable, exportBackup, importBackup } from './lib/localStore';
 import './styles/Common.css';
 
 // ── Gestión de empresas ───────────────────────────────────────────────────────
@@ -51,6 +51,60 @@ const EmpresasModal = ({ empresas, setEmpresas, onClose }) => {
   );
 };
 
+// ── Respaldo manual (exportar / importar) ────────────────────────────────────
+const RespaldoModal = ({ onClose }) => {
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(null);
+  const fileRef = useRef(null);
+
+  const handleImport = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!window.confirm('Importar reemplazará TODOS los datos guardados en este dispositivo por los del archivo. ¿Continuar?')) {
+      e.target.value = '';
+      return;
+    }
+    setBusy(true);
+    try {
+      await importBackup(file);
+      setMsg({ ok: true, text: 'Datos importados. Recargando la app...' });
+      setTimeout(() => window.location.reload(), 1200);
+    } catch (err) {
+      setMsg({ ok: false, text: `Error al importar: ${err.message}` });
+      setBusy(false);
+    }
+    e.target.value = '';
+  };
+
+  return (
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', zIndex:9000, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
+      <div style={{ background:'white', borderRadius:12, padding:24, width:'100%', maxWidth:380, boxShadow:'0 20px 40px rgba(0,0,0,0.3)' }} className="dark-modal">
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
+          <span style={{ fontFamily:'Changa', fontWeight:'bold', fontSize:'1em', textTransform:'uppercase' }}>Respaldo de Datos</span>
+          <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:'#6b7280' }}><X size={18}/></button>
+        </div>
+        <p style={{ fontFamily:'Quantico', fontSize:'0.65em', color:'#6b7280', textTransform:'uppercase', marginBottom:16, lineHeight:1.5 }}>
+          Los datos se guardan solo en este dispositivo. Exporta un archivo para respaldar o mover tu información a otro celular/computador, y luego impórtalo ahí.
+        </p>
+        <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+          <button className="btn btn-primary" onClick={() => { exportBackup(); setMsg({ ok:true, text:'Archivo descargado.' }); }}>
+            <Download size={15}/> Exportar respaldo
+          </button>
+          <button className="btn btn-secondary" disabled={busy} onClick={() => fileRef.current?.click()}>
+            <Upload size={15}/> Importar respaldo
+          </button>
+          <input ref={fileRef} type="file" accept="application/json" style={{ display:'none' }} onChange={handleImport} />
+        </div>
+        {msg && (
+          <p style={{ marginTop:14, fontFamily:'Quantico', fontSize:'0.65em', textTransform:'uppercase', color: msg.ok ? '#166534' : '#dc2626' }}>
+            {msg.text}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const normalizeEmpresa = (e) => {
   if (!e || e === 'Location World' || e === 'LW' || e === 'LW ENTEL') return 'Entel';
   return e;
@@ -66,7 +120,7 @@ const App = () => {
   const [clientes, setClientes] = useState([]);
   const [materiales, setMateriales] = useState([]);
   const [loaded, setLoaded] = useState(false);
-  const skipSync = useRef({ trabajos: false, equiposNuevos: false, equiposRetirados: false, equiposMalos: false, clientes: false, materiales: false });
+  const skipSync = useRef({ trabajos: true, equiposNuevos: true, equiposRetirados: true, equiposMalos: true, clientes: true, materiales: true });
   const [escanerReturn, setEscanerReturn] = useState('home');
   const [materError, setMaterError] = useState(null);
 
@@ -74,6 +128,7 @@ const App = () => {
     try { const s = localStorage.getItem('empresas'); return s ? JSON.parse(s) : ['UGPS']; } catch { return ['UGPS']; }
   });
   const [showEmpresasModal, setShowEmpresasModal] = useState(false);
+  const [showRespaldoModal, setShowRespaldoModal] = useState(false);
   const [empresaSeleccionada, setEmpresaSeleccionada] = useState(() => {
     try { const s = localStorage.getItem('empresas'); const list = s ? JSON.parse(s) : ['UGPS']; return list[0] || 'UGPS'; } catch { return 'UGPS'; }
   });
@@ -101,7 +156,7 @@ const App = () => {
     }
   }, [empresas, empresaSeleccionada]);
 
-  // Cargar desde Supabase al iniciar — única fuente de verdad
+  // Cargar desde el almacenamiento local del dispositivo — única fuente de verdad
   useEffect(() => {
     const loadData = async () => {
       const [t, en, er, em, cl, mat] = await Promise.all([
@@ -112,25 +167,19 @@ const App = () => {
         loadTable('clientes'),
         loadTable('materiales'),
       ]);
-      if (t === null || en === null || er === null || em === null) {
-        console.error('Error al cargar datos de Supabase. Verifica tu conexión.');
-        setLoaded(true);
-        return;
-      }
       skipSync.current = { trabajos: true, equiposNuevos: true, equiposRetirados: true, equiposMalos: true, clientes: true, materiales: true };
       setTrabajos(t.map(norm));
       setEquiposNuevos(en.map(norm));
       setEquiposRetirados(er.map(norm));
       setEquiposMalos(em.map(norm));
       if (cl?.length) setClientes(cl);
-      if (mat === null) setMaterError('load');
-      else if (mat.length) setMateriales(mat);
+      if (mat?.length) setMateriales(mat);
       setLoaded(true);
     };
     loadData();
   }, []);
 
-  // Sincronizar adiciones/ediciones a Supabase (upsert, no borra)
+  // Guardar adiciones/ediciones en el almacenamiento local (upsert, no borra)
   useEffect(() => {
     if (!loaded) return;
     if (skipSync.current.trabajos) { skipSync.current.trabajos = false; return; }
@@ -180,25 +229,6 @@ const App = () => {
   }, [materiales, loaded]);
 
   // Realtime: recibe cambios de otros dispositivos en vivo
-  useEffect(() => {
-    if (!loaded) return;
-    const ch = supabase.channel('live_sync')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'trabajos' },
-        async () => { const d = await loadTable('trabajos'); if (!d) return; skipSync.current.trabajos = true; setTrabajos(d.map(norm)); })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'equipos_nuevos' },
-        async () => { const d = await loadTable('equipos_nuevos'); if (!d) return; skipSync.current.equiposNuevos = true; setEquiposNuevos(d.map(norm)); })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'equipos_retirados' },
-        async () => { const d = await loadTable('equipos_retirados'); if (!d) return; skipSync.current.equiposRetirados = true; setEquiposRetirados(d.map(norm)); })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'equipos_malos' },
-        async () => { const d = await loadTable('equipos_malos'); if (!d) return; skipSync.current.equiposMalos = true; setEquiposMalos(d.map(norm)); })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'clientes' },
-        async () => { const d = await loadTable('clientes'); if (!d) return; skipSync.current.clientes = true; setClientes(d); })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'materiales' },
-        async () => { const d = await loadTable('materiales'); if (!d) return; if (d.length > 0) { skipSync.current.materiales = true; setMateriales(d); } })
-      .subscribe();
-    return () => supabase.removeChannel(ch);
-  }, [loaded]);
-
   return (
     <div className="font-sans">
       {currentView !== 'home' && (
@@ -214,8 +244,13 @@ const App = () => {
         <EmpresasModal empresas={empresas} setEmpresas={setEmpresas} onClose={() => setShowEmpresasModal(false)} />
       )}
 
+      {showRespaldoModal && (
+        <RespaldoModal onClose={() => setShowRespaldoModal(false)} />
+      )}
+
       {currentView === 'home' && <Home setCurrentView={setCurrentView} darkMode={darkMode} setDarkMode={setDarkMode}
-        empresas={empresas} onManageEmpresas={() => setShowEmpresasModal(true)} />}
+        empresas={empresas} onManageEmpresas={() => setShowEmpresasModal(true)}
+        onRespaldo={() => setShowRespaldoModal(true)} />}
 
       {currentView === 'trabajos' && (
         <Trabajos setCurrentView={setCurrentView} trabajos={trabajos} setTrabajos={setTrabajos}
@@ -251,7 +286,7 @@ const App = () => {
           trabajos={trabajos} setTrabajos={setTrabajos}
           clientes={clientes} setClientes={setClientes}
           materiales={materiales} setMateriales={setMateriales}
-          mesSeleccionado={mesSeleccionado} setOtQueue={setOtQueue}
+          mesSeleccionado={mesSeleccionado} setMesSeleccionado={setMesSeleccionado} setOtQueue={setOtQueue}
           empresaSeleccionada={empresaSeleccionada} setEmpresaSeleccionada={setEmpresaSeleccionada}
           pendingOT={pendingOT} setPendingOT={setPendingOT} />
       )}
