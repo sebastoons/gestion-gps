@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Download, Search, ChevronLeft, X, Trash2, Check, Home as HomeIcon, ChevronDown, FileImage } from 'lucide-react';
-import { supabase, loadTable, syncTable, deleteFromTable } from '../lib/supabase';
+import { loadTable, syncTable, deleteFromTable } from '../lib/localStore';
 import '../styles/OrdenesTrabajo.css';
 
 const REGIONES = [
@@ -317,7 +317,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, cliente
   const [firma,setFirma] = useState(null);
   const [search,setSearch] = useState('');
   const [filterMes,setFilterMes] = useState('');
-  const [counters,setCounters] = useState({Entel:1,UGPS:1});
+  const [counters,setCounters] = useState({});
   const [historyOT,setHistoryOT] = useState(null);
   const [downloading,setDownloading] = useState(false);
   const canvasRef = useRef(null);
@@ -325,16 +325,12 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, cliente
 
   useEffect(()=>{
     const load = async () => {
-      const [ots, entel, ugps] = await Promise.all([
+      const [ots, ctrs] = await Promise.all([
         loadTable('ordenes_trabajo'),
-        supabase.from('ot_counters').select('counter').eq('empresa','Entel').single(),
-        supabase.from('ot_counters').select('counter').eq('empresa','UGPS').single(),
+        loadTable('ot_counters'),
       ]);
       setOtsList(ots);
-      setCounters({
-        Entel: entel.data?.counter || 1,
-        UGPS: ugps.data?.counter || 1,
-      });
+      setCounters(Object.fromEntries(ctrs.map(c => [c.empresa, c.counter || 1])));
     };
     load();
   },[]);
@@ -373,14 +369,14 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, cliente
   };
 
   const finalizeSession=async()=>{
-    const emp=sessionEmpresa,prefix=emp==='UGPS'?'U':'E';
-    const start=counters[emp];
+    const emp=sessionEmpresa,prefix=(emp[0]||'X').toUpperCase();
+    const start=counters[emp]||1;
     const sid=Date.now().toString();
     const newOTs=sessionOTs.map((ot,i)=>({...ot,id:`${sid}-${i}`,numero:`${prefix}${start+i}`,
       sessionId:sid,empresa:emp,cliente:clienteData.nombre,rutCliente:clienteData.rut,
       firma,aceptacion,createdAt:new Date().toISOString(),emailEnviado:false}));
     const nn=start+sessionOTs.length;
-    await supabase.from('ot_counters').upsert({ empresa: emp, counter: nn });
+    await syncTable('ot_counters', [{ id: emp, empresa: emp, counter: nn }]);
     setCounters(p=>({...p,[emp]:nn}));
     saveOTs([...otsList,...newOTs]);
     setSessionOTs(newOTs);

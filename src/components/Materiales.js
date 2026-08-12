@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Home, Plus, Trash2, Camera, Download, Edit2, X, AlertTriangle, QrCode } from 'lucide-react';
-import { deleteFromTable } from '../lib/supabase';
+import { deleteFromTable } from '../lib/localStore';
 import { exportToCSV } from '../utils/exportUtils';
 import BarcodeScanner from './BarcodeScanner';
 import '../styles/Scanner.css';
@@ -244,12 +244,10 @@ const Materiales = ({
               <AlertTriangle size={18} color="#dc2626" style={{flexShrink:0,marginTop:2}}/>
               <div>
                 <p style={{fontFamily:'Changa',fontWeight:'bold',color:'#dc2626',fontSize:'0.75em',textTransform:'uppercase',margin:0}}>
-                  Error de base de datos — los materiales no se están guardando
+                  Error de almacenamiento — los materiales no se están guardando
                 </p>
                 <p style={{fontFamily:'Quantico',color:'#7f1d1d',fontSize:'0.6em',textTransform:'uppercase',margin:'4px 0 0'}}>
-                  {dbError === 'load'
-                    ? 'No se pudo cargar la tabla "materiales". Créala en Supabase con columnas: id (text, PK) y data (jsonb), luego activa RLS con política de lectura/escritura pública.'
-                    : 'Error al guardar en Supabase. Verifica que la tabla "materiales" existe con columnas id (text PK) y data (jsonb), y que las políticas RLS permiten INSERT y UPDATE.'}
+                  No se pudo guardar en el almacenamiento local del dispositivo. Es posible que el espacio disponible esté lleno — libera espacio o exporta un respaldo y limpia datos antiguos desde Inicio → Respaldo.
                 </p>
               </div>
             </div>
