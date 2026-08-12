@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Download, Plus, Home, Edit2, Trash2, AlertCircle, FileImage, ChevronDown } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
 import { exportToVisualImage } from '../utils/visualExportUtils';
-import { deleteFromTable, syncTable } from '../lib/localStore';
+import { deleteFromTable, syncTable, nextTrabajoId } from '../lib/localStore';
 
 const Trabajos = ({
   setCurrentView,
@@ -227,16 +227,12 @@ const Trabajos = ({
       await syncTable('trabajos', [updated]);
       setEditingItem(null);
     } else {
-      const prefix = (empresaSeleccionada[0] || 'X').toUpperCase();
-      const trabajosDeEmpresa = trabajos.filter(t => t.empresa === empresaSeleccionada);
-      const count = trabajosDeEmpresa.length;
-
       // Reinstalación con ambas PPU → split en Desinstalación + Instalación
       if (formData.servicio === 'Reinstalación' && formData.ppuIn && formData.ppuOut) {
         const ufDes = 0.5;
         const ufInst = formData.accesorios.includes('ON BATT') ? 0.6 : 0.8;
-        const idDes = `${prefix}${String(count + 1).padStart(3, '0')}`;
-        const idInst = `${prefix}${String(count + 2).padStart(3, '0')}`;
+        const idDes = nextTrabajoId(empresaSeleccionada, trabajos);
+        const idInst = nextTrabajoId(empresaSeleccionada, trabajos);
         const job1 = {
           ...formData, id: idDes, empresa: empresaSeleccionada, mes: mesSeleccionado,
           servicio: 'Desinstalación', ppuIn: '', ppuOut: formData.ppuOut,
@@ -254,7 +250,7 @@ const Trabajos = ({
         descontarEquipos(formData.imeiIn, formData.imeiOut);
         agregarClienteSiNoExiste(formData.nombreCliente);
       } else {
-        const newId = `${prefix}${String(count + 1).padStart(3, '0')}`;
+        const newId = nextTrabajoId(empresaSeleccionada, trabajos);
         const newJob = { ...formData, id: newId, empresa: empresaSeleccionada, mes: mesSeleccionado };
         setTrabajos([...trabajos, newJob]);
         await syncTable('trabajos', [newJob]);

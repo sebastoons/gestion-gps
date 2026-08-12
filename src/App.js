@@ -286,7 +286,7 @@ const App = () => {
           trabajos={trabajos} setTrabajos={setTrabajos}
           clientes={clientes} setClientes={setClientes}
           materiales={materiales} setMateriales={setMateriales}
-          mesSeleccionado={mesSeleccionado} setOtQueue={setOtQueue}
+          mesSeleccionado={mesSeleccionado} setMesSeleccionado={setMesSeleccionado} setOtQueue={setOtQueue}
           empresaSeleccionada={empresaSeleccionada} setEmpresaSeleccionada={setEmpresaSeleccionada}
           pendingOT={pendingOT} setPendingOT={setPendingOT} />
       )}

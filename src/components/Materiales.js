@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Home, Plus, Trash2, Camera, Download, Edit2, X, AlertTriangle, QrCode } from 'lucide-react';
-import { deleteFromTable } from '../lib/localStore';
+import { deleteFromTable, nextEquipoId } from '../lib/localStore';
 import { exportToCSV } from '../utils/exportUtils';
 import BarcodeScanner from './BarcodeScanner';
 import '../styles/Scanner.css';
@@ -81,8 +81,6 @@ const Materiales = ({
       : new Set(data.map(d => d.id)));
   };
 
-  const pfx = (b) => emp === 'UGPS' ? `U${b}` : `E${b}`;
-
   const resetForms = () => {
     setFormN({ fechaRecepcion:TODAY, imei:'', estado:'disponible', nombreCliente:'' });
     setFormR({ fecha:TODAY, cliente:'', imei:'' });
@@ -122,7 +120,7 @@ const Materiales = ({
     if (editingId) {
       setEquiposNuevos(prev => prev.map(e => e.id===editingId ? {...formN,id:editingId,empresa:emp} : e));
     } else {
-      setEquiposNuevos(prev => [...prev, {...formN, id:`${pfx('N')}${String(filtN.length+1).padStart(3,'0')}`, empresa:emp}]);
+      setEquiposNuevos(prev => [...prev, {...formN, id: nextEquipoId('equipos_nuevos', emp, equiposNuevos, 'N'), empresa:emp}]);
     }
     setShowForm(false); setEditingId(null);
   };
@@ -132,7 +130,7 @@ const Materiales = ({
     if (editingId) {
       setEquiposRetirados(prev => prev.map(e => e.id===editingId ? {...formR,id:editingId,empresa:emp} : e));
     } else {
-      setEquiposRetirados(prev => [...prev, {...formR, id:`${pfx('R')}${String(filtR.length+1).padStart(3,'0')}`, empresa:emp}]);
+      setEquiposRetirados(prev => [...prev, {...formR, id: nextEquipoId('equipos_retirados', emp, equiposRetirados, 'R'), empresa:emp}]);
     }
     setShowForm(false); setEditingId(null);
   };
@@ -142,7 +140,7 @@ const Materiales = ({
     if (editingId) {
       setEquiposMalos(prev => prev.map(e => e.id===editingId ? {...formMl,id:editingId,empresa:emp} : e));
     } else {
-      setEquiposMalos(prev => [...prev, {...formMl, id:`${pfx('M')}${String(filtMl.length+1).padStart(3,'0')}`, empresa:emp}]);
+      setEquiposMalos(prev => [...prev, {...formMl, id: nextEquipoId('equipos_malos', emp, equiposMalos, 'M'), empresa:emp}]);
     }
     setShowForm(false); setEditingId(null);
   };

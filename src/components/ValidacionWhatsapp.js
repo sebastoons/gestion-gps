@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Home } from 'lucide-react';
 import { ChevronDown } from 'lucide-react';
-import { deleteFromTable, syncTable } from '../lib/localStore';
+import { deleteFromTable, syncTable, nextTrabajoId, nextEquipoId } from '../lib/localStore';
 
 const COSTOS = {
   'Instalación': 0.8, 'Desinstalación': 0.5,
@@ -100,12 +100,14 @@ const ValidacionWhatsapp = ({
   equiposRetirados, setEquiposRetirados,
   equiposMalos, setEquiposMalos,
   trabajos, setTrabajos,
+  clientes, setClientes,
   materiales, setMateriales,
-  mesSeleccionado, setOtQueue,
+  mesSeleccionado, setMesSeleccionado, setOtQueue,
   empresaSeleccionada, setEmpresaSeleccionada,
   pendingOT, setPendingOT,
 }) => {
   const [form, setForm] = useState(() => ({ ...VACIO, empresa: empresaSeleccionada || 'Entel' }));
+  const [ultimoRegistro, setUltimoRegistro] = useState(null);
   const [showPpuOut, setShowPpuOut] = useState(false);
   const [showGpsOut, setShowGpsOut] = useState(false);
 
@@ -216,27 +218,41 @@ const ValidacionWhatsapp = ({
     } else if (servicio === 'Desinstalación') {
       if (gpsOut) {
         if (dest === 'Malo') {
-          setEquiposMalos(prev => [...prev, { id: `M${String(prev.length+1).padStart(3,'0')}`, imei: gpsOut, asignado: true, nombreCliente: form.cliente, empresa: form.empresa }]);
+          setEquiposMalos(prev => [...prev, { id: nextEquipoId('equipos_malos', form.empresa, equiposMalos, 'M'), imei: gpsOut, asignado: true, nombreCliente: form.cliente, empresa: form.empresa }]);
         } else {
-          setEquiposRetirados(prev => [...prev, { id: `R${String(prev.length+1).padStart(3,'0')}`, fecha: form.fecha, cliente: form.cliente, imei: gpsOut, empresa: form.empresa }]);
+          setEquiposRetirados(prev => [...prev, { id: nextEquipoId('equipos_retirados', form.empresa, equiposRetirados, 'R'), fecha: form.fecha, cliente: form.cliente, imei: gpsOut, empresa: form.empresa }]);
         }
       }
     } else if (servicio === 'Mantención') {
       if (gpsIn) quitarInventario(gpsIn);
-      if (gpsOut) setEquiposRetirados(prev => [...prev, { id: `R${String(prev.length+1).padStart(3,'0')}`, fecha: form.fecha, cliente: form.cliente, imei: gpsOut, empresa: form.empresa }]);
+      if (gpsOut) setEquiposRetirados(prev => [...prev, { id: nextEquipoId('equipos_retirados', form.empresa, equiposRetirados, 'R'), fecha: form.fecha, cliente: form.cliente, imei: gpsOut, empresa: form.empresa }]);
     }
   };
 
+  const agregarClienteSiNoExiste = (nombre, empresa) => {
+    if (!nombre?.trim() || !clientes || !setClientes) return;
+    const existe = clientes.some(c => c.nombreCliente.trim().toLowerCase() === nombre.trim().toLowerCase());
+    if (!existe) {
+      setClientes(prev => [...prev, {
+        id: `CL${String(prev.length + 1).padStart(3, '0')}`,
+        nombreCliente: nombre.trim(), empresa,
+        nombreContacto1: '', telefono1: '', nombreContacto2: '', telefono2: '',
+        region: '', ciudad: '', comuna: '', direccion: '', tipoVehiculo: ''
+      }]);
+    }
+  };
+
+  // Retorna el mes de facturación en el que quedó registrado el trabajo, para
+  // poder avisarle al usuario dónde encontrarlo si no coincide con el mes
+  // que tiene seleccionado actualmente en "Trabajos del Mes".
   const agregarATrabajos = async () => {
     const emp = form.empresa;
-    const prefix = (emp[0] || 'X').toUpperCase();
     const mes = getMesFacturacion(form.fecha, emp) || mesSeleccionado;
     const costoPerif = form.perifericos.reduce((sum, p) => sum + (COSTOS_PERIFERICOS[p] || 0), 0);
 
     if (form.servicio === 'Reinstalación') {
-      const count = trabajos.filter(t => t.empresa === emp).length;
-      const id1 = `${prefix}${String(count + 1).padStart(3,'0')}`;
-      const id2 = `${prefix}${String(count + 2).padStart(3,'0')}`;
+      const id1 = nextTrabajoId(emp, trabajos);
+      const id2 = nextTrabajoId(emp, trabajos);
       const ufInstBase = form.perifericos.includes('ON BATT') ? 0.6 : COSTOS['Instalación'];
       const ufInst = ufInstBase + costoPerif;
       const ufDes = COSTOS['Desinstalación'];
@@ -259,7 +275,7 @@ const ValidacionWhatsapp = ({
       setTrabajos(prev => [...prev, job1, job2]);
       await syncTable('trabajos', [job1, job2]);
     } else {
-      const newId = `${prefix}${String(trabajos.filter(t => t.empresa === emp).length + 1).padStart(3,'0')}`;
+      const newId = nextTrabajoId(emp, trabajos);
       const baseUF = (form.servicio === 'Instalación' && form.perifericos.includes('ON BATT'))
         ? 0.6 : (COSTOS[form.servicio] || 0.8);
       const uf = baseUF + costoPerif;
@@ -274,6 +290,7 @@ const ValidacionWhatsapp = ({
       setTrabajos(prev => [...prev, newJob]);
       await syncTable('trabajos', [newJob]);
     }
+    return { mes, empresa: emp };
   };
 
   const validar = () => {
@@ -284,7 +301,9 @@ const ValidacionWhatsapp = ({
   const ejecutarAcciones = async () => {
     const esReinst = form.servicio === 'Reinstalación';
     procesarEquipos();
-    await agregarATrabajos();
+    const { mes, empresa } = await agregarATrabajos();
+    agregarClienteSiNoExiste(form.cliente, empresa);
+    setUltimoRegistro({ mes, empresa });
     if (setPendingOT) setPendingOT({ inst: crearDraftOT(), desinst: esReinst ? crearDraftOTDesinst() : null });
     setForm(prev => ({
       ...VACIO,
@@ -466,11 +485,26 @@ const ValidacionWhatsapp = ({
               </button>
             </div>
 
+            {ultimoRegistro && (
+              <div className="val-preview" style={{ marginTop:12, padding:'8px 12px', backgroundColor:'#f0fdf4', border:'1px solid #86efac', borderRadius:8, fontFamily:'Quantico', fontSize:'0.65em', color:'#166534', textTransform:'uppercase', display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
+                <span style={{ flex:1 }}>
+                  ✓ Registrado en Trabajos del Mes — {ultimoRegistro.empresa} · {ultimoRegistro.mes}
+                </span>
+                {(ultimoRegistro.mes !== mesSeleccionado || ultimoRegistro.empresa !== empresaSeleccionada) && (
+                  <button className="btn btn-primary" style={{ fontSize:'0.7em', padding:'4px 10px', textTransform:'uppercase' }}
+                    onClick={() => {
+                      if (setEmpresaSeleccionada) setEmpresaSeleccionada(ultimoRegistro.empresa);
+                      if (setMesSeleccionado) setMesSeleccionado(ultimoRegistro.mes);
+                      setCurrentView('trabajos');
+                    }}>
+                    Ver en Trabajos →
+                  </button>
+                )}
+              </div>
+            )}
+
             {pendingOT && (
               <div style={{ marginTop:12, display:'flex', flexDirection:'column', gap:8 }}>
-                <div className="val-preview" style={{ padding:'8px 12px', backgroundColor:'#f0fdf4', border:'1px solid #86efac', borderRadius:8, fontFamily:'Quantico', fontSize:'0.65em', color:'#166534', textTransform:'uppercase' }}>
-                  ✓ Datos registrados en trabajos del mes
-                </div>
                 <div className="val-banner" style={{ padding:'10px 14px', background:'#fffbeb', border:'1px solid #fcd34d', borderRadius:8, display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
                   <span style={{ fontFamily:'Quantico', fontSize:'0.7em', color:'#92400e', flex:1 }}>
                     📋 ¿Crear OT de {pendingOT.inst.tipoServicio}?

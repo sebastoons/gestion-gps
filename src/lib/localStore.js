@@ -45,6 +45,41 @@ export const deleteFromTable = async (name, ids) => {
   writeRaw(name, current.filter(i => !toDelete.has(i.id)));
 };
 
+// ── Generador de IDs sin colisiones ─────────────────────────────────────────
+// Los conteos tipo `array.filter(...).length + 1` se repiten después de borrar
+// un registro (el largo del arreglo baja pero el máximo histórico no), lo que
+// genera un id ya usado y el upsert de syncTable sobreescribe silenciosamente
+// el registro viejo. nextId mantiene un contador persistente por clave que
+// nunca decrece: al primer uso se autoinicializa buscando el número más alto
+// ya presente entre los items existentes con ese mismo prefijo.
+const nextId = (counterKey, existingItems, prefix) => {
+  const storageKey = KEY(`counter_${counterKey}`);
+  let n = parseInt(localStorage.getItem(storageKey), 10);
+  if (!n || isNaN(n)) {
+    n = (existingItems || []).reduce((max, it) => {
+      if (typeof it?.id === 'string' && it.id.startsWith(prefix)) {
+        const num = parseInt(it.id.slice(prefix.length), 10);
+        if (!isNaN(num) && num > max) return num;
+      }
+      return max;
+    }, 0);
+  }
+  n += 1;
+  localStorage.setItem(storageKey, String(n));
+  return `${prefix}${String(n).padStart(3, '0')}`;
+};
+
+// Prefijo de empresa: primera letra en mayúscula (E de Entel, U de UGPS, etc).
+export const empresaPrefix = (empresa) => (empresa?.[0] || 'X').toUpperCase();
+
+// IDs para trabajos: prefijo = letra de empresa (ej. "U004").
+export const nextTrabajoId = (empresa, trabajosActuales) =>
+  nextId(`trabajos_${empresa}`, trabajosActuales.filter(t => t.empresa === empresa), empresaPrefix(empresa));
+
+// IDs para equipos/materiales: prefijo = letra de empresa + código de tipo (ej. "UN004", "UR004", "UM004").
+export const nextEquipoId = (tabla, empresa, itemsActuales, tipoCodigo) =>
+  nextId(`${tabla}_${empresa}`, itemsActuales.filter(it => it.empresa === empresa), `${empresaPrefix(empresa)}${tipoCodigo}`);
+
 // ── Respaldo (exportar / importar todo) ─────────────────────────────────────
 export const BACKUP_TABLES = [
   'trabajos', 'equipos_nuevos', 'equipos_retirados', 'equipos_malos',
@@ -87,6 +122,16 @@ export const importBackup = (file) => new Promise((resolve, reject) => {
       if (Array.isArray(payload.empresas) && payload.empresas.length) {
         localStorage.setItem('empresas', JSON.stringify(payload.empresas));
       }
+      // Los contadores de nextId quedan obsoletos frente a los datos importados
+      // (pueden ser más bajos que el máximo real importado y volver a chocar).
+      // Se borran para que se re-inicialicen solos a partir de los ids importados.
+      const counterPrefix = KEY('counter_');
+      const staleCounterKeys = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(counterPrefix)) staleCounterKeys.push(k);
+      }
+      staleCounterKeys.forEach(k => localStorage.removeItem(k));
       resolve();
     } catch (e) {
       reject(e);
