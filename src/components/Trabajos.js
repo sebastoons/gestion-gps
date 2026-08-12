@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Download, Plus, Home, Edit2, Trash2, AlertCircle, FileImage, ChevronDown } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
 import { exportToVisualImage } from '../utils/visualExportUtils';
-import { deleteFromTable, syncTable } from '../lib/localStore';
+import { deleteFromTable, syncTable } from '../lib/supabase';
 
 const Trabajos = ({
   setCurrentView,

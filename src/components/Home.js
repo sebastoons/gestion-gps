@@ -1,8 +1,8 @@
 import React from 'react';
-import { Briefcase, Archive, DollarSign, MessageCircle, ClipboardList, Sun, Moon, Settings, DatabaseBackup } from 'lucide-react';
+import { Briefcase, Archive, DollarSign, MessageCircle, ClipboardList, Sun, Moon, Settings } from 'lucide-react';
 import '../styles/Home.css';
 
-const Home = ({ setCurrentView, darkMode, setDarkMode, empresas, onManageEmpresas, onRespaldo }) => {
+const Home = ({ setCurrentView, darkMode, setDarkMode, empresas, onManageEmpresas }) => {
   return (
     <div className="home-container">
       <div className="home-content">
@@ -14,10 +14,6 @@ const Home = ({ setCurrentView, darkMode, setDarkMode, empresas, onManageEmpresa
           <button className="home-toggle" onClick={onManageEmpresas} style={{ gap:5 }}>
             <Settings size={13} />
             {empresas?.length === 1 ? empresas[0] : `${empresas?.length || 0} empresas`}
-          </button>
-          <button className="home-toggle" onClick={onRespaldo} style={{ gap:5 }}>
-            <DatabaseBackup size={13} />
-            Respaldo
           </button>
         </div>
 

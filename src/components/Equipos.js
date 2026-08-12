@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Download, Plus, Edit2, Trash2, Home, Camera, X, AlertTriangle, QrCode } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
-import { deleteFromTable } from '../lib/localStore';
+import { deleteFromTable } from '../lib/supabase';
 import BarcodeScanner from './BarcodeScanner';
 import '../styles/Scanner.css';
 

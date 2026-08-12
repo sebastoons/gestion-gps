@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Home } from 'lucide-react';
 import { ChevronDown } from 'lucide-react';
-import { deleteFromTable, syncTable } from '../lib/localStore';
+import { deleteFromTable, syncTable } from '../lib/supabase';
 
 const COSTOS = {
   'Instalación': 0.8, 'Desinstalación': 0.5,
