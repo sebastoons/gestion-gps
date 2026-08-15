@@ -1,0 +1,189 @@
+/* ══════════════════════════════════════
+   DASHBOARD — categorical series palette
+   (validated: adjacent-pair CVD-safe, light & dark)
+══════════════════════════════════════ */
+:root {
+  --series-1: #2a78d6; /* azul */
+  --series-2: #eb6834; /* naranja */
+  --series-3: #1baf7a; /* aqua */
+  --series-4: #eda100; /* amarillo */
+  --series-5: #e87ba4; /* magenta */
+  --series-6: #008300; /* verde */
+  --series-7: #4a3aa7; /* violeta */
+  --series-8: #e34948; /* rojo */
+}
+.dark {
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --series-6: #008300;
+  --series-7: #9085e9;
+  --series-8: #e66767;
+}
+
+.db-toolbar {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  margin-bottom: 18px;
+}
+.db-metric-toggle { display: flex; gap: 4px; }
+
+.db-note {
+  font-family: 'Quantico'; font-size: 0.6em; text-transform: uppercase;
+  color: #6b7280; margin: -6px 0 12px;
+}
+.dark .db-note { color: #64748b; }
+
+/* ── Hero ── */
+.db-hero {
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b5bdb 55%, #507cdd 100%);
+  border-radius: 18px;
+  padding: 24px 22px;
+  margin-bottom: 22px;
+  color: white;
+  box-shadow: 0 12px 32px rgba(37,99,235,0.28);
+  display: flex; flex-direction: column; gap: 16px;
+}
+.dark .db-hero {
+  background: linear-gradient(135deg, #0f1f47 0%, #1d3a8f 55%, #2a4bb0 100%);
+  box-shadow: 0 12px 36px rgba(0,0,0,0.4);
+}
+.db-hero-main { display: flex; flex-direction: column; gap: 4px; }
+.db-hero-label {
+  font-family: 'Quantico'; font-size: 0.65em; text-transform: uppercase;
+  letter-spacing: 1px; color: rgba(255,255,255,0.75);
+}
+.db-hero-value {
+  font-family: 'Changa'; font-weight: bold; font-size: 2.2em; line-height: 1.1;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.15);
+}
+.db-hero-sub {
+  font-family: 'Quantico'; font-size: 0.62em; text-transform: uppercase;
+  color: rgba(255,255,255,0.72);
+}
+.db-hero-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.db-hero-chip {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 12px; padding: 6px 12px;
+  backdrop-filter: blur(6px);
+}
+.db-hero-chip-name {
+  font-family: 'Quantico'; font-size: 0.6em; text-transform: uppercase; color: rgba(255,255,255,0.85);
+}
+.db-hero-chip-value {
+  font-family: 'Changa'; font-weight: bold; font-size: 0.72em; color: white;
+}
+
+.db-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+
+/* ── Section title ── */
+.db-section-title {
+  font-family: 'Changa'; font-weight: bold; font-size: 0.85em; text-transform: uppercase;
+  color: #1e3a5f; margin: 4px 0 12px;
+}
+.dark .db-section-title { color: rgba(255,255,255,0.9); }
+
+/* ── Empresa cards ── */
+.db-empresa-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px; margin-bottom: 24px;
+}
+.db-empresa-card {
+  background: white; border-radius: 14px; padding: 14px 16px;
+  border: 1px solid rgba(0,0,0,0.06);
+  border-top: 3px solid var(--card-color);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  display: flex; flex-direction: column; gap: 4px;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.db-empresa-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.09); }
+.dark .db-empresa-card {
+  background: #1a2744; border-color: rgba(255,255,255,0.07);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+.db-empresa-head { display: flex; align-items: center; gap: 7px; }
+.db-empresa-name {
+  font-family: 'Quantico'; font-size: 0.65em; font-weight: bold; text-transform: uppercase; color: #374151;
+}
+.dark .db-empresa-name { color: #cbd5e1; }
+.db-empresa-value {
+  font-family: 'Changa'; font-weight: bold; font-size: 1.25em; color: #1f2937;
+}
+.dark .db-empresa-value { color: #f1f5f9; }
+.db-empresa-sub {
+  font-family: 'Quantico'; font-size: 0.55em; text-transform: uppercase; color: #9ca3af;
+}
+.dark .db-empresa-sub { color: #64748b; }
+.db-meter {
+  height: 6px; border-radius: 4px; background: rgba(0,0,0,0.06); overflow: hidden; margin-top: 4px;
+}
+.dark .db-meter { background: rgba(255,255,255,0.08); }
+.db-meter-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+
+/* ── Legend ── */
+.db-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 10px; }
+.db-legend-item {
+  display: flex; align-items: center; gap: 6px;
+  font-family: 'Quantico'; font-size: 0.6em; text-transform: uppercase; color: #4b5563;
+}
+.dark .db-legend-item { color: #94a3b8; }
+
+/* ── Chart ── */
+.db-chart-scroll { overflow-x: auto; padding-bottom: 4px; }
+.db-chart {
+  display: flex; align-items: flex-end; gap: 14px;
+  min-height: 230px; padding: 8px 6px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+.dark .db-chart { border-color: #334155; }
+
+.db-bar-col {
+  display: flex; flex-direction: column; align-items: center;
+  min-width: 40px; flex-shrink: 0;
+}
+.db-bar-total {
+  font-family: 'Quantico'; font-size: 0.55em; font-weight: bold; color: #374151;
+  margin-bottom: 4px; white-space: nowrap;
+}
+.dark .db-bar-total { color: #cbd5e1; }
+
+.db-bar-stack {
+  width: 24px; height: 180px;
+  display: flex; flex-direction: column-reverse;
+  gap: 2px;
+}
+.db-bar-seg {
+  width: 100%; min-height: 3px;
+  transition: filter 0.15s ease, opacity 0.15s ease;
+  cursor: pointer;
+}
+.db-bar-seg:hover { filter: brightness(1.12); }
+.db-bar-seg--top { border-radius: 4px 4px 0 0; }
+
+.db-bar-label {
+  font-family: 'Quantico'; font-size: 0.55em; text-transform: uppercase; color: #6b7280;
+  margin-top: 6px; white-space: nowrap;
+}
+.dark .db-bar-label { color: #64748b; }
+
+/* ── Tooltip ── */
+.db-tooltip {
+  margin-top: 10px; display: inline-block;
+  background: #1f2937; color: white;
+  font-family: 'Quantico'; font-size: 0.62em; text-transform: uppercase;
+  padding: 6px 12px; border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+.db-tooltip strong { font-family: 'Changa'; }
+.dark .db-tooltip { background: #0f172a; border: 1px solid #334155; }
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+  .db-hero-value { font-size: 1.7em; }
+  .db-empresa-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+  .db-bar-stack { height: 140px; }
+  .db-chart { min-height: 190px; }
+}

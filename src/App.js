@@ -6,6 +6,7 @@ import ValidacionWhatsapp from './components/ValidacionWhatsapp';
 import OrdenesTrabajo from './components/OrdenesTrabajo';
 import EscanerGPS from './components/EscanerGPS';
 import Materiales from './components/Materiales';
+import Dashboard from './components/Dashboard';
 import { Sun, Moon, X, Plus, Download, Upload } from 'lucide-react';
 import { loadTable, syncTable, exportBackup, importBackup } from './lib/localStore';
 import './styles/Common.css';
@@ -262,6 +263,10 @@ const App = () => {
       )}
 
       {currentView === 'valores' && <ValoresTrabajos setCurrentView={setCurrentView} />}
+
+      {currentView === 'dashboard' && (
+        <Dashboard setCurrentView={setCurrentView} trabajos={trabajos} empresas={empresas} />
+      )}
 
       {currentView === 'ordenes' && (
         <OrdenesTrabajo setCurrentView={setCurrentView} empresas={empresas}
