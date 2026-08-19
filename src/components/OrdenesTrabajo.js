@@ -272,7 +272,7 @@ const OTDoc = ({ ot, numero, empresa, cliente, rut, firma, aceptacion }) => {
       </div>
 
       <div className="otd-footer">
-        <span>{empresa} · {ot.fecha} · La firma acredita autorización y conformidad.</span>
+        <span>{cliente} · {ot.fecha} · La firma acredita autorización y conformidad.</span>
         <img src="/logo.svg" alt="ServITrak" className="otd-footer-logo"/>
       </div>
     </div>
