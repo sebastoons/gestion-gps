@@ -280,11 +280,11 @@ const App = () => {
           equiposNuevos={equiposNuevos} setEquiposNuevos={setEquiposNuevos}
           equiposRetirados={equiposRetirados} setEquiposRetirados={setEquiposRetirados}
           equiposMalos={equiposMalos} setEquiposMalos={setEquiposMalos}
-          empresas={empresas} />
+          empresas={empresas} empresaSeleccionada={empresaSeleccionada} />
       )}
 
       {currentView === 'validacion' && (
-        <ValidacionWhatsapp setCurrentView={setCurrentView}
+        <ValidacionWhatsapp setCurrentView={setCurrentView} empresas={empresas}
           equiposNuevos={equiposNuevos} setEquiposNuevos={setEquiposNuevos}
           equiposRetirados={equiposRetirados} setEquiposRetirados={setEquiposRetirados}
           equiposMalos={equiposMalos} setEquiposMalos={setEquiposMalos}

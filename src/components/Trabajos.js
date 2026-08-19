@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Download, Plus, Home, Edit2, Trash2, AlertCircle, FileImage, ChevronDown } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
 import { exportToVisualImage } from '../utils/visualExportUtils';
-import { deleteFromTable, syncTable, nextTrabajoId } from '../lib/localStore';
+import { deleteFromTable, syncTable, nextTrabajoId, nextClienteId } from '../lib/localStore';
 
 const Trabajos = ({
   setCurrentView,
@@ -150,49 +150,36 @@ const Trabajos = ({
   const descontarEquipos = (imeiIn, imeiOut) => {
     let mensajesDescuento = [];
 
-    // Procesar IMEI IN (equipo instalado)
+    // Quita por id (no por snapshot completo) usando el setter funcional: si
+    // imeiIn e imeiOut terminan tocando el mismo inventario (p.ej. ambos se
+    // encuentran en "nuevos"), dos llamadas a setEquiposX con un array plano
+    // calculado sobre el mismo snapshot viejo harían que la segunda pisara a
+    // la primera y una de las dos bajas se "perdiera" silenciosamente.
+    const removerDe = (lista, setLista, tabla, imei) => {
+      const encontrado = lista.find(e => e.imei === imei && e.empresa === empresaSeleccionada);
+      if (!encontrado) return false;
+      deleteFromTable(tabla, encontrado.id);
+      setLista(prev => prev.filter(e => e.id !== encontrado.id));
+      return true;
+    };
+
+    // Procesar IMEI IN (equipo instalado): buscar PRIMERO en equipos nuevos
     if (imeiIn && imeiIn.trim() !== '') {
       const imeiInLimpio = imeiIn.trim();
-      
-      // Buscar PRIMERO en equipos nuevos
-      const equipoNuevo = equiposNuevos.find(
-        e => e.imei === imeiInLimpio && e.empresa === empresaSeleccionada
-      );
-      
-      if (equipoNuevo) {
-        deleteFromTable('equipos_nuevos', equipoNuevo.id);
-        setEquiposNuevos(equiposNuevos.filter(e => !(e.imei === imeiInLimpio && e.empresa === empresaSeleccionada)));
+      if (removerDe(equiposNuevos, setEquiposNuevos, 'equipos_nuevos', imeiInLimpio)) {
         mensajesDescuento.push(`✓ Equipo NUEVO (${imeiInLimpio}) descontado del inventario`);
-      } else {
-        const equipoRetirado = equiposRetirados.find(e => e.imei === imeiInLimpio && e.empresa === empresaSeleccionada);
-        if (equipoRetirado) {
-          deleteFromTable('equipos_retirados', equipoRetirado.id);
-          setEquiposRetirados(equiposRetirados.filter(e => !(e.imei === imeiInLimpio && e.empresa === empresaSeleccionada)));
-          mensajesDescuento.push(`✓ Equipo RETIRADO (${imeiInLimpio}) descontado del inventario`);
-        }
+      } else if (removerDe(equiposRetirados, setEquiposRetirados, 'equipos_retirados', imeiInLimpio)) {
+        mensajesDescuento.push(`✓ Equipo RETIRADO (${imeiInLimpio}) descontado del inventario`);
       }
     }
 
-    // Procesar IMEI OUT (equipo retirado)
+    // Procesar IMEI OUT (equipo retirado): buscar PRIMERO en equipos retirados
     if (imeiOut && imeiOut.trim() !== '') {
       const imeiOutLimpio = imeiOut.trim();
-      
-      // Buscar PRIMERO en equipos retirados
-      const equipoRetirado = equiposRetirados.find(
-        e => e.imei === imeiOutLimpio && e.empresa === empresaSeleccionada
-      );
-      
-      if (equipoRetirado) {
-        deleteFromTable('equipos_retirados', equipoRetirado.id);
-        setEquiposRetirados(equiposRetirados.filter(e => !(e.imei === imeiOutLimpio && e.empresa === empresaSeleccionada)));
+      if (removerDe(equiposRetirados, setEquiposRetirados, 'equipos_retirados', imeiOutLimpio)) {
         mensajesDescuento.push(`✓ Equipo RETIRADO (${imeiOutLimpio}) descontado del inventario`);
-      } else {
-        const equipoNuevo = equiposNuevos.find(e => e.imei === imeiOutLimpio && e.empresa === empresaSeleccionada);
-        if (equipoNuevo) {
-          deleteFromTable('equipos_nuevos', equipoNuevo.id);
-          setEquiposNuevos(equiposNuevos.filter(e => !(e.imei === imeiOutLimpio && e.empresa === empresaSeleccionada)));
-          mensajesDescuento.push(`✓ Equipo NUEVO (${imeiOutLimpio}) descontado del inventario`);
-        }
+      } else if (removerDe(equiposNuevos, setEquiposNuevos, 'equipos_nuevos', imeiOutLimpio)) {
+        mensajesDescuento.push(`✓ Equipo NUEVO (${imeiOutLimpio}) descontado del inventario`);
       }
     }
 
@@ -206,8 +193,9 @@ const Trabajos = ({
     if (!nombre?.trim() || !clientes || !setClientes) return;
     const existe = clientes.some(c => c.nombreCliente.trim().toLowerCase() === nombre.trim().toLowerCase());
     if (!existe) {
+      const newId = nextClienteId(clientes);
       setClientes(prev => [...prev, {
-        id: `CL${String(prev.length + 1).padStart(3, '0')}`,
+        id: newId,
         nombreCliente: nombre.trim(), empresa: empresaSeleccionada,
         nombreContacto1: '', telefono1: '', nombreContacto2: '', telefono2: '',
         region: '', ciudad: '', comuna: '', direccion: '', tipoVehiculo: ''

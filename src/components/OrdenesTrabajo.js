@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Download, Search, ChevronLeft, X, Trash2, Check, Home as HomeIcon, ChevronDown, FileImage } from 'lucide-react';
+import { Plus, Download, Search, ChevronLeft, X, Trash2, Check, Home as HomeIcon, ChevronDown, FileImage, Eye } from 'lucide-react';
 import { loadTable, syncTable, deleteFromTable } from '../lib/localStore';
 import '../styles/OrdenesTrabajo.css';
 
@@ -306,7 +306,7 @@ const downloadImage = async (elementId, filename) => {
 };
 
 // ── Componente principal ──────────────────────────────────────────────────────
-const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, clientes, otQueue, setOtQueue, pendingOT, setPendingOT }) => {
+const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue, setOtQueue, pendingOT, setPendingOT }) => {
   const [step,setStep] = useState('list');
   const [otsList,setOtsList] = useState([]);
   const [sessionOTs,setSessionOTs] = useState([]);
@@ -319,6 +319,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, cliente
   const [filterMes,setFilterMes] = useState('');
   const [counters,setCounters] = useState({});
   const [historyOT,setHistoryOT] = useState(null);
+  const [previewOT,setPreviewOT] = useState(null);
   const [downloading,setDownloading] = useState(false);
   const canvasRef = useRef(null);
   const isDrawing = useRef(false);
@@ -492,6 +493,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, cliente
                     <td style={{fontWeight:700}}>{ot.numero}</td><td>{ot.empresa}</td><td>{ot.fecha}</td>
                     <td>{ot.cliente}</td><td>{ot.ppu}</td><td>{ot.tipoServicio}</td><td>{ot.tecnico}</td>
                     <td><div className="table-actions">
+                      <button className="btn btn-secondary" style={{fontSize:'0.6em',padding:'3px 7px'}} onClick={()=>setPreviewOT(ot)}><Eye size={11}/> Ver</button>
                       <button className="btn btn-primary" style={{fontSize:'0.6em',padding:'3px 7px'}} onClick={()=>downloadHistoryItem(ot,'pdf')} disabled={downloading}><Download size={11}/> PDF</button>
                       <button className="btn btn-secondary" style={{fontSize:'0.6em',padding:'3px 7px'}} onClick={()=>downloadHistoryItem(ot,'img')} disabled={downloading}><FileImage size={11}/> JPG</button>
                       <button className="action-btn delete" onClick={()=>deleteOT(ot.id)}><Trash2 size={14}/></button>
@@ -509,6 +511,19 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, cliente
           <div id="ot-history-render">
             <OTDoc ot={historyOT} numero={historyOT.numero} empresa={historyOT.empresa}
               cliente={historyOT.cliente} rut={historyOT.rutCliente} firma={historyOT.firma} aceptacion={historyOT.aceptacion}/>
+          </div>
+        </div>
+      )}
+      {previewOT&&(
+        <div className="modal-overlay" onClick={()=>setPreviewOT(null)}>
+          <div style={{background:'#f8fafc',borderRadius:12,padding:12,maxWidth:440,width:'100%',maxHeight:'90vh',overflowY:'auto'}} onClick={e=>e.stopPropagation()}>
+            <div style={{display:'flex',justifyContent:'flex-end',gap:8,marginBottom:8}}>
+              <button className="btn btn-primary" style={{fontSize:'0.65em'}} onClick={()=>downloadHistoryItem(previewOT,'pdf')} disabled={downloading}><Download size={12}/> PDF</button>
+              <button className="btn btn-secondary" style={{fontSize:'0.65em'}} onClick={()=>downloadHistoryItem(previewOT,'img')} disabled={downloading}><FileImage size={12}/> JPG</button>
+              <button className="btn btn-secondary" style={{fontSize:'0.65em'}} onClick={()=>setPreviewOT(null)}><X size={12}/> Cerrar</button>
+            </div>
+            <OTDoc ot={previewOT} numero={previewOT.numero} empresa={previewOT.empresa}
+              cliente={previewOT.cliente} rut={previewOT.rutCliente} firma={previewOT.firma} aceptacion={previewOT.aceptacion}/>
           </div>
         </div>
       )}
