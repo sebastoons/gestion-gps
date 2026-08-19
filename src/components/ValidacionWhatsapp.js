@@ -96,6 +96,7 @@ const PerifeDropdown = ({ selected, onChange }) => {
 // ── Componente principal ────────────────────────────────────────────────────
 const ValidacionWhatsapp = ({
   setCurrentView,
+  empresas,
   equiposNuevos, setEquiposNuevos,
   equiposRetirados, setEquiposRetirados,
   equiposMalos, setEquiposMalos,
@@ -106,7 +107,7 @@ const ValidacionWhatsapp = ({
   empresaSeleccionada, setEmpresaSeleccionada,
   pendingOT, setPendingOT,
 }) => {
-  const [form, setForm] = useState(() => ({ ...VACIO, empresa: empresaSeleccionada || 'Entel' }));
+  const [form, setForm] = useState(() => ({ ...VACIO, empresa: empresaSeleccionada || empresas?.[0] || '' }));
   const [ultimoRegistro, setUltimoRegistro] = useState(null);
   const [showPpuOut, setShowPpuOut] = useState(false);
   const [showGpsOut, setShowGpsOut] = useState(false);
@@ -366,7 +367,7 @@ const ValidacionWhatsapp = ({
               <div>
                 <label style={lbl}>EMPRESA</label>
                 <select className="form-select" value={form.empresa} onChange={e => { set('empresa', e.target.value); if (setEmpresaSeleccionada) setEmpresaSeleccionada(e.target.value); }}>
-                  <option>Entel</option><option>UGPS</option>
+                  {(empresas || []).map(e => <option key={e}>{e}</option>)}
                 </select>
               </div>
               <div>

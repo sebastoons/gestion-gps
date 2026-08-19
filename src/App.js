@@ -284,7 +284,7 @@ const App = () => {
       )}
 
       {currentView === 'validacion' && (
-        <ValidacionWhatsapp setCurrentView={setCurrentView}
+        <ValidacionWhatsapp setCurrentView={setCurrentView} empresas={empresas}
           equiposNuevos={equiposNuevos} setEquiposNuevos={setEquiposNuevos}
           equiposRetirados={equiposRetirados} setEquiposRetirados={setEquiposRetirados}
           equiposMalos={equiposMalos} setEquiposMalos={setEquiposMalos}
