@@ -148,9 +148,13 @@ const ChecklistRow = ({ item, estado, onChange }) => {
 };
 
 // ── EmpresaLogos ──────────────────────────────────────────────────────────────
-const EmpresaLogos = ({ empresa }) => empresa==='UGPS'
-  ? <div className="ot-logos-wrap"><img src="/logos/ugps.png" alt="UGPS" className="ot-logo-img"/></div>
-  : <div className="ot-logos-wrap"><img src="/logos/onway.png" alt="Onway" className="ot-logo-img"/><img src="/logos/letra_entel.png" alt="Entel" className="ot-logo-img"/></div>;
+const normEmpresa = (s) => (s||'').toLowerCase().replace(/\s+/g,'');
+const EmpresaLogos = ({ empresa }) => {
+  const n = normEmpresa(empresa);
+  if (n === 'ugps') return <div className="ot-logos-wrap"><img src="/logos/ugps.png" alt="UGPS" className="ot-logo-img"/></div>;
+  if (n === 'megagps') return <div className="ot-logos-wrap"><img src="/logos/megagps.png" alt="Mega GPS" className="ot-logo-img"/></div>;
+  return <div className="ot-logos-wrap"><img src="/logos/onway.png" alt="Onway" className="ot-logo-img"/><img src="/logos/letra_entel.png" alt="Entel" className="ot-logo-img"/></div>;
+};
 
 // ── OTField ───────────────────────────────────────────────────────────────────
 const OTField = ({ l, v, full }) => (
