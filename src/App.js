@@ -280,7 +280,7 @@ const App = () => {
           equiposNuevos={equiposNuevos} setEquiposNuevos={setEquiposNuevos}
           equiposRetirados={equiposRetirados} setEquiposRetirados={setEquiposRetirados}
           equiposMalos={equiposMalos} setEquiposMalos={setEquiposMalos}
-          empresas={empresas} />
+          empresas={empresas} empresaSeleccionada={empresaSeleccionada} />
       )}
 
       {currentView === 'validacion' && (

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Home } from 'lucide-react';
 import { ChevronDown } from 'lucide-react';
-import { deleteFromTable, syncTable, nextTrabajoId, nextEquipoId } from '../lib/localStore';
+import { deleteFromTable, syncTable, nextTrabajoId, nextEquipoId, nextClienteId } from '../lib/localStore';
 
 const COSTOS = {
   'Instalación': 0.8, 'Desinstalación': 0.5,
@@ -158,9 +158,9 @@ const ValidacionWhatsapp = ({
   const verificarGPS = imei => {
     if (!imei?.trim()) return null;
     const i = imei.trim();
-    if (equiposNuevos.find(e => e.imei === i)) return 'NUEVO';
-    if (equiposRetirados.find(e => e.imei === i)) return 'RETIRADO';
-    if (equiposMalos.find(e => e.imei === i)) return 'MALO';
+    if (equiposNuevos.find(e => e.imei === i && e.empresa === form.empresa)) return 'NUEVO';
+    if (equiposRetirados.find(e => e.imei === i && e.empresa === form.empresa)) return 'RETIRADO';
+    if (equiposMalos.find(e => e.imei === i && e.empresa === form.empresa)) return 'MALO';
     return null;
   };
 
@@ -198,9 +198,12 @@ const ValidacionWhatsapp = ({
     const gpsIn = form.gpsIn?.trim();
     const gpsOut = showGpsOut ? form.gpsOut?.trim() : '';
     const quitarInventario = imei => {
-      const enNuevos = equiposNuevos.find(e => e.imei === imei);
-      if (enNuevos) { deleteFromTable('equipos_nuevos', enNuevos.id); setEquiposNuevos(prev => prev.filter(e => e.imei !== imei)); }
-      else { const enRet = equiposRetirados.find(e => e.imei === imei); if (enRet) { deleteFromTable('equipos_retirados', enRet.id); setEquiposRetirados(prev => prev.filter(e => e.imei !== imei)); } }
+      const enNuevos = equiposNuevos.find(e => e.imei === imei && e.empresa === form.empresa);
+      if (enNuevos) { deleteFromTable('equipos_nuevos', enNuevos.id); setEquiposNuevos(prev => prev.filter(e => e.id !== enNuevos.id)); }
+      else {
+        const enRet = equiposRetirados.find(e => e.imei === imei && e.empresa === form.empresa);
+        if (enRet) { deleteFromTable('equipos_retirados', enRet.id); setEquiposRetirados(prev => prev.filter(e => e.id !== enRet.id)); }
+      }
     };
     const descontarMateriales = (perifericos, empresa) => {
       if (!materiales?.length) return;
@@ -234,8 +237,9 @@ const ValidacionWhatsapp = ({
     if (!nombre?.trim() || !clientes || !setClientes) return;
     const existe = clientes.some(c => c.nombreCliente.trim().toLowerCase() === nombre.trim().toLowerCase());
     if (!existe) {
+      const newId = nextClienteId(clientes);
       setClientes(prev => [...prev, {
-        id: `CL${String(prev.length + 1).padStart(3, '0')}`,
+        id: newId,
         nombreCliente: nombre.trim(), empresa,
         nombreContacto1: '', telefono1: '', nombreContacto2: '', telefono2: '',
         region: '', ciudad: '', comuna: '', direccion: '', tipoVehiculo: ''

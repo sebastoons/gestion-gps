@@ -31,13 +31,14 @@ const EscanerGPS = ({
   equiposRetirados, setEquiposRetirados,
   equiposMalos, setEquiposMalos,
   empresas,
+  empresaSeleccionada,
 }) => {
   const [phase, setPhase] = useState('scanning');
   const [scanKey, setScanKey] = useState(0);
   const [camError, setCamError] = useState('');
   const qrRef = useRef(null);
   const [form, setForm] = useState({
-    imei: '', tipo: 'Nuevo', empresa: 'Entel',
+    imei: '', tipo: 'Nuevo', empresa: empresaSeleccionada || (empresas && empresas[0]) || 'Entel',
     fecha: new Date().toISOString().split('T')[0],
     nombreDispositivo: '',
   });

@@ -80,6 +80,14 @@ export const nextTrabajoId = (empresa, trabajosActuales) =>
 export const nextEquipoId = (tabla, empresa, itemsActuales, tipoCodigo) =>
   nextId(`${tabla}_${empresa}`, itemsActuales.filter(it => it.empresa === empresa), `${empresaPrefix(empresa)}${tipoCodigo}`);
 
+// IDs para clientes: prefijo fijo "CL" (compartido entre todas las empresas).
+// Antes se generaban como `CL${clientes.length + 1}`, el mismo patrón basado en
+// conteo que nextId fue creado para reemplazar (ver comentario arriba): un
+// respaldo importado con menos clientes que el máximo id ya usado podía volver
+// a generar un id existente y sobreescribir un cliente distinto en el upsert.
+export const nextClienteId = (clientesActuales) =>
+  nextId('clientes', clientesActuales, 'CL');
+
 // ── Respaldo (exportar / importar todo) ─────────────────────────────────────
 export const BACKUP_TABLES = [
   'trabajos', 'equipos_nuevos', 'equipos_retirados', 'equipos_malos',

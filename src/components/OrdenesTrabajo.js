@@ -306,7 +306,7 @@ const downloadImage = async (elementId, filename) => {
 };
 
 // ── Componente principal ──────────────────────────────────────────────────────
-const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, clientes, otQueue, setOtQueue, pendingOT, setPendingOT }) => {
+const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue, setOtQueue, pendingOT, setPendingOT }) => {
   const [step,setStep] = useState('list');
   const [otsList,setOtsList] = useState([]);
   const [sessionOTs,setSessionOTs] = useState([]);
