@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Home, Plus, Trash2, Camera, Download, Edit2, X, AlertTriangle, QrCode } from 'lucide-react';
-import { deleteFromTable, nextEquipoId } from '../lib/localStore';
+import { deleteFromTable, nextEquipoId } from '../lib/supabase';
 import { exportToCSV } from '../utils/exportUtils';
 import BarcodeScanner from './BarcodeScanner';
 import '../styles/Scanner.css';
@@ -115,32 +115,35 @@ const Materiales = ({
     setShowForm(true);
   };
 
-  const saveNuevo = () => {
+  const saveNuevo = async () => {
     if (!formN.imei || !formN.fechaRecepcion) { alert('IMEI y Fecha requeridos'); return; }
     if (editingId) {
       setEquiposNuevos(prev => prev.map(e => e.id===editingId ? {...formN,id:editingId,empresa:emp} : e));
     } else {
-      setEquiposNuevos(prev => [...prev, {...formN, id: nextEquipoId('equipos_nuevos', emp, equiposNuevos, 'N'), empresa:emp}]);
+      const id = await nextEquipoId('equipos_nuevos', emp, equiposNuevos, 'N');
+      setEquiposNuevos(prev => [...prev, {...formN, id, empresa:emp}]);
     }
     setShowForm(false); setEditingId(null);
   };
 
-  const saveRetirado = () => {
+  const saveRetirado = async () => {
     if (!formR.imei || !formR.fecha || !formR.cliente) { alert('Completa todos los campos'); return; }
     if (editingId) {
       setEquiposRetirados(prev => prev.map(e => e.id===editingId ? {...formR,id:editingId,empresa:emp} : e));
     } else {
-      setEquiposRetirados(prev => [...prev, {...formR, id: nextEquipoId('equipos_retirados', emp, equiposRetirados, 'R'), empresa:emp}]);
+      const id = await nextEquipoId('equipos_retirados', emp, equiposRetirados, 'R');
+      setEquiposRetirados(prev => [...prev, {...formR, id, empresa:emp}]);
     }
     setShowForm(false); setEditingId(null);
   };
 
-  const saveMalo = () => {
+  const saveMalo = async () => {
     if (!formMl.imei) { alert('IMEI requerido'); return; }
     if (editingId) {
       setEquiposMalos(prev => prev.map(e => e.id===editingId ? {...formMl,id:editingId,empresa:emp} : e));
     } else {
-      setEquiposMalos(prev => [...prev, {...formMl, id: nextEquipoId('equipos_malos', emp, equiposMalos, 'M'), empresa:emp}]);
+      const id = await nextEquipoId('equipos_malos', emp, equiposMalos, 'M');
+      setEquiposMalos(prev => [...prev, {...formMl, id, empresa:emp}]);
     }
     setShowForm(false); setEditingId(null);
   };

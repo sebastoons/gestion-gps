@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Download, Search, ChevronLeft, X, Trash2, Check, Home as HomeIcon, ChevronDown, FileImage, Eye } from 'lucide-react';
-import { loadTable, syncTable, deleteFromTable } from '../lib/localStore';
+import { loadTable, syncTable, deleteFromTable } from '../lib/supabase';
 import '../styles/OrdenesTrabajo.css';
 
 const REGIONES = [
