@@ -27,6 +27,10 @@
   display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
   margin-bottom: 18px;
 }
+/* Sin esto los botones se encogen y recortan su texto antes de saltar de
+   línea, en vez de mantenerse enteros y bajar en bloque (ej. al agregar el
+   segundo grupo Factura/Boleta, "Ver tabla"/"Imagen" quedaban cortados). */
+.db-toolbar .btn { flex-shrink: 0; }
 .db-metric-toggle { display: flex; gap: 4px; }
 
 .db-note {
@@ -186,4 +190,11 @@
   .db-empresa-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
   .db-bar-stack { height: 140px; }
   .db-chart { min-height: 190px; }
+  /* Common.css's ".btn { flex:1; min-width:0 }" at this breakpoint targets
+     every button on every page (not scoped to .toolbar), meant for a single
+     row of same-ish-length action buttons. With 6 buttons of very different
+     lengths (two toggle groups + Ver tabla + Imagen) that squeezes them all
+     onto one line and clips their text instead of letting db-toolbar's own
+     flex-wrap do its job. Restore natural sizing here specifically. */
+  .db-toolbar .btn { flex: 0 1 auto; min-width: auto; }
 }

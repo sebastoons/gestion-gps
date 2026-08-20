@@ -24,7 +24,7 @@ const Trabajos = ({
   const [editingItem, setEditingItem] = useState(null);
   const [accesoriosOpen, setAccesoriosOpen] = useState(false);
   const accesoriosRef = useRef(null);
-  const [valorUFMes, setValorUFMes] = useState(39000);
+  const [valorUFMes, setValorUFMes] = useState(40000);
   const [tipoDocumento, setTipoDocumento] = useState(() => localStorage.getItem('tipoDocumento') || 'factura');
   const [formData, setFormData] = useState({
     id: '',
@@ -69,7 +69,8 @@ const Trabajos = ({
       'Desinstalación': 0.5,
       'Mantención': 0.7,
       'Reinstalación': 0.8,
-      'Visita Fallida': 0.5
+      'Visita Fallida': 0.5,
+      'Sin Servicio': 0
     };
 
     const accesoriosDisponibles = {
@@ -219,8 +220,8 @@ const Trabajos = ({
       if (formData.servicio === 'Reinstalación' && formData.ppuIn && formData.ppuOut) {
         const ufDes = 0.5;
         const ufInst = formData.accesorios.includes('ON BATT') ? 0.6 : 0.8;
-        const idDes = await nextTrabajoId(empresaSeleccionada, trabajos);
-        const idInst = await nextTrabajoId(empresaSeleccionada, trabajos);
+        const idDes = await nextTrabajoId(empresaSeleccionada, trabajos, empresas);
+        const idInst = await nextTrabajoId(empresaSeleccionada, trabajos, empresas);
         const job1 = {
           ...formData, id: idDes, empresa: empresaSeleccionada, mes: mesSeleccionado,
           servicio: 'Desinstalación', ppuIn: '', ppuOut: formData.ppuOut,
@@ -238,7 +239,7 @@ const Trabajos = ({
         descontarEquipos(formData.imeiIn, formData.imeiOut);
         await agregarClienteSiNoExiste(formData.nombreCliente);
       } else {
-        const newId = await nextTrabajoId(empresaSeleccionada, trabajos);
+        const newId = await nextTrabajoId(empresaSeleccionada, trabajos, empresas);
         const newJob = { ...formData, id: newId, empresa: empresaSeleccionada, mes: mesSeleccionado };
         setTrabajos([...trabajos, newJob]);
         await syncTable('trabajos', [newJob]);
@@ -359,7 +360,7 @@ const Trabajos = ({
                 value={valorUFMes}
                 onChange={(e) => setValorUFMes(Number(e.target.value) || 0)}
                 className="form-input"
-                placeholder="Ej: 39000"
+                placeholder="Ej: 40000"
                 min="0"
                 step="1"
               />
@@ -496,6 +497,7 @@ const Trabajos = ({
                   <option>Mantención</option>
                   <option>Reinstalación</option>
                   <option>Visita Fallida</option>
+                  <option>Sin Servicio</option>
                 </select>
                 
                 <div ref={accesoriosRef} style={{ position: 'relative' }}>
@@ -531,8 +533,8 @@ const Trabajos = ({
                   )}
                 </div>
 
-                {/* PPU IN — oculto en Desinstalación */}
-                {formData.servicio !== 'Desinstalación' && (
+                {/* PPU IN — oculto en Desinstalación / Sin Servicio */}
+                {formData.servicio !== 'Desinstalación' && formData.servicio !== 'Sin Servicio' && (
                 <div style={{ position: 'relative' }}>
                   <input
                     type="text"
@@ -546,8 +548,8 @@ const Trabajos = ({
                 </div>
                 )}
 
-                {/* PPU OUT — oculto en Instalación */}
-                {formData.servicio !== 'Instalación' && (
+                {/* PPU OUT — oculto en Instalación / Sin Servicio */}
+                {formData.servicio !== 'Instalación' && formData.servicio !== 'Sin Servicio' && (
                 <div style={{ position: 'relative' }}>
                   <input
                     type="text"
@@ -561,8 +563,8 @@ const Trabajos = ({
                 </div>
                 )}
 
-                {/* IMEI IN — oculto en Desinstalación */}
-                {formData.servicio !== 'Desinstalación' && (
+                {/* IMEI IN — oculto en Desinstalación / Sin Servicio */}
+                {formData.servicio !== 'Desinstalación' && formData.servicio !== 'Sin Servicio' && (
                 <div style={{ position: 'relative' }}>
                   <input
                     type="tel"
@@ -596,8 +598,8 @@ const Trabajos = ({
                 </div>
                 )}
 
-                {/* IMEI OUT — oculto en Instalación */}
-                {formData.servicio !== 'Instalación' && (
+                {/* IMEI OUT — oculto en Instalación / Sin Servicio */}
+                {formData.servicio !== 'Instalación' && formData.servicio !== 'Sin Servicio' && (
                 <div style={{ position: 'relative' }}>
                   <input
                     type="tel"

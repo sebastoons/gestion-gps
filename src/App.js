@@ -16,7 +16,12 @@ const EmpresasModal = ({ empresas, setEmpresas, onRemove, onClose }) => {
   const [newName, setNewName] = useState('');
   const add = () => {
     const n = newName.trim();
-    if (!n || empresas.includes(n)) return;
+    // Comparación case-insensitive: "mega gps" y "Mega GPS" deben tratarse
+    // como la MISMA empresa, si no cada una termina con su propio id_counter,
+    // ot_counter y filtro de vista, partiendo en dos los datos de una sola
+    // empresa (bug de "empresa duplicada" difícil de notar hasta que los
+    // trabajos de una de las dos "mitades" parecen desaparecer).
+    if (!n || empresas.some(e => e.trim().toLowerCase() === n.toLowerCase())) return;
     setEmpresas(prev => [...prev, n]);
     setNewName('');
   };
@@ -39,10 +44,10 @@ const EmpresasModal = ({ empresas, setEmpresas, onRemove, onClose }) => {
           ))}
         </div>
         <div style={{ display:'flex', gap:8 }}>
-          <input value={newName} onChange={e => setNewName(e.target.value)}
+          <input value={newName} onChange={e => setNewName(e.target.value.toUpperCase())}
             onKeyDown={e => e.key === 'Enter' && add()}
             placeholder="Nueva empresa..."
-            style={{ flex:1, padding:'8px 10px', border:'1px solid #d1d5db', borderRadius:8, fontFamily:'Quantico', fontSize:'0.8em' }} />
+            style={{ flex:1, padding:'8px 10px', border:'1px solid #d1d5db', borderRadius:8, fontFamily:'Quantico', fontSize:'0.8em', textTransform:'uppercase' }} />
           <button onClick={add} className="btn btn-primary" style={{ fontSize:'0.8em', padding:'6px 12px' }}>
             <Plus size={13}/> Agregar
           </button>

@@ -120,7 +120,7 @@ const Materiales = ({
     if (editingId) {
       setEquiposNuevos(prev => prev.map(e => e.id===editingId ? {...formN,id:editingId,empresa:emp} : e));
     } else {
-      const id = await nextEquipoId('equipos_nuevos', emp, equiposNuevos, 'N');
+      const id = await nextEquipoId('equipos_nuevos', emp, equiposNuevos, 'N', empresas);
       setEquiposNuevos(prev => [...prev, {...formN, id, empresa:emp}]);
     }
     setShowForm(false); setEditingId(null);
@@ -131,7 +131,7 @@ const Materiales = ({
     if (editingId) {
       setEquiposRetirados(prev => prev.map(e => e.id===editingId ? {...formR,id:editingId,empresa:emp} : e));
     } else {
-      const id = await nextEquipoId('equipos_retirados', emp, equiposRetirados, 'R');
+      const id = await nextEquipoId('equipos_retirados', emp, equiposRetirados, 'R', empresas);
       setEquiposRetirados(prev => [...prev, {...formR, id, empresa:emp}]);
     }
     setShowForm(false); setEditingId(null);
@@ -142,7 +142,7 @@ const Materiales = ({
     if (editingId) {
       setEquiposMalos(prev => prev.map(e => e.id===editingId ? {...formMl,id:editingId,empresa:emp} : e));
     } else {
-      const id = await nextEquipoId('equipos_malos', emp, equiposMalos, 'M');
+      const id = await nextEquipoId('equipos_malos', emp, equiposMalos, 'M', empresas);
       setEquiposMalos(prev => [...prev, {...formMl, id, empresa:emp}]);
     }
     setShowForm(false); setEditingId(null);

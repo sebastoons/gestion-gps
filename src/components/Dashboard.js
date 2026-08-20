@@ -22,24 +22,48 @@ const fmtCompacto = (n) => {
 
 const MESES_A_MOSTRAR = 12;
 
+// Mismo valor por km que usa Trabajos del Mes (empresaSeleccionada === 'Entel' ? 200 : 250),
+// pero aplicado por trabajo según SU propia empresa (acá conviven varias a la vez).
+const valorKmDe = (empresa) => (empresa === 'Entel' ? 200 : 250);
+
+// Réplica de calcularTotales() de Trabajos.js: como IVA/retención son proporciones
+// fijas del subtotal, sumar subtotales y aplicar el % una sola vez al final da el
+// mismo resultado que sumar los totales ya calculados por trabajo/mes — no hace
+// falta repetir el cálculo por cada agrupación.
+const calcularFinal = (pesos, kmValor, tipoDocumento) => {
+  const subtotal = pesos + kmValor;
+  if (tipoDocumento === 'boleta') {
+    const totalBoleta = Math.round(subtotal / (1 - 0.1525));
+    return { subtotal, final: totalBoleta, extra: totalBoleta - subtotal, extraLabel: 'Retención (15.25%)' };
+  }
+  const iva = subtotal * 0.19;
+  return { subtotal, final: subtotal + iva, extra: iva, extraLabel: 'IVA (19%)' };
+};
+
 const Dashboard = ({ setCurrentView, trabajos, empresas }) => {
   const [metrica, setMetrica] = useState('pesos'); // 'pesos' | 'cantidad'
   const [verTabla, setVerTabla] = useState(false);
   const [hover, setHover] = useState(null);
+  // Comparte la preferencia con Trabajos del Mes, para que "factura" o "boleta"
+  // sea la misma elección en toda la app.
+  const [tipoDocumento, setTipoDocumento] = useState(() => localStorage.getItem('tipoDocumento') || 'factura');
+  const cambiarTipoDocumento = (t) => { setTipoDocumento(t); localStorage.setItem('tipoDocumento', t); };
 
   const colorFor = (empresa) => `var(--series-${(Math.max(0, empresas.indexOf(empresa)) % 8) + 1})`;
 
   const datos = useMemo(() => {
-    const porEmpresa = new Map(empresas.map(e => [e, { pesos: 0, uf: 0, cantidad: 0 }]));
+    const porEmpresa = new Map(empresas.map(e => [e, { pesos: 0, uf: 0, cantidad: 0, km: 0, kmValor: 0 }]));
     const porMesMap = new Map();
 
     trabajos.forEach(t => {
       const pesos = parseFloat(t.valorPesos) || 0;
       const uf = parseFloat(t.valorUF) || 0;
+      const km = parseFloat(t.km) || 0;
+      const kmValor = km * valorKmDe(t.empresa);
 
-      if (!porEmpresa.has(t.empresa)) porEmpresa.set(t.empresa, { pesos: 0, uf: 0, cantidad: 0 });
+      if (!porEmpresa.has(t.empresa)) porEmpresa.set(t.empresa, { pesos: 0, uf: 0, cantidad: 0, km: 0, kmValor: 0 });
       const e = porEmpresa.get(t.empresa);
-      e.pesos += pesos; e.uf += uf; e.cantidad += 1;
+      e.pesos += pesos; e.uf += uf; e.cantidad += 1; e.km += km; e.kmValor += kmValor;
 
       if (!porMesMap.has(t.mes)) porMesMap.set(t.mes, { mes: t.mes, ...parseMes(t.mes), porEmpresa: new Map(), totalPesos: 0, totalCantidad: 0 });
       const m = porMesMap.get(t.mes);
@@ -56,15 +80,18 @@ const Dashboard = ({ setCurrentView, trabajos, empresas }) => {
     const granTotalPesos = trabajos.reduce((s, t) => s + (parseFloat(t.valorPesos) || 0), 0);
     const granTotalUF = trabajos.reduce((s, t) => s + (parseFloat(t.valorUF) || 0), 0);
     const granTotalCantidad = trabajos.length;
+    const granTotalKm = trabajos.reduce((s, t) => s + (parseFloat(t.km) || 0), 0);
+    const granTotalKmValor = trabajos.reduce((s, t) => s + (parseFloat(t.km) || 0) * valorKmDe(t.empresa), 0);
 
     const empresasOrdenadas = Array.from(porEmpresa.entries())
       .map(([empresa, v]) => ({ empresa, ...v }))
       .sort((a, b) => b.pesos - a.pesos);
 
-    return { porEmpresa, mesesVisibles, mesesOcultos, granTotalPesos, granTotalUF, granTotalCantidad, empresasOrdenadas };
+    return { porEmpresa, mesesVisibles, mesesOcultos, granTotalPesos, granTotalUF, granTotalCantidad, granTotalKm, granTotalKmValor, empresasOrdenadas };
   }, [trabajos, empresas]);
 
-  const { mesesVisibles, mesesOcultos, granTotalPesos, granTotalUF, granTotalCantidad, empresasOrdenadas } = datos;
+  const { mesesVisibles, mesesOcultos, granTotalPesos, granTotalUF, granTotalCantidad, granTotalKm, granTotalKmValor, empresasOrdenadas } = datos;
+  const granFinal = calcularFinal(granTotalPesos, granTotalKmValor, tipoDocumento);
 
   const valorMes = (m, emp) => {
     const v = m.porEmpresa.get(emp);
@@ -107,6 +134,10 @@ const Dashboard = ({ setCurrentView, trabajos, empresas }) => {
                     <ListChecks size={15} /> Cantidad
                   </button>
                 </div>
+                <div className="db-metric-toggle">
+                  <button className={`btn ${tipoDocumento === 'factura' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => cambiarTipoDocumento('factura')}>Factura</button>
+                  <button className={`btn ${tipoDocumento === 'boleta' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => cambiarTipoDocumento('boleta')}>Boleta</button>
+                </div>
                 <button className="btn btn-secondary" onClick={() => setVerTabla(v => !v)}>
                   <Table2 size={15} /> {verTabla ? 'Ocultar tabla' : 'Ver tabla'}
                 </button>
@@ -116,19 +147,21 @@ const Dashboard = ({ setCurrentView, trabajos, empresas }) => {
               </div>
 
               <div id="dashboard-export">
-                {/* ── Hero: total general ── */}
+                {/* ── Hero: total general (incluye km, con IVA o retención según Factura/Boleta) ── */}
                 <div className="db-hero">
                   <div className="db-hero-main">
-                    <span className="db-hero-label">Total General — Todas las Empresas</span>
-                    <span className="db-hero-value">{fmtPesos(granTotalPesos)}</span>
-                    <span className="db-hero-sub">{granTotalCantidad} trabajos realizados · {granTotalUF.toFixed(1)} UF acumuladas</span>
+                    <span className="db-hero-label">Total {tipoDocumento === 'boleta' ? 'Boleta' : 'Factura'} — Todas las Empresas</span>
+                    <span className="db-hero-value">{fmtPesos(granFinal.final)}</span>
+                    <span className="db-hero-sub">
+                      {granTotalCantidad} trabajos ({granTotalUF.toFixed(1)} UF) · {fmtPesos(granTotalPesos)} en servicios · {granTotalKm.toFixed(0)} km ({fmtPesos(granTotalKmValor)}) · {granFinal.extraLabel}: {fmtPesos(granFinal.extra)}
+                    </span>
                   </div>
                   <div className="db-hero-chips">
                     {empresasOrdenadas.map(e => (
                       <div key={e.empresa} className="db-hero-chip">
                         <span className="db-dot" style={{ background: colorFor(e.empresa) }} />
                         <span className="db-hero-chip-name">{e.empresa}</span>
-                        <span className="db-hero-chip-value">{fmtCompacto(e.pesos)}</span>
+                        <span className="db-hero-chip-value">{fmtCompacto(calcularFinal(e.pesos, e.kmValor, tipoDocumento).final)}</span>
                       </div>
                     ))}
                   </div>
@@ -137,7 +170,9 @@ const Dashboard = ({ setCurrentView, trabajos, empresas }) => {
                 {/* ── Totales por empresa ── */}
                 <h3 className="db-section-title">Totales por Empresa</h3>
                 <div className="db-empresa-grid">
-                  {empresasOrdenadas.map(e => (
+                  {empresasOrdenadas.map(e => {
+                    const f = calcularFinal(e.pesos, e.kmValor, tipoDocumento);
+                    return (
                     <div key={e.empresa} className="db-empresa-card" style={{ '--card-color': colorFor(e.empresa) }}>
                       <div className="db-empresa-head">
                         <span className="db-dot" style={{ background: colorFor(e.empresa) }} />
@@ -147,11 +182,16 @@ const Dashboard = ({ setCurrentView, trabajos, empresas }) => {
                       <span className="db-empresa-sub">
                         {metrica === 'pesos' ? `${e.cantidad} trabajos · ${e.uf.toFixed(1)} UF` : `${fmtPesos(e.pesos)} · ${e.uf.toFixed(1)} UF`}
                       </span>
+                      <span className="db-empresa-sub">{e.km.toFixed(0)} km ({fmtPesos(e.kmValor)})</span>
+                      <span className="db-empresa-sub" style={{ fontWeight: 'bold' }}>
+                        Total {tipoDocumento === 'boleta' ? 'boleta' : 'factura'}: {fmtPesos(f.final)}
+                      </span>
                       <div className="db-meter">
                         <div className="db-meter-fill" style={{ width: `${(valorEmpresa(e) / maxEmpresa) * 100}%`, background: colorFor(e.empresa) }} />
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* ── Trabajos por mes ── */}
