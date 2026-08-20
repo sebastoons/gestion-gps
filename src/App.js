@@ -44,10 +44,10 @@ const EmpresasModal = ({ empresas, setEmpresas, onRemove, onClose }) => {
           ))}
         </div>
         <div style={{ display:'flex', gap:8 }}>
-          <input value={newName} onChange={e => setNewName(e.target.value)}
+          <input value={newName} onChange={e => setNewName(e.target.value.toUpperCase())}
             onKeyDown={e => e.key === 'Enter' && add()}
             placeholder="Nueva empresa..."
-            style={{ flex:1, padding:'8px 10px', border:'1px solid #d1d5db', borderRadius:8, fontFamily:'Quantico', fontSize:'0.8em' }} />
+            style={{ flex:1, padding:'8px 10px', border:'1px solid #d1d5db', borderRadius:8, fontFamily:'Quantico', fontSize:'0.8em', textTransform:'uppercase' }} />
           <button onClick={add} className="btn btn-primary" style={{ fontSize:'0.8em', padding:'6px 12px' }}>
             <Plus size={13}/> Agregar
           </button>
