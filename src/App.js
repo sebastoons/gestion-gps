@@ -16,7 +16,12 @@ const EmpresasModal = ({ empresas, setEmpresas, onRemove, onClose }) => {
   const [newName, setNewName] = useState('');
   const add = () => {
     const n = newName.trim();
-    if (!n || empresas.includes(n)) return;
+    // Comparación case-insensitive: "mega gps" y "Mega GPS" deben tratarse
+    // como la MISMA empresa, si no cada una termina con su propio id_counter,
+    // ot_counter y filtro de vista, partiendo en dos los datos de una sola
+    // empresa (bug de "empresa duplicada" difícil de notar hasta que los
+    // trabajos de una de las dos "mitades" parecen desaparecer).
+    if (!n || empresas.some(e => e.trim().toLowerCase() === n.toLowerCase())) return;
     setEmpresas(prev => [...prev, n]);
     setNewName('');
   };

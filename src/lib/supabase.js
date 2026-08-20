@@ -45,18 +45,38 @@ export const deleteFromTable = async (name, ids) => {
 // empiece igual. Si no hay colisión (caso normal), el prefijo sigue siendo
 // una sola letra — no cambia nada para quien no tiene empresas con la misma
 // inicial.
+// Nombre "limpio" (sólo A-Z0-9) usado para comparar empresas. Si no queda
+// nada (nombre vacío, sólo espacios, o sólo símbolos como "***") se deriva un
+// token estable a partir del texto original en vez de un 'X' fijo — dos
+// empresas así distintas ya no colisionarían en la letra fija.
+const limpiar = (s) => (s || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+const nombreClave = (s) => limpiar(s) || ('X' + Math.abs(
+  [...(s || '')].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0)
+).toString(36).toUpperCase());
+
 export const empresaPrefix = (empresa, todasLasEmpresas) => {
-  const nombre = (empresa || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-  if (!nombre) return 'X';
-  const otras = (todasLasEmpresas || [])
-    .filter(e => e !== empresa)
-    .map(e => (e || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, ''))
-    .filter(Boolean);
+  const nombre = nombreClave(empresa);
+  const lista = todasLasEmpresas || [];
+  const otras = lista.filter(e => e !== empresa).map(nombreClave).filter(Boolean);
   for (let len = 1; len <= nombre.length; len++) {
     const cand = nombre.slice(0, len);
     if (!otras.some(o => o.startsWith(cand))) return cand;
   }
-  return nombre; // caso extremo: no hay largo que las distinga, se usa el nombre completo
+  // Caso extremo: el nombre completo no alcanza para distinguir esta empresa
+  // de otra de la lista. Pasa en dos situaciones:
+  //  a) otra empresa tiene el MISMO nombre limpio (ej. "Mega GPS" y
+  //     "Mega-GPS" -> "MEGAGPS" las dos) — se usa el orden de aparición en
+  //     la lista para darle a cada una un sufijo distinto.
+  //  b) el nombre de esta empresa es texto-prefijo del de otra (ej. "GPS" y
+  //     "GPS1"): como el contador final no tiene ancho fijo, "GPS"+1004 y
+  //     "GPS1"+004 producirían el mismo id ("GPS1004") sin protección extra.
+  // En ambos casos se agrega un separador fuera del alfabeto [A-Z0-9] usado
+  // para los nombres (nunca puede salir de `nombreClave`), así el id
+  // resultante no puede coincidir con el de ninguna otra empresa sin importar
+  // cuántos dígitos tenga el contador.
+  const mismos = lista.filter(e => nombreClave(e) === nombre);
+  const idx = Math.max(0, mismos.indexOf(empresa));
+  return `${nombre}-${idx + 1}`;
 };
 
 const nextId = async (counterKey, existingItems, prefix) => {
