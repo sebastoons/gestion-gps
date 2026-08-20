@@ -153,6 +153,7 @@ const EmpresaLogos = ({ empresa }) => {
   const n = normEmpresa(empresa);
   if (n === 'ugps') return <div className="ot-logos-wrap"><img src="/logos/ugps.png" alt="UGPS" className="ot-logo-img"/></div>;
   if (n === 'megagps') return <div className="ot-logos-wrap"><img src="/logos/megagps.png" alt="Mega GPS" className="ot-logo-img"/></div>;
+  if (n === 'mavigps') return <div className="ot-logos-wrap"><img src="/logos/mavigps.png" alt="Mavi GPS" className="ot-logo-img"/></div>;
   return null;
 };
 
