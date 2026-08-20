@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Download, Search, ChevronLeft, X, Trash2, Check, Home as HomeIcon, ChevronDown, FileImage, Eye } from 'lucide-react';
-import { loadTable, syncTable, deleteFromTable } from '../lib/supabase';
+import { supabase, loadTable, syncTable, deleteFromTable } from '../lib/supabase';
 import '../styles/OrdenesTrabajo.css';
 
 const REGIONES = [
@@ -339,6 +339,15 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
       setCounters(Object.fromEntries(ctrs.map(c => [c.empresa, c.counter || 1])));
     };
     load();
+  },[]);
+
+  // Realtime: refleja en vivo las OT creadas/editadas/borradas desde otro dispositivo
+  useEffect(()=>{
+    const ch = supabase.channel('ot_live_sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ordenes_trabajo' },
+        async () => { const ots = await loadTable('ordenes_trabajo'); setOtsList(ots); })
+      .subscribe();
+    return () => supabase.removeChannel(ch);
   },[]);
 
   const saveOTs = async (list) => {
