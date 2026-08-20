@@ -219,8 +219,8 @@ const Trabajos = ({
       if (formData.servicio === 'Reinstalación' && formData.ppuIn && formData.ppuOut) {
         const ufDes = 0.5;
         const ufInst = formData.accesorios.includes('ON BATT') ? 0.6 : 0.8;
-        const idDes = await nextTrabajoId(empresaSeleccionada, trabajos);
-        const idInst = await nextTrabajoId(empresaSeleccionada, trabajos);
+        const idDes = await nextTrabajoId(empresaSeleccionada, trabajos, empresas);
+        const idInst = await nextTrabajoId(empresaSeleccionada, trabajos, empresas);
         const job1 = {
           ...formData, id: idDes, empresa: empresaSeleccionada, mes: mesSeleccionado,
           servicio: 'Desinstalación', ppuIn: '', ppuOut: formData.ppuOut,
@@ -238,7 +238,7 @@ const Trabajos = ({
         descontarEquipos(formData.imeiIn, formData.imeiOut);
         await agregarClienteSiNoExiste(formData.nombreCliente);
       } else {
-        const newId = await nextTrabajoId(empresaSeleccionada, trabajos);
+        const newId = await nextTrabajoId(empresaSeleccionada, trabajos, empresas);
         const newJob = { ...formData, id: newId, empresa: empresaSeleccionada, mes: mesSeleccionado };
         setTrabajos([...trabajos, newJob]);
         await syncTable('trabajos', [newJob]);

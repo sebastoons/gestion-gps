@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Download, Search, ChevronLeft, X, Trash2, Check, Home as HomeIcon, ChevronDown, FileImage, Eye } from 'lucide-react';
-import { supabase, loadTable, syncTable, deleteFromTable } from '../lib/supabase';
+import { supabase, loadTable, syncTable, deleteFromTable, empresaPrefix } from '../lib/supabase';
 import '../styles/OrdenesTrabajo.css';
 
 const REGIONES = [
@@ -384,7 +384,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
   };
 
   const finalizeSession=async()=>{
-    const emp=sessionEmpresa,prefix=(emp[0]||'X').toUpperCase();
+    const emp=sessionEmpresa,prefix=empresaPrefix(emp, empresas);
     const start=counters[emp]||1;
     const sid=Date.now().toString();
     const newOTs=sessionOTs.map((ot,i)=>({...ot,id:`${sid}-${i}`,numero:`${prefix}${start+i}`,

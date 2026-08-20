@@ -28,13 +28,36 @@ export const deleteFromTable = async (name, ids) => {
   if (error) console.error(`delete ${name}:`, error);
 };
 
-// ── Generador de IDs sin colisiones (multi-dispositivo) ─────────────────────
+// ── Generador de IDs sin colisiones (multi-dispositivo, multi-empresa) ──────
 // Usa la función Postgres next_counter (UPSERT atómico) para que dos
 // dispositivos escribiendo casi al mismo tiempo nunca reciban el mismo id.
 // p_seed sólo se usa la primera vez que se ve esa clave: se calcula del
 // máximo id ya presente entre los items actuales, para no chocar con datos
 // preexistentes.
-export const empresaPrefix = (empresa) => (empresa?.[0] || 'X').toUpperCase();
+//
+// El prefijo de cada empresa es la letra inicial (ej. "U004" para UGPS),
+// pero si otra empresa de la lista actual empieza igual (ej. "Mega GPS" y
+// "Mavi GPS", ambas con "M") esa sola letra deja de ser única: como el id
+// es la clave primaria global de la tabla, dos empresas generando el mismo
+// id se pisan entre sí en el upsert — un trabajo de una empresa desaparece
+// silenciosamente al ser sobreescrito por el de otra. Por eso el prefijo se
+// alarga letra por letra hasta que ninguna OTRA empresa de la lista actual
+// empiece igual. Si no hay colisión (caso normal), el prefijo sigue siendo
+// una sola letra — no cambia nada para quien no tiene empresas con la misma
+// inicial.
+export const empresaPrefix = (empresa, todasLasEmpresas) => {
+  const nombre = (empresa || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (!nombre) return 'X';
+  const otras = (todasLasEmpresas || [])
+    .filter(e => e !== empresa)
+    .map(e => (e || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, ''))
+    .filter(Boolean);
+  for (let len = 1; len <= nombre.length; len++) {
+    const cand = nombre.slice(0, len);
+    if (!otras.some(o => o.startsWith(cand))) return cand;
+  }
+  return nombre; // caso extremo: no hay largo que las distinga, se usa el nombre completo
+};
 
 const nextId = async (counterKey, existingItems, prefix) => {
   const seed = (existingItems || []).reduce((max, it) => {
@@ -49,13 +72,13 @@ const nextId = async (counterKey, existingItems, prefix) => {
   return `${prefix}${String(data).padStart(3, '0')}`;
 };
 
-// IDs para trabajos: prefijo = letra de empresa (ej. "U004").
-export const nextTrabajoId = (empresa, trabajosActuales) =>
-  nextId(`trabajos_${empresa}`, trabajosActuales.filter(t => t.empresa === empresa), empresaPrefix(empresa));
+// IDs para trabajos: prefijo = letra(s) de empresa, únicas frente al resto de empresas (ej. "U004").
+export const nextTrabajoId = (empresa, trabajosActuales, todasLasEmpresas) =>
+  nextId(`trabajos_${empresa}`, trabajosActuales.filter(t => t.empresa === empresa), empresaPrefix(empresa, todasLasEmpresas));
 
-// IDs para equipos/materiales: prefijo = letra de empresa + código de tipo (ej. "UN004").
-export const nextEquipoId = (tabla, empresa, itemsActuales, tipoCodigo) =>
-  nextId(`${tabla}_${empresa}`, itemsActuales.filter(it => it.empresa === empresa), `${empresaPrefix(empresa)}${tipoCodigo}`);
+// IDs para equipos/materiales: prefijo = letra(s) de empresa + código de tipo (ej. "UN004").
+export const nextEquipoId = (tabla, empresa, itemsActuales, tipoCodigo, todasLasEmpresas) =>
+  nextId(`${tabla}_${empresa}`, itemsActuales.filter(it => it.empresa === empresa), `${empresaPrefix(empresa, todasLasEmpresas)}${tipoCodigo}`);
 
 // IDs para clientes: prefijo fijo "CL" (compartido entre todas las empresas).
 export const nextClienteId = (clientesActuales) =>

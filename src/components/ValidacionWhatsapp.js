@@ -222,17 +222,17 @@ const ValidacionWhatsapp = ({
     } else if (servicio === 'Desinstalación') {
       if (gpsOut) {
         if (dest === 'Malo') {
-          const id = await nextEquipoId('equipos_malos', form.empresa, equiposMalos, 'M');
+          const id = await nextEquipoId('equipos_malos', form.empresa, equiposMalos, 'M', empresas);
           setEquiposMalos(prev => [...prev, { id, imei: gpsOut, asignado: true, nombreCliente: form.cliente, empresa: form.empresa }]);
         } else {
-          const id = await nextEquipoId('equipos_retirados', form.empresa, equiposRetirados, 'R');
+          const id = await nextEquipoId('equipos_retirados', form.empresa, equiposRetirados, 'R', empresas);
           setEquiposRetirados(prev => [...prev, { id, fecha: form.fecha, cliente: form.cliente, imei: gpsOut, empresa: form.empresa }]);
         }
       }
     } else if (servicio === 'Mantención') {
       if (gpsIn) quitarInventario(gpsIn);
       if (gpsOut) {
-        const id = await nextEquipoId('equipos_retirados', form.empresa, equiposRetirados, 'R');
+        const id = await nextEquipoId('equipos_retirados', form.empresa, equiposRetirados, 'R', empresas);
         setEquiposRetirados(prev => [...prev, { id, fecha: form.fecha, cliente: form.cliente, imei: gpsOut, empresa: form.empresa }]);
       }
     }
@@ -261,8 +261,8 @@ const ValidacionWhatsapp = ({
     const costoPerif = form.perifericos.reduce((sum, p) => sum + (COSTOS_PERIFERICOS[p] || 0), 0);
 
     if (form.servicio === 'Reinstalación') {
-      const id1 = await nextTrabajoId(emp, trabajos);
-      const id2 = await nextTrabajoId(emp, trabajos);
+      const id1 = await nextTrabajoId(emp, trabajos, empresas);
+      const id2 = await nextTrabajoId(emp, trabajos, empresas);
       const ufInstBase = form.perifericos.includes('ON BATT') ? 0.6 : COSTOS['Instalación'];
       const ufInst = ufInstBase + costoPerif;
       const ufDes = COSTOS['Desinstalación'];
@@ -285,7 +285,7 @@ const ValidacionWhatsapp = ({
       setTrabajos(prev => [...prev, job1, job2]);
       await syncTable('trabajos', [job1, job2]);
     } else {
-      const newId = await nextTrabajoId(emp, trabajos);
+      const newId = await nextTrabajoId(emp, trabajos, empresas);
       const baseUF = (form.servicio === 'Instalación' && form.perifericos.includes('ON BATT'))
         ? 0.6 : (COSTOS[form.servicio] || 0.8);
       const uf = baseUF + costoPerif;

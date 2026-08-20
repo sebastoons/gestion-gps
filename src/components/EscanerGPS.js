@@ -102,13 +102,13 @@ const EscanerGPS = ({
     const { tipo, empresa, fecha, nombreDispositivo } = form;
     const base = { imei, empresa, fecha, nombreDispositivo: nombreDispositivo.trim() };
     if (tipo === 'Nuevo') {
-      const id = await nextEquipoId('equipos_nuevos', empresa, equiposNuevos, 'N');
+      const id = await nextEquipoId('equipos_nuevos', empresa, equiposNuevos, 'N', empresas);
       setEquiposNuevos(prev => [...prev, { id, ...base, asignado: false }]);
     } else if (tipo === 'Retirado') {
-      const id = await nextEquipoId('equipos_retirados', empresa, equiposRetirados, 'R');
+      const id = await nextEquipoId('equipos_retirados', empresa, equiposRetirados, 'R', empresas);
       setEquiposRetirados(prev => [...prev, { id, ...base, cliente: '' }]);
     } else {
-      const id = await nextEquipoId('equipos_malos', empresa, equiposMalos, 'M');
+      const id = await nextEquipoId('equipos_malos', empresa, equiposMalos, 'M', empresas);
       setEquiposMalos(prev => [...prev, { id, ...base, asignado: false, nombreCliente: '' }]);
     }
     setPhase('saved');
