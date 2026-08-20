@@ -8,11 +8,11 @@ import EscanerGPS from './components/EscanerGPS';
 import Materiales from './components/Materiales';
 import Dashboard from './components/Dashboard';
 import { Sun, Moon, X, Plus, Download, Upload } from 'lucide-react';
-import { supabase, loadTable, syncTable, exportBackup, importBackup } from './lib/supabase';
+import { supabase, loadTable, syncTable, deleteFromTable, exportBackup, importBackup } from './lib/supabase';
 import './styles/Common.css';
 
 // ── Gestión de empresas ───────────────────────────────────────────────────────
-const EmpresasModal = ({ empresas, setEmpresas, onClose }) => {
+const EmpresasModal = ({ empresas, setEmpresas, onRemove, onClose }) => {
   const [newName, setNewName] = useState('');
   const add = () => {
     const n = newName.trim();
@@ -32,7 +32,7 @@ const EmpresasModal = ({ empresas, setEmpresas, onClose }) => {
             <div key={e} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 12px', background:'#f3f4f6', borderRadius:8 }}>
               <span style={{ fontFamily:'Quantico', fontSize:'0.85em', fontWeight:'bold' }}>{e}</span>
               {empresas.length > 1 && (
-                <button onClick={() => setEmpresas(prev => prev.filter(x => x !== e))}
+                <button onClick={() => onRemove(e)}
                   style={{ background:'none', border:'none', cursor:'pointer', color:'#dc2626' }}><X size={14}/></button>
               )}
             </div>
@@ -121,7 +121,7 @@ const App = () => {
   const [clientes, setClientes] = useState([]);
   const [materiales, setMateriales] = useState([]);
   const [loaded, setLoaded] = useState(false);
-  const skipSync = useRef({ trabajos: true, equiposNuevos: true, equiposRetirados: true, equiposMalos: true, clientes: true, materiales: true });
+  const skipSync = useRef({ trabajos: true, equiposNuevos: true, equiposRetirados: true, equiposMalos: true, clientes: true, materiales: true, empresas: true });
   const [escanerReturn, setEscanerReturn] = useState('home');
   const [materError, setMaterError] = useState(null);
 
@@ -157,24 +157,38 @@ const App = () => {
     }
   }, [empresas, empresaSeleccionada]);
 
+  const onRemoveEmpresa = (nombre) => {
+    setEmpresas(prev => prev.filter(x => x !== nombre));
+    deleteFromTable('empresas', nombre);
+  };
+
   // Cargar desde Supabase al iniciar — única fuente de verdad
   useEffect(() => {
     const loadData = async () => {
-      const [t, en, er, em, cl, mat] = await Promise.all([
+      const [t, en, er, em, cl, mat, emp] = await Promise.all([
         loadTable('trabajos'),
         loadTable('equipos_nuevos'),
         loadTable('equipos_retirados'),
         loadTable('equipos_malos'),
         loadTable('clientes'),
         loadTable('materiales'),
+        loadTable('empresas'),
       ]);
-      skipSync.current = { trabajos: true, equiposNuevos: true, equiposRetirados: true, equiposMalos: true, clientes: true, materiales: true };
+      // Si Supabase ya tiene empresas guardadas, esas mandan (skip del eco de
+      // sincronización). Si la tabla está vacía (proyecto recién conectado),
+      // se deja el valor local/por-defecto y SÍ se sincroniza, para sembrar
+      // la nube con lo que ya tenía este dispositivo.
+      skipSync.current = {
+        trabajos: true, equiposNuevos: true, equiposRetirados: true, equiposMalos: true,
+        clientes: true, materiales: true, empresas: emp.length > 0,
+      };
       setTrabajos(t.map(norm));
       setEquiposNuevos(en.map(norm));
       setEquiposRetirados(er.map(norm));
       setEquiposMalos(em.map(norm));
       if (cl?.length) setClientes(cl);
       if (mat?.length) setMateriales(mat);
+      if (emp.length) setEmpresas(emp.map(e => e.nombre));
       setLoaded(true);
     };
     loadData();
@@ -216,6 +230,14 @@ const App = () => {
     return () => clearTimeout(t);
   }, [clientes, loaded]);
 
+  // Empresas: agregar sincroniza (upsert); quitar es explícito, ver onRemoveEmpresa.
+  useEffect(() => {
+    if (!loaded) return;
+    if (skipSync.current.empresas) { skipSync.current.empresas = false; return; }
+    const t = setTimeout(() => syncTable('empresas', empresas.map(nombre => ({ id: nombre, nombre }))), 300);
+    return () => clearTimeout(t);
+  }, [empresas, loaded]);
+
   useEffect(() => {
     if (!loaded) return;
     if (skipSync.current.materiales) { skipSync.current.materiales = false; return; }
@@ -245,6 +267,8 @@ const App = () => {
         async () => { const d = await loadTable('clientes'); skipSync.current.clientes = true; setClientes(d); })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'materiales' },
         async () => { const d = await loadTable('materiales'); if (d.length > 0) { skipSync.current.materiales = true; setMateriales(d); } })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'empresas' },
+        async () => { const d = await loadTable('empresas'); if (d.length > 0) { skipSync.current.empresas = true; setEmpresas(d.map(e => e.nombre)); } })
       .subscribe();
     return () => supabase.removeChannel(ch);
   }, [loaded]);
@@ -261,7 +285,7 @@ const App = () => {
       )}
 
       {showEmpresasModal && (
-        <EmpresasModal empresas={empresas} setEmpresas={setEmpresas} onClose={() => setShowEmpresasModal(false)} />
+        <EmpresasModal empresas={empresas} setEmpresas={setEmpresas} onRemove={onRemoveEmpresa} onClose={() => setShowEmpresasModal(false)} />
       )}
 
       {showRespaldoModal && (
