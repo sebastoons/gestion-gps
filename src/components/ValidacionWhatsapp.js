@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Home } from 'lucide-react';
 import { ChevronDown } from 'lucide-react';
-import { deleteFromTable, syncTable, nextTrabajoId, nextEquipoId, nextClienteId } from '../lib/localStore';
+import { deleteFromTable, syncTable, nextTrabajoId, nextEquipoId, nextClienteId } from '../lib/supabase';
 
 const COSTOS = {
   'Instalación': 0.8, 'Desinstalación': 0.5,
@@ -193,7 +193,7 @@ const ValidacionWhatsapp = ({
     return lineas.join('\n');
   };
 
-  const procesarEquipos = () => {
+  const procesarEquipos = async () => {
     const { servicio, destinoDesinstalacion: dest } = form;
     const gpsIn = form.gpsIn?.trim();
     const gpsOut = showGpsOut ? form.gpsOut?.trim() : '';
@@ -222,22 +222,27 @@ const ValidacionWhatsapp = ({
     } else if (servicio === 'Desinstalación') {
       if (gpsOut) {
         if (dest === 'Malo') {
-          setEquiposMalos(prev => [...prev, { id: nextEquipoId('equipos_malos', form.empresa, equiposMalos, 'M'), imei: gpsOut, asignado: true, nombreCliente: form.cliente, empresa: form.empresa }]);
+          const id = await nextEquipoId('equipos_malos', form.empresa, equiposMalos, 'M');
+          setEquiposMalos(prev => [...prev, { id, imei: gpsOut, asignado: true, nombreCliente: form.cliente, empresa: form.empresa }]);
         } else {
-          setEquiposRetirados(prev => [...prev, { id: nextEquipoId('equipos_retirados', form.empresa, equiposRetirados, 'R'), fecha: form.fecha, cliente: form.cliente, imei: gpsOut, empresa: form.empresa }]);
+          const id = await nextEquipoId('equipos_retirados', form.empresa, equiposRetirados, 'R');
+          setEquiposRetirados(prev => [...prev, { id, fecha: form.fecha, cliente: form.cliente, imei: gpsOut, empresa: form.empresa }]);
         }
       }
     } else if (servicio === 'Mantención') {
       if (gpsIn) quitarInventario(gpsIn);
-      if (gpsOut) setEquiposRetirados(prev => [...prev, { id: nextEquipoId('equipos_retirados', form.empresa, equiposRetirados, 'R'), fecha: form.fecha, cliente: form.cliente, imei: gpsOut, empresa: form.empresa }]);
+      if (gpsOut) {
+        const id = await nextEquipoId('equipos_retirados', form.empresa, equiposRetirados, 'R');
+        setEquiposRetirados(prev => [...prev, { id, fecha: form.fecha, cliente: form.cliente, imei: gpsOut, empresa: form.empresa }]);
+      }
     }
   };
 
-  const agregarClienteSiNoExiste = (nombre, empresa) => {
+  const agregarClienteSiNoExiste = async (nombre, empresa) => {
     if (!nombre?.trim() || !clientes || !setClientes) return;
     const existe = clientes.some(c => c.nombreCliente.trim().toLowerCase() === nombre.trim().toLowerCase());
     if (!existe) {
-      const newId = nextClienteId(clientes);
+      const newId = await nextClienteId(clientes);
       setClientes(prev => [...prev, {
         id: newId,
         nombreCliente: nombre.trim(), empresa,
@@ -256,8 +261,8 @@ const ValidacionWhatsapp = ({
     const costoPerif = form.perifericos.reduce((sum, p) => sum + (COSTOS_PERIFERICOS[p] || 0), 0);
 
     if (form.servicio === 'Reinstalación') {
-      const id1 = nextTrabajoId(emp, trabajos);
-      const id2 = nextTrabajoId(emp, trabajos);
+      const id1 = await nextTrabajoId(emp, trabajos);
+      const id2 = await nextTrabajoId(emp, trabajos);
       const ufInstBase = form.perifericos.includes('ON BATT') ? 0.6 : COSTOS['Instalación'];
       const ufInst = ufInstBase + costoPerif;
       const ufDes = COSTOS['Desinstalación'];
@@ -280,7 +285,7 @@ const ValidacionWhatsapp = ({
       setTrabajos(prev => [...prev, job1, job2]);
       await syncTable('trabajos', [job1, job2]);
     } else {
-      const newId = nextTrabajoId(emp, trabajos);
+      const newId = await nextTrabajoId(emp, trabajos);
       const baseUF = (form.servicio === 'Instalación' && form.perifericos.includes('ON BATT'))
         ? 0.6 : (COSTOS[form.servicio] || 0.8);
       const uf = baseUF + costoPerif;
@@ -305,9 +310,9 @@ const ValidacionWhatsapp = ({
 
   const ejecutarAcciones = async () => {
     const esReinst = form.servicio === 'Reinstalación';
-    procesarEquipos();
+    await procesarEquipos();
     const { mes, empresa } = await agregarATrabajos();
-    agregarClienteSiNoExiste(form.cliente, empresa);
+    await agregarClienteSiNoExiste(form.cliente, empresa);
     setUltimoRegistro({ mes, empresa });
     if (setPendingOT) setPendingOT({ inst: crearDraftOT(), desinst: esReinst ? crearDraftOTDesinst() : null });
     setForm(prev => ({

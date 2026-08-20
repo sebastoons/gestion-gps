@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Download, Search, ChevronLeft, X, Trash2, Check, Home as HomeIcon, ChevronDown, FileImage, Eye } from 'lucide-react';
-import { loadTable, syncTable, deleteFromTable } from '../lib/localStore';
+import { loadTable, syncTable, deleteFromTable } from '../lib/supabase';
 import '../styles/OrdenesTrabajo.css';
 
 const REGIONES = [
@@ -148,9 +148,14 @@ const ChecklistRow = ({ item, estado, onChange }) => {
 };
 
 // ── EmpresaLogos ──────────────────────────────────────────────────────────────
-const EmpresaLogos = ({ empresa }) => empresa==='UGPS'
-  ? <div className="ot-logos-wrap"><img src="/logos/ugps.png" alt="UGPS" className="ot-logo-img"/></div>
-  : <div className="ot-logos-wrap"><img src="/logos/onway.png" alt="Onway" className="ot-logo-img"/><img src="/logos/letra_entel.png" alt="Entel" className="ot-logo-img"/></div>;
+const normEmpresa = (s) => (s||'').toLowerCase().replace(/\s+/g,'');
+const EmpresaLogos = ({ empresa }) => {
+  const n = normEmpresa(empresa);
+  if (n === 'ugps') return <div className="ot-logos-wrap"><img src="/logos/ugps.png" alt="UGPS" className="ot-logo-img"/></div>;
+  if (n === 'megagps') return <div className="ot-logos-wrap"><img src="/logos/megagps.png" alt="Mega GPS" className="ot-logo-img"/></div>;
+  if (n === 'mavigps') return <div className="ot-logos-wrap"><img src="/logos/mavigps.png" alt="Mavi GPS" className="ot-logo-img"/></div>;
+  return null;
+};
 
 // ── OTField ───────────────────────────────────────────────────────────────────
 const OTField = ({ l, v, full }) => (
@@ -272,7 +277,7 @@ const OTDoc = ({ ot, numero, empresa, cliente, rut, firma, aceptacion }) => {
       </div>
 
       <div className="otd-footer">
-        <span>{empresa} · {ot.fecha} · La firma acredita autorización y conformidad.</span>
+        <span>{cliente} · {ot.fecha} · La firma acredita autorización y conformidad.</span>
         <img src="/logo.svg" alt="ServITrak" className="otd-footer-logo"/>
       </div>
     </div>

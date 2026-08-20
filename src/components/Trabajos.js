@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Download, Plus, Home, Edit2, Trash2, AlertCircle, FileImage, ChevronDown } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
 import { exportToVisualImage } from '../utils/visualExportUtils';
-import { deleteFromTable, syncTable, nextTrabajoId, nextClienteId } from '../lib/localStore';
+import { deleteFromTable, syncTable, nextTrabajoId, nextClienteId } from '../lib/supabase';
 
 const Trabajos = ({
   setCurrentView,
@@ -189,11 +189,11 @@ const Trabajos = ({
     }
   };
 
-  const agregarClienteSiNoExiste = (nombre) => {
+  const agregarClienteSiNoExiste = async (nombre) => {
     if (!nombre?.trim() || !clientes || !setClientes) return;
     const existe = clientes.some(c => c.nombreCliente.trim().toLowerCase() === nombre.trim().toLowerCase());
     if (!existe) {
-      const newId = nextClienteId(clientes);
+      const newId = await nextClienteId(clientes);
       setClientes(prev => [...prev, {
         id: newId,
         nombreCliente: nombre.trim(), empresa: empresaSeleccionada,
@@ -219,8 +219,8 @@ const Trabajos = ({
       if (formData.servicio === 'Reinstalación' && formData.ppuIn && formData.ppuOut) {
         const ufDes = 0.5;
         const ufInst = formData.accesorios.includes('ON BATT') ? 0.6 : 0.8;
-        const idDes = nextTrabajoId(empresaSeleccionada, trabajos);
-        const idInst = nextTrabajoId(empresaSeleccionada, trabajos);
+        const idDes = await nextTrabajoId(empresaSeleccionada, trabajos);
+        const idInst = await nextTrabajoId(empresaSeleccionada, trabajos);
         const job1 = {
           ...formData, id: idDes, empresa: empresaSeleccionada, mes: mesSeleccionado,
           servicio: 'Desinstalación', ppuIn: '', ppuOut: formData.ppuOut,
@@ -236,14 +236,14 @@ const Trabajos = ({
         setTrabajos(prev => [...prev, job1, job2]);
         await syncTable('trabajos', [job1, job2]);
         descontarEquipos(formData.imeiIn, formData.imeiOut);
-        agregarClienteSiNoExiste(formData.nombreCliente);
+        await agregarClienteSiNoExiste(formData.nombreCliente);
       } else {
-        const newId = nextTrabajoId(empresaSeleccionada, trabajos);
+        const newId = await nextTrabajoId(empresaSeleccionada, trabajos);
         const newJob = { ...formData, id: newId, empresa: empresaSeleccionada, mes: mesSeleccionado };
         setTrabajos([...trabajos, newJob]);
         await syncTable('trabajos', [newJob]);
         descontarEquipos(formData.imeiIn, formData.imeiOut);
-        agregarClienteSiNoExiste(formData.nombreCliente);
+        await agregarClienteSiNoExiste(formData.nombreCliente);
       }
     }
 

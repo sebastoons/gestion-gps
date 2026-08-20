@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Home as HomeIcon, RefreshCw, Check, AlertCircle } from 'lucide-react';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
-import { nextEquipoId } from '../lib/localStore';
+import { nextEquipoId } from '../lib/supabase';
 
 const FORMATS = [
   Html5QrcodeSupportedFormats.QR_CODE,
@@ -96,17 +96,20 @@ const EscanerGPS = ({
     setPhase('scanning');
   };
 
-  const guardar = () => {
+  const guardar = async () => {
     const imei = form.imei?.trim();
     if (!imei) { alert('IMEI requerido'); return; }
     const { tipo, empresa, fecha, nombreDispositivo } = form;
     const base = { imei, empresa, fecha, nombreDispositivo: nombreDispositivo.trim() };
     if (tipo === 'Nuevo') {
-      setEquiposNuevos(prev => [...prev, { id: nextEquipoId('equipos_nuevos', empresa, equiposNuevos, 'N'), ...base, asignado: false }]);
+      const id = await nextEquipoId('equipos_nuevos', empresa, equiposNuevos, 'N');
+      setEquiposNuevos(prev => [...prev, { id, ...base, asignado: false }]);
     } else if (tipo === 'Retirado') {
-      setEquiposRetirados(prev => [...prev, { id: nextEquipoId('equipos_retirados', empresa, equiposRetirados, 'R'), ...base, cliente: '' }]);
+      const id = await nextEquipoId('equipos_retirados', empresa, equiposRetirados, 'R');
+      setEquiposRetirados(prev => [...prev, { id, ...base, cliente: '' }]);
     } else {
-      setEquiposMalos(prev => [...prev, { id: nextEquipoId('equipos_malos', empresa, equiposMalos, 'M'), ...base, asignado: false, nombreCliente: '' }]);
+      const id = await nextEquipoId('equipos_malos', empresa, equiposMalos, 'M');
+      setEquiposMalos(prev => [...prev, { id, ...base, asignado: false, nombreCliente: '' }]);
     }
     setPhase('saved');
     setTimeout(reiniciar, 1800);

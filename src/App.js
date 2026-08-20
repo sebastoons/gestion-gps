@@ -8,7 +8,7 @@ import EscanerGPS from './components/EscanerGPS';
 import Materiales from './components/Materiales';
 import Dashboard from './components/Dashboard';
 import { Sun, Moon, X, Plus, Download, Upload } from 'lucide-react';
-import { loadTable, syncTable, exportBackup, importBackup } from './lib/localStore';
+import { supabase, loadTable, syncTable, exportBackup, importBackup } from './lib/supabase';
 import './styles/Common.css';
 
 // ── Gestión de empresas ───────────────────────────────────────────────────────
@@ -85,10 +85,10 @@ const RespaldoModal = ({ onClose }) => {
           <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:'#6b7280' }}><X size={18}/></button>
         </div>
         <p style={{ fontFamily:'Quantico', fontSize:'0.65em', color:'#6b7280', textTransform:'uppercase', marginBottom:16, lineHeight:1.5 }}>
-          Los datos se guardan solo en este dispositivo. Exporta un archivo para respaldar o mover tu información a otro celular/computador, y luego impórtalo ahí.
+          Tus datos se sincronizan automáticamente entre dispositivos vía Supabase. Exporta un archivo igual como respaldo extra o para migrar a otra cuenta.
         </p>
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-          <button className="btn btn-primary" onClick={() => { exportBackup(); setMsg({ ok:true, text:'Archivo descargado.' }); }}>
+          <button className="btn btn-primary" onClick={async () => { await exportBackup(); setMsg({ ok:true, text:'Archivo descargado.' }); }}>
             <Download size={15}/> Exportar respaldo
           </button>
           <button className="btn btn-secondary" disabled={busy} onClick={() => fileRef.current?.click()}>
@@ -157,7 +157,7 @@ const App = () => {
     }
   }, [empresas, empresaSeleccionada]);
 
-  // Cargar desde el almacenamiento local del dispositivo — única fuente de verdad
+  // Cargar desde Supabase al iniciar — única fuente de verdad
   useEffect(() => {
     const loadData = async () => {
       const [t, en, er, em, cl, mat] = await Promise.all([
@@ -180,7 +180,7 @@ const App = () => {
     loadData();
   }, []);
 
-  // Guardar adiciones/ediciones en el almacenamiento local (upsert, no borra)
+  // Sincronizar adiciones/ediciones a Supabase (upsert, no borra)
   useEffect(() => {
     if (!loaded) return;
     if (skipSync.current.trabajos) { skipSync.current.trabajos = false; return; }
@@ -230,6 +230,25 @@ const App = () => {
   }, [materiales, loaded]);
 
   // Realtime: recibe cambios de otros dispositivos en vivo
+  useEffect(() => {
+    if (!loaded) return;
+    const ch = supabase.channel('live_sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'trabajos' },
+        async () => { const d = await loadTable('trabajos'); skipSync.current.trabajos = true; setTrabajos(d.map(norm)); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'equipos_nuevos' },
+        async () => { const d = await loadTable('equipos_nuevos'); skipSync.current.equiposNuevos = true; setEquiposNuevos(d.map(norm)); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'equipos_retirados' },
+        async () => { const d = await loadTable('equipos_retirados'); skipSync.current.equiposRetirados = true; setEquiposRetirados(d.map(norm)); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'equipos_malos' },
+        async () => { const d = await loadTable('equipos_malos'); skipSync.current.equiposMalos = true; setEquiposMalos(d.map(norm)); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'clientes' },
+        async () => { const d = await loadTable('clientes'); skipSync.current.clientes = true; setClientes(d); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'materiales' },
+        async () => { const d = await loadTable('materiales'); if (d.length > 0) { skipSync.current.materiales = true; setMateriales(d); } })
+      .subscribe();
+    return () => supabase.removeChannel(ch);
+  }, [loaded]);
+
   return (
     <div className="font-sans">
       {currentView !== 'home' && (
