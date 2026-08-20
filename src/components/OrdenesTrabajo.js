@@ -153,7 +153,7 @@ const EmpresaLogos = ({ empresa }) => {
   const n = normEmpresa(empresa);
   if (n === 'ugps') return <div className="ot-logos-wrap"><img src="/logos/ugps.png" alt="UGPS" className="ot-logo-img"/></div>;
   if (n === 'megagps') return <div className="ot-logos-wrap"><img src="/logos/megagps.png" alt="Mega GPS" className="ot-logo-img"/></div>;
-  return <div className="ot-logos-wrap"><img src="/logos/onway.png" alt="Onway" className="ot-logo-img"/><img src="/logos/letra_entel.png" alt="Entel" className="ot-logo-img"/></div>;
+  return null;
 };
 
 // ── OTField ───────────────────────────────────────────────────────────────────
