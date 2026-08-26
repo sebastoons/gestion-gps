@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Download, Search, ChevronLeft, X, Trash2, Check, Home as HomeIcon, ChevronDown, FileImage, Eye } from 'lucide-react';
 import { supabase, loadTable, syncTable, deleteFromTable, empresaPrefix } from '../lib/supabase';
+import { formatFecha } from '../utils/dateUtils';
 import '../styles/OrdenesTrabajo.css';
 
 const REGIONES = [
@@ -197,7 +198,7 @@ const OTDoc = ({ ot, numero, empresa, cliente, rut, firma, aceptacion }) => {
           <div className="otd-sec-ttl">SERVICIO</div>
           <div className="otd-rows">
             <OTField l="TIPO" v={ot.tipoServicio}/>
-            <OTField l="FECHA" v={ot.fecha}/>
+            <OTField l="FECHA" v={formatFecha(ot.fecha)}/>
             <OTField l="TÉCNICO" v={ot.tecnico}/>
             <OTField l="INSTALADORA" v={ot.empresaInstaladora}/>
           </div>
@@ -278,7 +279,7 @@ const OTDoc = ({ ot, numero, empresa, cliente, rut, firma, aceptacion }) => {
       </div>
 
       <div className="otd-footer">
-        <span>{cliente} · {ot.fecha} · La firma acredita autorización y conformidad.</span>
+        <span>{cliente} · {formatFecha(ot.fecha)} · La firma acredita autorización y conformidad.</span>
         <img src="/logo.svg" alt="ServITrak" className="otd-footer-logo"/>
       </div>
     </div>
@@ -505,7 +506,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
                 {filteredOTs.length===0&&<tr><td colSpan={8} className="empty-state">Sin órdenes en el período</td></tr>}
                 {filteredOTs.map(ot=>(
                   <tr key={ot.id}>
-                    <td style={{fontWeight:700}}>{ot.numero}</td><td>{ot.empresa}</td><td>{ot.fecha}</td>
+                    <td style={{fontWeight:700}}>{ot.numero}</td><td>{ot.empresa}</td><td>{formatFecha(ot.fecha)}</td>
                     <td>{ot.cliente}</td><td>{ot.ppu}</td><td>{ot.tipoServicio}</td><td>{ot.tecnico}</td>
                     <td><div className="table-actions">
                       <button className="btn btn-secondary" style={{fontSize:'0.6em',padding:'3px 7px'}} onClick={()=>setPreviewOT(ot)}><Eye size={11}/> Ver</button>

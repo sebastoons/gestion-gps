@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Home, Plus, Trash2, Camera, Download, Edit2, X, AlertTriangle, QrCode } from 'lucide-react';
 import { deleteFromTable, nextEquipoId } from '../lib/supabase';
 import { exportToCSV } from '../utils/exportUtils';
+import { formatFecha } from '../utils/dateUtils';
 import BarcodeScanner from './BarcodeScanner';
 import '../styles/Scanner.css';
 
@@ -403,7 +404,7 @@ const Materiales = ({
                   ? <tr><td colSpan="6" className="empty-state">Sin equipos nuevos para {emp}</td></tr>
                   : filtN.map(e=><tr key={e.id} style={{background:selectedRows.has(e.id)?'rgba(99,102,241,0.08)':''}}>
                       <td style={{textAlign:'center'}}><ChkRow id={e.id}/></td>
-                      <td>{e.id}</td><td>{e.fechaRecepcion}</td><td className="text-mono">{e.imei}</td><td>{e.nombreCliente||'-'}</td>
+                      <td>{e.id}</td><td>{formatFecha(e.fechaRecepcion)}</td><td className="text-mono">{e.imei}</td><td>{e.nombreCliente||'-'}</td>
                       <td className="center"><div className="table-actions">
                         <button onClick={()=>handleEdit(e,'nuevos')} className="action-btn edit"><Edit2 size={18}/></button>
                         <button onClick={()=>setDeleteId(e.id)} className="action-btn delete"><Trash2 size={18}/></button>
@@ -425,7 +426,7 @@ const Materiales = ({
                   ? <tr><td colSpan="6" className="empty-state">Sin equipos retirados para {emp}</td></tr>
                   : filtR.map(e=><tr key={e.id} style={{background:selectedRows.has(e.id)?'rgba(99,102,241,0.08)':''}}>
                       <td style={{textAlign:'center'}}><ChkRow id={e.id}/></td>
-                      <td>{e.id}</td><td>{e.fecha}</td><td>{e.cliente}</td><td className="text-mono">{e.imei}</td>
+                      <td>{e.id}</td><td>{formatFecha(e.fecha)}</td><td>{e.cliente}</td><td className="text-mono">{e.imei}</td>
                       <td className="center"><div className="table-actions">
                         <button onClick={()=>handleEdit(e,'retirados')} className="action-btn edit"><Edit2 size={18}/></button>
                         <button onClick={()=>setDeleteId(e.id)} className="action-btn delete"><Trash2 size={18}/></button>
@@ -469,7 +470,7 @@ const Materiales = ({
                   ? <tr><td colSpan="5" className="empty-state">Sin {selectedType} para {emp}</td></tr>
                   : filtMat.filter(m=>m.tipo===selectedType).map(m=><tr key={m.id} style={{background:selectedRows.has(m.id)?'rgba(99,102,241,0.08)':''}}>
                       <td style={{textAlign:'center'}}><ChkRow id={m.id}/></td>
-                      <td>{m.tipo}</td><td className="text-mono">{m.serial||'-'}</td><td>{m.fecha}</td>
+                      <td>{m.tipo}</td><td className="text-mono">{m.serial||'-'}</td><td>{formatFecha(m.fecha)}</td>
                       <td className="center"><div className="table-actions">
                         <button onClick={()=>setDeleteId(m.id)} className="action-btn delete"><Trash2 size={18}/></button>
                       </div></td>

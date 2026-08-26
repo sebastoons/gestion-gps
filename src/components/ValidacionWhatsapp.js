@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Home } from 'lucide-react';
 import { ChevronDown } from 'lucide-react';
 import { deleteFromTable, syncTable, nextTrabajoId, nextEquipoId, nextClienteId } from '../lib/supabase';
+import { formatFecha } from '../utils/dateUtils';
 
 const COSTOS = {
   'Instalación': 0.8, 'Desinstalación': 0.5,
@@ -168,7 +169,7 @@ const ValidacionWhatsapp = ({
     const lineas = [
       `*EMPRESA*: ${form.empresa}`,
       `*CLIENTE*: ${cap(form.cliente)}`,
-      `*FECHA*: ${form.fecha}`,
+      `*FECHA*: ${formatFecha(form.fecha)}`,
       `*SERVICIO*: ${cap(form.servicio)}`,
     ];
     if (form.ppuVinIn || form.ppuVinOut) {
