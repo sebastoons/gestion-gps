@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Home, FileImage, Table2, DollarSign, ListChecks } from 'lucide-react';
+import { Home, FileImage, Table2, DollarSign, ListChecks, ChevronDown } from 'lucide-react';
 import { exportToVisualImage } from '../utils/visualExportUtils';
 import '../styles/Dashboard.css';
 
@@ -48,8 +48,16 @@ const Dashboard = ({ setCurrentView, trabajos, empresas }) => {
   // sea la misma elección en toda la app.
   const [tipoDocumento, setTipoDocumento] = useState(() => localStorage.getItem('tipoDocumento') || 'factura');
   const cambiarTipoDocumento = (t) => { setTipoDocumento(t); localStorage.setItem('tipoDocumento', t); };
+  // Qué empresas están desplegadas — así no se satura la pantalla mostrando
+  // las cifras de todas a la vez, sobre todo en el celular.
+  const [expandidas, setExpandidas] = useState(() => new Set());
+  const toggleEmpresa = (empresa) => setExpandidas(prev => {
+    const next = new Set(prev);
+    next.has(empresa) ? next.delete(empresa) : next.add(empresa);
+    return next;
+  });
 
-  const colorFor = (empresa) => `var(--series-${(Math.max(0, empresas.indexOf(empresa)) % 8) + 1})`;
+  const colorFor = (empresa) => `var(--series-${(Math.max(0, empresas.indexOf(empresa)) % 7) + 1})`;
 
   const datos = useMemo(() => {
     const porEmpresa = new Map(empresas.map(e => [e, { pesos: 0, uf: 0, cantidad: 0, km: 0, kmValor: 0 }]));
@@ -170,36 +178,48 @@ const Dashboard = ({ setCurrentView, trabajos, empresas }) => {
                   </span>
                 </div>
 
-                {/* ── Totales por empresa — mismos 3 campos (líquido, km, retención/IVA), compacto ── */}
+                {/* ── Totales por empresa — lista plegable: cifras completas en pesos,
+                     una empresa a la vez para no saturar la pantalla en el celular ── */}
                 <h3 className="db-section-title">Totales por Empresa</h3>
-                <div className="db-empresa-grid">
+                <div className="db-empresa-list">
                   {empresasOrdenadas.map(e => {
                     const f = calcularFinal(e.pesos, e.kmValor, tipoDocumento);
+                    const abierta = expandidas.has(e.empresa);
                     return (
-                    <div key={e.empresa} className="db-empresa-card" style={{ '--card-color': colorFor(e.empresa) }}>
-                      <div className="db-empresa-head">
-                        <span className="db-dot" style={{ background: colorFor(e.empresa) }} />
-                        <span className="db-empresa-name">{e.empresa}</span>
-                        <span className="db-empresa-count">{e.cantidad} trab.</span>
-                      </div>
-                      <div className="db-empresa-stats">
-                        <div className="db-empresa-stat">
-                          <span className="db-empresa-stat-label">Líquido</span>
-                          <span className="db-empresa-stat-value">{fmtCompacto(f.subtotal)}</span>
+                      <div key={e.empresa} className={`db-empresa-item ${abierta ? 'db-empresa-item--open' : ''}`} style={{ '--card-color': colorFor(e.empresa) }}>
+                        <button className="db-empresa-row" onClick={() => toggleEmpresa(e.empresa)} aria-expanded={abierta}>
+                          <span className="db-empresa-avatar" style={{ background: colorFor(e.empresa) }}>{e.empresa.charAt(0).toUpperCase()}</span>
+                          <span className="db-empresa-row-mid">
+                            <span className="db-empresa-name">{e.empresa}</span>
+                            <span className="db-empresa-count">{e.cantidad} trabajo{e.cantidad === 1 ? '' : 's'}</span>
+                          </span>
+                          <span className="db-empresa-row-value">{fmtPesos(f.subtotal)}</span>
+                          <ChevronDown size={16} className="db-empresa-chevron" />
+                        </button>
+                        <div className="db-meter">
+                          <div className="db-meter-fill" style={{ width: `${(valorEmpresa(e) / maxEmpresa) * 100}%`, background: colorFor(e.empresa) }} />
                         </div>
-                        <div className="db-empresa-stat">
-                          <span className="db-empresa-stat-label">Km $</span>
-                          <span className="db-empresa-stat-value">{fmtCompacto(e.kmValor)}</span>
-                        </div>
-                        <div className="db-empresa-stat">
-                          <span className="db-empresa-stat-label">{f.extraCorto}</span>
-                          <span className="db-empresa-stat-value">{fmtCompacto(f.extra)}</span>
-                        </div>
+                        {abierta && (
+                          <div className="db-empresa-detail">
+                            <div className="db-empresa-detail-row">
+                              <span className="db-empresa-detail-label">Líquido</span>
+                              <span className="db-empresa-detail-value">{fmtPesos(f.subtotal)}</span>
+                            </div>
+                            <div className="db-empresa-detail-row">
+                              <span className="db-empresa-detail-label">Valor Km ({e.km.toFixed(0)} km)</span>
+                              <span className="db-empresa-detail-value">{fmtPesos(e.kmValor)}</span>
+                            </div>
+                            <div className="db-empresa-detail-row">
+                              <span className="db-empresa-detail-label">{f.extraLabel}</span>
+                              <span className="db-empresa-detail-value">{fmtPesos(f.extra)}</span>
+                            </div>
+                            <div className="db-empresa-detail-row db-empresa-detail-row--total">
+                              <span className="db-empresa-detail-label">Total {tipoDocumento === 'boleta' ? 'boleta' : 'a facturar'}</span>
+                              <span className="db-empresa-detail-value">{fmtPesos(f.final)}</span>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <div className="db-meter">
-                        <div className="db-meter-fill" style={{ width: `${(valorEmpresa(e) / maxEmpresa) * 100}%`, background: colorFor(e.empresa) }} />
-                      </div>
-                    </div>
                     );
                   })}
                 </div>
