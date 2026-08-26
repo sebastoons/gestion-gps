@@ -177,7 +177,7 @@ const OTDoc = ({ ot, numero, empresa, cliente, rut, firma, aceptacion }) => {
         <EmpresaLogos empresa={empresa}/>
         <div className="otd-hdr-mid">
           <span className="otd-title">ORDEN DE TRABAJO</span>
-          <span className="otd-sub">{empresa}</span>
+          <span className="otd-sub">{cliente}</span>
         </div>
         <div className="otd-num-wrap">
           <span className="otd-num-lbl">N°</span>
@@ -204,8 +204,9 @@ const OTDoc = ({ ot, numero, empresa, cliente, rut, firma, aceptacion }) => {
         </div>
 
         <div className="otd-sec">
-          <div className="otd-sec-ttl">UBICACIÓN</div>
+          <div className="otd-sec-ttl">CLIENTE</div>
           <div className="otd-rows">
+            <OTField l="NOMBRE" v={cliente} full/>
             <OTField l="REGIÓN" v={ot.region}/>
             <OTField l="CIUDAD" v={ot.ciudad}/>
             <OTField l="COMUNA" v={ot.comuna}/>
