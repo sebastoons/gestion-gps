@@ -34,10 +34,10 @@ const calcularFinal = (pesos, kmValor, tipoDocumento) => {
   const subtotal = pesos + kmValor;
   if (tipoDocumento === 'boleta') {
     const totalBoleta = Math.round(subtotal / (1 - 0.1525));
-    return { subtotal, final: totalBoleta, extra: totalBoleta - subtotal, extraLabel: 'Retención (15.25%)' };
+    return { subtotal, final: totalBoleta, extra: totalBoleta - subtotal, extraLabel: 'Retención (15.25%)', extraCorto: 'Retención' };
   }
   const iva = subtotal * 0.19;
-  return { subtotal, final: subtotal + iva, extra: iva, extraLabel: 'IVA (19%)' };
+  return { subtotal, final: subtotal + iva, extra: iva, extraLabel: 'IVA (19%)', extraCorto: 'IVA' };
 };
 
 const Dashboard = ({ setCurrentView, trabajos, empresas }) => {
@@ -147,27 +147,29 @@ const Dashboard = ({ setCurrentView, trabajos, empresas }) => {
               </div>
 
               <div id="dashboard-export">
-                {/* ── Hero: total general (incluye km, con IVA o retención según Factura/Boleta) ── */}
+                {/* ── Hero: total general — líquido, km y retención/IVA de TODAS las empresas ── */}
                 <div className="db-hero">
-                  <div className="db-hero-main">
-                    <span className="db-hero-label">Total {tipoDocumento === 'boleta' ? 'Boleta' : 'Factura'} — Todas las Empresas</span>
-                    <span className="db-hero-value">{fmtPesos(granFinal.final)}</span>
-                    <span className="db-hero-sub">
-                      {granTotalCantidad} trabajos ({granTotalUF.toFixed(1)} UF) · {fmtPesos(granTotalPesos)} en servicios · {granTotalKm.toFixed(0)} km ({fmtPesos(granTotalKmValor)}) · {granFinal.extraLabel}: {fmtPesos(granFinal.extra)}
-                    </span>
+                  <span className="db-hero-label">Total {tipoDocumento === 'boleta' ? 'Boleta' : 'Factura'} — Todas las Empresas</span>
+                  <div className="db-hero-stats">
+                    <div className="db-hero-stat">
+                      <span className="db-hero-stat-label">Líquido</span>
+                      <span className="db-hero-stat-value">{fmtPesos(granFinal.subtotal)}</span>
+                    </div>
+                    <div className="db-hero-stat">
+                      <span className="db-hero-stat-label">Kilómetros</span>
+                      <span className="db-hero-stat-value">{granTotalKm.toFixed(0)} km</span>
+                    </div>
+                    <div className="db-hero-stat">
+                      <span className="db-hero-stat-label">{granFinal.extraCorto}</span>
+                      <span className="db-hero-stat-value">{fmtPesos(granFinal.extra)}</span>
+                    </div>
                   </div>
-                  <div className="db-hero-chips">
-                    {empresasOrdenadas.map(e => (
-                      <div key={e.empresa} className="db-hero-chip">
-                        <span className="db-dot" style={{ background: colorFor(e.empresa) }} />
-                        <span className="db-hero-chip-name">{e.empresa}</span>
-                        <span className="db-hero-chip-value">{fmtCompacto(calcularFinal(e.pesos, e.kmValor, tipoDocumento).final)}</span>
-                      </div>
-                    ))}
-                  </div>
+                  <span className="db-hero-sub">
+                    {granTotalCantidad} trabajos ({granTotalUF.toFixed(1)} UF) · Total {tipoDocumento === 'boleta' ? 'boleta' : 'a facturar'}: {fmtPesos(granFinal.final)}
+                  </span>
                 </div>
 
-                {/* ── Totales por empresa ── */}
+                {/* ── Totales por empresa — mismos 3 campos (líquido, km, retención/IVA), compacto ── */}
                 <h3 className="db-section-title">Totales por Empresa</h3>
                 <div className="db-empresa-grid">
                   {empresasOrdenadas.map(e => {
@@ -177,15 +179,22 @@ const Dashboard = ({ setCurrentView, trabajos, empresas }) => {
                       <div className="db-empresa-head">
                         <span className="db-dot" style={{ background: colorFor(e.empresa) }} />
                         <span className="db-empresa-name">{e.empresa}</span>
+                        <span className="db-empresa-count">{e.cantidad} trab.</span>
                       </div>
-                      <span className="db-empresa-value">{metrica === 'pesos' ? fmtPesos(e.pesos) : `${e.cantidad} trabajos`}</span>
-                      <span className="db-empresa-sub">
-                        {metrica === 'pesos' ? `${e.cantidad} trabajos · ${e.uf.toFixed(1)} UF` : `${fmtPesos(e.pesos)} · ${e.uf.toFixed(1)} UF`}
-                      </span>
-                      <span className="db-empresa-sub">{e.km.toFixed(0)} km ({fmtPesos(e.kmValor)})</span>
-                      <span className="db-empresa-sub" style={{ fontWeight: 'bold' }}>
-                        Total {tipoDocumento === 'boleta' ? 'boleta' : 'factura'}: {fmtPesos(f.final)}
-                      </span>
+                      <div className="db-empresa-stats">
+                        <div className="db-empresa-stat">
+                          <span className="db-empresa-stat-label">Líquido</span>
+                          <span className="db-empresa-stat-value">{fmtPesos(f.subtotal)}</span>
+                        </div>
+                        <div className="db-empresa-stat">
+                          <span className="db-empresa-stat-label">Km</span>
+                          <span className="db-empresa-stat-value">{e.km.toFixed(0)}</span>
+                        </div>
+                        <div className="db-empresa-stat">
+                          <span className="db-empresa-stat-label">{f.extraCorto}</span>
+                          <span className="db-empresa-stat-value">{fmtPesos(f.extra)}</span>
+                        </div>
+                      </div>
                       <div className="db-meter">
                         <div className="db-meter-fill" style={{ width: `${(valorEmpresa(e) / maxEmpresa) * 100}%`, background: colorFor(e.empresa) }} />
                       </div>
