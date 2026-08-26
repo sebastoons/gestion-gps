@@ -525,7 +525,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
         <div style={{position:'absolute',left:'-9999px',top:0,width:'420px',background:'#f8fafc'}}>
           <div id="ot-history-render">
             <OTDoc ot={historyOT} numero={historyOT.numero} empresa={historyOT.empresa}
-              cliente={historyOT.cliente} rut={historyOT.rutCliente} firma={historyOT.firma} aceptacion={historyOT.aceptacion}/>
+              cliente={historyOT.nombreCliente || historyOT.cliente} rut={historyOT.rutCliente} firma={historyOT.firma} aceptacion={historyOT.aceptacion}/>
           </div>
         </div>
       )}
@@ -538,7 +538,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
               <button className="btn btn-secondary" style={{fontSize:'0.65em'}} onClick={()=>setPreviewOT(null)}><X size={12}/> Cerrar</button>
             </div>
             <OTDoc ot={previewOT} numero={previewOT.numero} empresa={previewOT.empresa}
-              cliente={previewOT.cliente} rut={previewOT.rutCliente} firma={previewOT.firma} aceptacion={previewOT.aceptacion}/>
+              cliente={previewOT.nombreCliente || previewOT.cliente} rut={previewOT.rutCliente} firma={previewOT.firma} aceptacion={previewOT.aceptacion}/>
           </div>
         </div>
       )}
@@ -786,7 +786,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
 
   // ── PREVIEW ───────────────────────────────────────────────────────────────
   const otDocProps = (ot) => ({ot, numero:ot.numero, empresa:sessionEmpresa,
-    cliente:clienteData.nombre, rut:clienteData.rut, firma, aceptacion});
+    cliente: ot.nombreCliente || clienteData.nombre, rut:clienteData.rut, firma, aceptacion});
 
   if(step==='preview') return (
     <div className="page-container">
