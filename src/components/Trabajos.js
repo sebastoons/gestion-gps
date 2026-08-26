@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Download, Plus, Home, Edit2, Trash2, AlertCircle, FileImage, ChevronDown } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
 import { exportToVisualImage } from '../utils/visualExportUtils';
+import { formatFecha } from '../utils/dateUtils';
 import { deleteFromTable, syncTable, nextTrabajoId, nextClienteId } from '../lib/supabase';
 
 const Trabajos = ({
@@ -704,7 +705,7 @@ const Trabajos = ({
                       <tr key={trabajo.id}>
                         <td>{trabajo.id}</td>
                         <td className="text-bold">{trabajo.nombreCliente}</td>
-                        <td>{trabajo.fecha}</td>
+                        <td>{formatFecha(trabajo.fecha)}</td>
                         <td>{trabajo.servicio}</td>
                         <td style={{ fontSize: '0.55em' }}>
                           {trabajo.accesorios && trabajo.accesorios.length > 0 
