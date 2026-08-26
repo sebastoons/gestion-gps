@@ -1,26 +1,26 @@
 /* ══════════════════════════════════════
-   DASHBOARD — categorical series palette
-   (validated: adjacent-pair CVD-safe, light & dark)
+   DASHBOARD — colores de la app, no una paleta aparte del dashboard.
+   Mismos tonos que ya usan los íconos de Inicio y el resto de la app
+   (azul/teal/naranja/verde/morado/amarillo/rojo), sólo su versión clara
+   y oscura, así una empresa se ve con el mismo color en todos lados.
 ══════════════════════════════════════ */
 :root {
-  --series-1: #2a78d6; /* azul */
-  --series-2: #eb6834; /* naranja */
-  --series-3: #1baf7a; /* aqua */
-  --series-4: #eda100; /* amarillo */
-  --series-5: #e87ba4; /* magenta */
-  --series-6: #008300; /* verde */
-  --series-7: #4a3aa7; /* violeta */
-  --series-8: #e34948; /* rojo */
+  --series-1: #3b82f6; /* azul   — Trabajos */
+  --series-2: #14b8a6; /* teal   — Inventario */
+  --series-3: #f97316; /* naranja — Valores */
+  --series-4: #22c55e; /* verde  — Validación */
+  --series-5: #a855f7; /* morado — Dashboard */
+  --series-6: #eab308; /* amarillo — Órdenes de Trabajo */
+  --series-7: #ef4444; /* rojo */
 }
 .dark {
-  --series-1: #3987e5;
-  --series-2: #d95926;
-  --series-3: #199e70;
-  --series-4: #c98500;
-  --series-5: #d55181;
-  --series-6: #008300;
-  --series-7: #9085e9;
-  --series-8: #e66767;
+  --series-1: #60a5fa;
+  --series-2: #2dd4bf;
+  --series-3: #fb923c;
+  --series-4: #4ade80;
+  --series-5: #c084fc;
+  --series-6: #fbbf24;
+  --series-7: #f87171;
 }
 
 .db-toolbar {
@@ -97,61 +97,89 @@
 }
 .dark .db-section-title { color: rgba(255,255,255,0.9); }
 
-/* ── Empresa cards — compactas: nombre + 3 campos (líquido/km/retención-IVA) ──
-   Columnas fijas por breakpoint (no auto-fit): con auto-fit, muchas empresas
-   angostas caben por fila y sus 3 cifras internas terminan recortadas con
-   "…" — mejor menos columnas y que cada tarjeta tenga aire real. */
-.db-empresa-grid {
-  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px; margin-bottom: 24px;
-}
-.db-empresa-card {
-  background: white; border-radius: 10px; padding: 8px 10px;
+/* ── Totales por empresa — lista plegable ──
+   Una fila compacta por empresa (avatar + nombre + total líquido) y al
+   tocarla se abre el desglose completo, en pesos completos (nunca "24.2K")
+   apilado en filas propias — así cada cifra tiene todo el ancho de la
+   tarjeta para mostrarse entera, sin importar el largo del número. */
+.db-empresa-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+
+.db-empresa-item {
+  background: white; border-radius: 14px; overflow: hidden;
   border: 1px solid rgba(0,0,0,0.06);
-  border-top: 3px solid var(--card-color);
+  border-left: 4px solid var(--card-color);
   box-shadow: 0 1px 6px rgba(0,0,0,0.05);
-  display: flex; flex-direction: column; gap: 6px;
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  transition: box-shadow 0.18s ease;
 }
-.db-empresa-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.09); }
-.dark .db-empresa-card {
+.db-empresa-item--open { box-shadow: 0 6px 18px rgba(0,0,0,0.1); }
+.dark .db-empresa-item {
   background: #1a2744; border-color: rgba(255,255,255,0.07);
   box-shadow: 0 3px 12px rgba(0,0,0,0.3);
 }
-.db-empresa-head { display: flex; align-items: center; gap: 6px; }
+.dark .db-empresa-item--open { box-shadow: 0 8px 22px rgba(0,0,0,0.4); }
+
+.db-empresa-row {
+  width: 100%; display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; background: none; border: none; cursor: pointer;
+  text-align: left; font: inherit;
+}
+.db-empresa-avatar {
+  width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-family: 'Changa'; font-weight: bold; font-size: 0.75em;
+}
+.db-empresa-row-mid { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .db-empresa-name {
-  font-family: 'Quantico'; font-size: 0.6em; font-weight: bold; text-transform: uppercase; color: #374151;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0;
-}
-.dark .db-empresa-name { color: #cbd5e1; }
-.db-empresa-count {
-  font-family: 'Quantico'; font-size: 0.5em; text-transform: uppercase; color: #9ca3af; flex-shrink: 0;
-}
-.dark .db-empresa-count { color: #64748b; }
-.db-empresa-stats {
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px;
-}
-.db-empresa-stat {
-  min-width: 0;
-  background: rgba(0,0,0,0.03); border-radius: 7px; padding: 4px 3px; text-align: center;
-}
-.dark .db-empresa-stat { background: rgba(255,255,255,0.04); }
-.db-empresa-stat-label {
-  display: block; font-family: 'Quantico'; font-size: 0.46em; text-transform: uppercase; color: #9ca3af;
-  margin-bottom: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.dark .db-empresa-stat-label { color: #64748b; }
-.db-empresa-stat-value {
-  display: block; font-family: 'Changa'; font-weight: bold;
-  font-size: clamp(0.55em, 3.6vw, 0.7em); line-height: 1.2; color: #1f2937;
+  font-family: 'Quantico'; font-size: 0.65em; font-weight: bold; text-transform: uppercase; color: #374151;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.dark .db-empresa-stat-value { color: #f1f5f9; }
+.dark .db-empresa-name { color: #e2e8f0; }
+.db-empresa-count {
+  font-family: 'Quantico'; font-size: 0.52em; text-transform: uppercase; color: #9ca3af;
+}
+.dark .db-empresa-count { color: #64748b; }
+.db-empresa-row-value {
+  font-family: 'Changa'; font-weight: bold; font-size: 0.72em; color: #1f2937;
+  flex-shrink: 0; white-space: nowrap;
+}
+.dark .db-empresa-row-value { color: #f1f5f9; }
+.db-empresa-chevron { color: #9ca3af; flex-shrink: 0; transition: transform 0.2s ease; }
+.db-empresa-item--open .db-empresa-chevron { transform: rotate(180deg); color: var(--card-color); }
+.dark .db-empresa-chevron { color: #64748b; }
+
 .db-meter {
-  height: 5px; border-radius: 4px; background: rgba(0,0,0,0.06); overflow: hidden;
+  height: 3px; background: rgba(0,0,0,0.06); overflow: hidden; margin: 0 12px;
 }
 .dark .db-meter { background: rgba(255,255,255,0.08); }
-.db-meter-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+.db-meter-fill { height: 100%; transition: width 0.4s ease; }
+
+/* Desglose — animado al abrir, una cifra por fila con su etiqueta a la
+   izquierda para que el monto completo nunca compita por ancho. */
+.db-empresa-detail {
+  padding: 4px 14px 12px; display: flex; flex-direction: column; gap: 2px;
+  animation: dbDetailIn 0.18s ease-out;
+}
+@keyframes dbDetailIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+.db-empresa-detail-row {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+  padding: 6px 0; border-top: 1px solid rgba(0,0,0,0.06);
+}
+.dark .db-empresa-detail-row { border-color: rgba(255,255,255,0.08); }
+.db-empresa-detail-label {
+  font-family: 'Quantico'; font-size: 0.58em; text-transform: uppercase; color: #6b7280; flex-shrink: 0;
+}
+.dark .db-empresa-detail-label { color: #94a3b8; }
+.db-empresa-detail-value {
+  font-family: 'Changa'; font-weight: bold; font-size: 0.72em; color: #1f2937; text-align: right;
+}
+.dark .db-empresa-detail-value { color: #f1f5f9; }
+.db-empresa-detail-row--total {
+  margin-top: 4px; padding: 8px 10px; border-top: none; border-radius: 8px;
+  background: rgba(0,0,0,0.03);
+}
+.dark .db-empresa-detail-row--total { background: rgba(255,255,255,0.05); }
+.db-empresa-detail-row--total .db-empresa-detail-label { color: var(--card-color); font-weight: bold; }
+.db-empresa-detail-row--total .db-empresa-detail-value { color: var(--card-color); font-size: 0.8em; }
 
 /* ── Legend ── */
 .db-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 10px; }
@@ -211,16 +239,11 @@
 .dark .db-tooltip { background: #0f172a; border: 1px solid #334155; }
 
 /* ── Responsive ──
-   Base (móvil, definida arriba) = 2 columnas fijas, así cada tarjeta
-   siempre tiene ancho real para sus 3 cifras. Más columnas sólo cuando
-   realmente sobra espacio — nunca "las que quepan" via auto-fit, que es
-   lo que las recortaba con "…" en pantallas chicas con 3-4 empresas. */
-@media (min-width: 640px) and (max-width: 899px) {
-  .db-empresa-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
+   La lista de empresas es de una sola columna a cualquier ancho — cada
+   fila ya ocupa el 100% disponible, así que no necesita romperse en
+   columnas: en el celular (lo que más se usa) da cifras completas sin
+   apretar, y en pantallas grandes simplemente se ve más ancha. */
 @media (min-width: 900px) {
-  .db-empresa-grid { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
-  .db-empresa-card { padding: 12px 14px; }
   .db-hero { padding: 28px 26px; }
 }
 
@@ -237,11 +260,4 @@
      onto one line and clips their text instead of letting db-toolbar's own
      flex-wrap do its job. Restore natural sizing here specifically. */
   .db-toolbar .btn { flex: 0 1 auto; min-width: auto; }
-}
-
-/* Teléfonos muy angostos (ej. iPhone SE, ~360px): incluso 2 columnas dejan
-   muy poco ancho para los 3 campos de cada tarjeta. Una sola columna les da
-   todo el ancho de la página en vez de recortar las cifras con "…". */
-@media (max-width: 400px) {
-  .db-empresa-grid { grid-template-columns: 1fr; }
 }
