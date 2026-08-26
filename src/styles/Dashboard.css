@@ -61,20 +61,31 @@
   font-family: 'Quantico'; font-size: 0.62em; text-transform: uppercase;
   color: rgba(255,255,255,0.72);
 }
-/* Los 3 campos pedidos — líquido, km, retención/IVA — para el total general */
+/* Los 3 campos pedidos — líquido, km, retención/IVA — para el total general.
+   min-width:0 en los hijos del grid es necesario para que el elipsis/ajuste
+   de fuente realmente achique el texto en vez de forzar la celda a ensanchar
+   (los items de grid no encogen bajo su ancho de contenido por defecto). */
 .db-hero-stats {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;
 }
 .db-hero-stat {
+  min-width: 0;
   background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.16);
-  border-radius: 12px; padding: 10px 12px; text-align: center;
+  border-radius: 12px; padding: 10px 8px; text-align: center;
 }
 .db-hero-stat-label {
-  display: block; font-family: 'Quantico'; font-size: 0.58em; text-transform: uppercase;
+  display: block; font-family: 'Quantico'; font-size: 0.56em; text-transform: uppercase;
   letter-spacing: 0.5px; color: rgba(255,255,255,0.7); margin-bottom: 3px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .db-hero-stat-value {
-  display: block; font-family: 'Changa'; font-weight: bold; font-size: 1.15em; color: white;
+  display: block; font-family: 'Changa'; font-weight: bold;
+  font-size: clamp(0.75em, 4.2vw, 1.15em); line-height: 1.15; color: white;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.db-hero-stat-hint {
+  display: block; font-family: 'Quantico'; font-size: 0.5em; text-transform: uppercase;
+  color: rgba(255,255,255,0.55); margin-top: 2px;
 }
 
 .db-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
@@ -86,9 +97,12 @@
 }
 .dark .db-section-title { color: rgba(255,255,255,0.9); }
 
-/* ── Empresa cards — compactas: nombre + 3 campos (líquido/km/retención-IVA) ── */
+/* ── Empresa cards — compactas: nombre + 3 campos (líquido/km/retención-IVA) ──
+   Columnas fijas por breakpoint (no auto-fit): con auto-fit, muchas empresas
+   angostas caben por fila y sus 3 cifras internas terminan recortadas con
+   "…" — mejor menos columnas y que cada tarjeta tenga aire real. */
 .db-empresa-grid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px; margin-bottom: 24px;
 }
 .db-empresa-card {
@@ -107,7 +121,7 @@
 .db-empresa-head { display: flex; align-items: center; gap: 6px; }
 .db-empresa-name {
   font-family: 'Quantico'; font-size: 0.6em; font-weight: bold; text-transform: uppercase; color: #374151;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0;
 }
 .dark .db-empresa-name { color: #cbd5e1; }
 .db-empresa-count {
@@ -115,9 +129,10 @@
 }
 .dark .db-empresa-count { color: #64748b; }
 .db-empresa-stats {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px;
 }
 .db-empresa-stat {
+  min-width: 0;
   background: rgba(0,0,0,0.03); border-radius: 7px; padding: 4px 3px; text-align: center;
 }
 .dark .db-empresa-stat { background: rgba(255,255,255,0.04); }
@@ -127,7 +142,9 @@
 }
 .dark .db-empresa-stat-label { color: #64748b; }
 .db-empresa-stat-value {
-  display: block; font-family: 'Changa'; font-weight: bold; font-size: 0.68em; color: #1f2937;
+  display: block; font-family: 'Changa'; font-weight: bold;
+  font-size: clamp(0.55em, 3.6vw, 0.7em); line-height: 1.2; color: #1f2937;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .dark .db-empresa-stat-value { color: #f1f5f9; }
 .db-meter {
@@ -193,10 +210,24 @@
 .db-tooltip strong { font-family: 'Changa'; }
 .dark .db-tooltip { background: #0f172a; border: 1px solid #334155; }
 
-/* ── Responsive ── */
+/* ── Responsive ──
+   Base (móvil, definida arriba) = 2 columnas fijas, así cada tarjeta
+   siempre tiene ancho real para sus 3 cifras. Más columnas sólo cuando
+   realmente sobra espacio — nunca "las que quepan" via auto-fit, que es
+   lo que las recortaba con "…" en pantallas chicas con 3-4 empresas. */
+@media (min-width: 640px) and (max-width: 899px) {
+  .db-empresa-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 900px) {
+  .db-empresa-grid { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+  .db-empresa-card { padding: 12px 14px; }
+  .db-hero { padding: 28px 26px; }
+}
+
 @media (max-width: 480px) {
-  .db-hero-value { font-size: 1.7em; }
-  .db-empresa-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+  .db-hero { padding: 18px 16px; border-radius: 16px; }
+  .db-hero-stats { gap: 6px; }
+  .db-hero-stat { padding: 8px 4px; border-radius: 10px; }
   .db-bar-stack { height: 140px; }
   .db-chart { min-height: 190px; }
   /* Common.css's ".btn { flex:1; min-width:0 }" at this breakpoint targets
@@ -206,4 +237,11 @@
      onto one line and clips their text instead of letting db-toolbar's own
      flex-wrap do its job. Restore natural sizing here specifically. */
   .db-toolbar .btn { flex: 0 1 auto; min-width: auto; }
+}
+
+/* Teléfonos muy angostos (ej. iPhone SE, ~360px): incluso 2 columnas dejan
+   muy poco ancho para los 3 campos de cada tarjeta. Una sola columna les da
+   todo el ancho de la página en vez de recortar las cifras con "…". */
+@media (max-width: 400px) {
+  .db-empresa-grid { grid-template-columns: 1fr; }
 }

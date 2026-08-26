@@ -156,8 +156,9 @@ const Dashboard = ({ setCurrentView, trabajos, empresas }) => {
                       <span className="db-hero-stat-value">{fmtPesos(granFinal.subtotal)}</span>
                     </div>
                     <div className="db-hero-stat">
-                      <span className="db-hero-stat-label">Kilómetros</span>
-                      <span className="db-hero-stat-value">{granTotalKm.toFixed(0)} km</span>
+                      <span className="db-hero-stat-label">Valor Km</span>
+                      <span className="db-hero-stat-value">{fmtPesos(granTotalKmValor)}</span>
+                      <span className="db-hero-stat-hint">{granTotalKm.toFixed(0)} km</span>
                     </div>
                     <div className="db-hero-stat">
                       <span className="db-hero-stat-label">{granFinal.extraCorto}</span>
@@ -184,15 +185,15 @@ const Dashboard = ({ setCurrentView, trabajos, empresas }) => {
                       <div className="db-empresa-stats">
                         <div className="db-empresa-stat">
                           <span className="db-empresa-stat-label">Líquido</span>
-                          <span className="db-empresa-stat-value">{fmtPesos(f.subtotal)}</span>
+                          <span className="db-empresa-stat-value">{fmtCompacto(f.subtotal)}</span>
                         </div>
                         <div className="db-empresa-stat">
-                          <span className="db-empresa-stat-label">Km</span>
-                          <span className="db-empresa-stat-value">{e.km.toFixed(0)}</span>
+                          <span className="db-empresa-stat-label">Km $</span>
+                          <span className="db-empresa-stat-value">{fmtCompacto(e.kmValor)}</span>
                         </div>
                         <div className="db-empresa-stat">
                           <span className="db-empresa-stat-label">{f.extraCorto}</span>
-                          <span className="db-empresa-stat-value">{fmtPesos(f.extra)}</span>
+                          <span className="db-empresa-stat-value">{fmtCompacto(f.extra)}</span>
                         </div>
                       </div>
                       <div className="db-meter">
