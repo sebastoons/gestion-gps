@@ -10,16 +10,16 @@ root.render(
   </React.StrictMode>
 );
 
-// Registrar Service Worker SOLO en producción
-if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+// No registrar un service worker nuevo: uno anterior (cache-first, sin
+// revalidar) dejaba dispositivos atrapados en versiones viejas del código,
+// sin ver los cambios de sincronización con Supabase — ver
+// public/service-worker.js, que se mantiene solo como "interruptor de
+// apagado" para limpiar el de cualquier dispositivo que ya lo tenga
+// instalado.
+if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker
-      .register('/service-worker.js')
-      .then((registration) => {
-        console.log('Service Worker registrado con éxito:', registration.scope);
-      })
-      .catch((error) => {
-        console.log('Error al registrar el Service Worker:', error);
-      });
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      registrations.forEach((registration) => registration.unregister());
+    });
   });
 }
