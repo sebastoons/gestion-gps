@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Download, Plus, Home, Edit2, Trash2, AlertCircle, FileImage, ChevronDown } from 'lucide-react';
-import { exportToCSV } from '../utils/exportUtils';
+import { exportTrabajosToExcel } from '../utils/excelExport';
 import { exportToVisualImage } from '../utils/visualExportUtils';
 import { formatFecha } from '../utils/dateUtils';
 import { deleteFromTable, syncTable, nextTrabajoId, nextClienteId } from '../lib/supabase';
@@ -384,9 +384,10 @@ const Trabajos = ({
               <Plus size={20} /> Agregar
             </button>
             <button
-              onClick={() => exportToCSV(
-                trabajosFiltrados.map(({ mes, empresa, ...r }) => r),
-                `trabajos_${empresaSeleccionada}_${mesSeleccionado}`
+              onClick={() => exportTrabajosToExcel(
+                trabajosFiltrados,
+                `trabajos_${empresaSeleccionada}_${mesSeleccionado}`,
+                { empresa: empresaSeleccionada, mes: mesSeleccionado, totales, tipoDocumento }
               )}
               className="btn btn-success"
             >
