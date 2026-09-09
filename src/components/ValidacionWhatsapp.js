@@ -29,21 +29,39 @@ const VACIO = {
   gpsIn: '', gpsOut: '', kms: '',
   ubicacion: '', perifericos: [], detalles: '', trabajo: '',
   destinoDesinstalacion: 'Retirado',
-  proveedor: '', idProveedor: ''
+  compania: '', idProveedor: ''
 };
 
-// Campos adicionales que algunas empresas GPS piden en la validación (ej. Mavi
-// GPS). El orden en que aparecen es editable por el usuario y se guarda por
-// dispositivo, igual que otras preferencias de interfaz (theme, tipoDocumento).
-const CAMPOS_EXTRA = { proveedor: 'PROVEEDOR', idProveedor: 'ID PROVEEDOR' };
-const ORDEN_EXTRA_KEY = 'ordenCamposExtraValidacion';
-const cargarOrdenExtra = () => {
+// Todos los campos del formulario son reordenables (botón "Reordenar Campos").
+// El orden elegido se guarda por dispositivo, igual que otras preferencias de
+// interfaz (theme, tipoDocumento). "Compañía" e "ID Proveedor" (datos que
+// piden algunas empresas GPS, ej. Mavi GPS) parten arriba de todo por defecto.
+const ORDEN_CAMPOS_DEFAULT = [
+  'compania', 'idProveedor', 'empresa', 'cliente', 'fecha', 'servicio',
+  'ppuVinIn', 'ppuVinOut', 'marca', 'modelo', 'anio', 'gpsIn', 'gpsOut',
+  'kms', 'ubicacion', 'perifericos', 'detalles', 'trabajo', 'destino',
+];
+const ORDEN_CAMPOS_KEY = 'ordenCamposValidacion';
+const cargarOrdenCampos = () => {
   try {
-    const guardado = JSON.parse(localStorage.getItem(ORDEN_EXTRA_KEY));
-    if (Array.isArray(guardado) && guardado.length === Object.keys(CAMPOS_EXTRA).length
-      && guardado.every(k => CAMPOS_EXTRA[k])) return guardado;
+    const guardado = JSON.parse(localStorage.getItem(ORDEN_CAMPOS_KEY));
+    if (Array.isArray(guardado) && guardado.length === ORDEN_CAMPOS_DEFAULT.length
+      && ORDEN_CAMPOS_DEFAULT.every(k => guardado.includes(k))) return guardado;
   } catch { /* usa el default */ }
-  return Object.keys(CAMPOS_EXTRA);
+  return ORDEN_CAMPOS_DEFAULT;
+};
+
+// Varios campos comparten una sola línea del mensaje de WhatsApp (ej. PPU
+// IN/OUT). El orden del mensaje sigue el orden visual usando la posición del
+// primer campo de cada grupo que aparezca en ordenCampos.
+const SEGMENTO_DE_CAMPO = {
+  empresa: 'empresa', cliente: 'cliente', fecha: 'fecha', servicio: 'servicio',
+  ppuVinIn: 'ppu', ppuVinOut: 'ppu',
+  marca: 'vehiculo', modelo: 'vehiculo', anio: 'vehiculo',
+  gpsIn: 'gps', gpsOut: 'gps',
+  kms: 'kms', ubicacion: 'ubicacion', perifericos: 'perifericos',
+  detalles: 'detalles', trabajo: 'trabajo',
+  compania: 'compania', idProveedor: 'idProveedor',
 };
 
 const COSTOS_PERIFERICOS = {
@@ -127,17 +145,24 @@ const ValidacionWhatsapp = ({
   const [ultimoRegistro, setUltimoRegistro] = useState(null);
   const [showPpuOut, setShowPpuOut] = useState(false);
   const [showGpsOut, setShowGpsOut] = useState(false);
-  const [ordenExtra, setOrdenExtra] = useState(cargarOrdenExtra);
+  const [ordenCampos, setOrdenCampos] = useState(cargarOrdenCampos);
+  const [modoOrden, setModoOrden] = useState(false);
 
   const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : '';
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
-  const moverCampoExtra = (i, dir) => {
-    setOrdenExtra(prev => {
-      const j = i + dir;
-      if (j < 0 || j >= prev.length) return prev;
+  // Reordena dentro de los campos actualmente visibles (algunos, como
+  // "Destino GPS OUT", sólo se muestran según el servicio elegido), sin
+  // perder la posición relativa de los que están ocultos.
+  const moverCampo = (key, dir, visibles) => {
+    setOrdenCampos(prev => {
+      const pos = visibles.indexOf(key);
+      const destino = visibles[pos + dir];
+      if (!destino) return prev;
       const nuevo = [...prev];
-      [nuevo[i], nuevo[j]] = [nuevo[j], nuevo[i]];
-      try { localStorage.setItem(ORDEN_EXTRA_KEY, JSON.stringify(nuevo)); } catch { /* localStorage no disponible */ }
+      const i1 = nuevo.indexOf(key);
+      const i2 = nuevo.indexOf(destino);
+      [nuevo[i1], nuevo[i2]] = [nuevo[i2], nuevo[i1]];
+      try { localStorage.setItem(ORDEN_CAMPOS_KEY, JSON.stringify(nuevo)); } catch { /* localStorage no disponible */ }
       return nuevo;
     });
   };
@@ -191,33 +216,51 @@ const ValidacionWhatsapp = ({
     return null;
   };
 
+  const generarLineaSegmento = seg => {
+    switch (seg) {
+      case 'empresa': return `*EMPRESA*: ${form.empresa}`;
+      case 'cliente': return `*CLIENTE*: ${cap(form.cliente)}`;
+      case 'fecha': return `*FECHA*: ${formatFecha(form.fecha)}`;
+      case 'servicio': return `*SERVICIO*: ${cap(form.servicio)}`;
+      case 'ppu': {
+        if (!form.ppuVinIn && !form.ppuVinOut) return null;
+        const p = [];
+        if (form.ppuVinIn) p.push(`*PPU/VIN IN*: ${form.ppuVinIn.toUpperCase()}`);
+        if (form.ppuVinOut) p.push(`*PPU/VIN OUT*: ${form.ppuVinOut.toUpperCase()}`);
+        return p.join(' | ');
+      }
+      case 'vehiculo': {
+        const vm = [form.marca, form.modelo, form.anio].filter(Boolean).join(' ');
+        return vm ? `*MARCA/MODELO*: ${vm}` : null;
+      }
+      case 'gps': {
+        if (!form.gpsIn && !(showGpsOut && form.gpsOut)) return null;
+        const p = [];
+        if (form.gpsIn) p.push(`*GPS IN*: ${form.gpsIn}`);
+        if (showGpsOut && form.gpsOut) p.push(`*GPS OUT*: ${form.gpsOut}`);
+        return p.join(' | ');
+      }
+      case 'kms': return form.kms ? `*KMS ODOMETRO*: ${form.kms}` : null;
+      case 'ubicacion': return form.ubicacion ? `*UBICACION*: ${cap(form.ubicacion)}` : null;
+      case 'perifericos': return form.perifericos.length ? `*PERIFERICOS*: ${form.perifericos.join(', ')}` : null;
+      case 'detalles': return form.detalles ? `*DETALLES*: ${cap(form.detalles)}` : null;
+      case 'trabajo': return form.trabajo ? `*TRABAJO*: ${cap(form.trabajo)}` : null;
+      case 'compania': return form.compania ? `*COMPAÑÍA*: ${form.compania}` : null;
+      case 'idProveedor': return form.idProveedor ? `*ID PROVEEDOR*: ${form.idProveedor}` : null;
+      default: return null;
+    }
+  };
+
   const generarMensaje = () => {
-    const lineas = [
-      `*EMPRESA*: ${form.empresa}`,
-      `*CLIENTE*: ${cap(form.cliente)}`,
-      `*FECHA*: ${formatFecha(form.fecha)}`,
-      `*SERVICIO*: ${cap(form.servicio)}`,
-    ];
-    if (form.ppuVinIn || form.ppuVinOut) {
-      const p = [];
-      if (form.ppuVinIn) p.push(`*PPU/VIN IN*: ${form.ppuVinIn.toUpperCase()}`);
-      if (form.ppuVinOut) p.push(`*PPU/VIN OUT*: ${form.ppuVinOut.toUpperCase()}`);
-      lineas.push(p.join(' | '));
-    }
-    const vm = [form.marca, form.modelo, form.anio].filter(Boolean).join(' ');
-    if (vm) lineas.push(`*MARCA/MODELO*: ${vm}`);
-    if (form.gpsIn || (showGpsOut && form.gpsOut)) {
-      const p = [];
-      if (form.gpsIn) p.push(`*GPS IN*: ${form.gpsIn}`);
-      if (showGpsOut && form.gpsOut) p.push(`*GPS OUT*: ${form.gpsOut}`);
-      lineas.push(p.join(' | '));
-    }
-    if (form.kms) lineas.push(`*KMS ODOMETRO*: ${form.kms}`);
-    if (form.ubicacion) lineas.push(`*UBICACION*: ${cap(form.ubicacion)}`);
-    if (form.perifericos.length) lineas.push(`*PERIFERICOS*: ${form.perifericos.join(', ')}`);
-    if (form.detalles) lineas.push(`*DETALLES*: ${cap(form.detalles)}`);
-    if (form.trabajo) lineas.push(`*TRABAJO*: ${cap(form.trabajo)}`);
-    ordenExtra.forEach(k => { if (form[k]) lineas.push(`*${CAMPOS_EXTRA[k]}*: ${form[k]}`); });
+    const vistos = new Set();
+    const lineas = [];
+    ordenCampos.forEach(k => {
+      const seg = SEGMENTO_DE_CAMPO[k];
+      if (!seg || vistos.has(seg)) return;
+      vistos.add(seg);
+      const linea = generarLineaSegmento(seg);
+      if (linea) lineas.push(linea);
+    });
     return lineas.join('\n');
   };
 
@@ -385,6 +428,164 @@ const ValidacionWhatsapp = ({
   });
   const lbl = { display:'block', fontFamily:'Quantico', fontSize:'0.6em', fontWeight:'bold', textTransform:'uppercase', color:'#374151', marginBottom:'4px' };
 
+  // Contenido de cada campo del formulario, en un mapa por clave para que el
+  // orden visual (ordenCampos, editable con "Reordenar Campos") sea el único
+  // que decide en qué posición aparece cada uno dentro de la grilla.
+  const nodosCampos = {
+    compania: (
+      <>
+        <label style={lbl}>COMPAÑÍA</label>
+        <input className="form-input" value={form.compania} onChange={e => set('compania', e.target.value)} />
+      </>
+    ),
+    idProveedor: (
+      <>
+        <label style={lbl}>ID PROVEEDOR</label>
+        <input className="form-input" value={form.idProveedor} onChange={e => set('idProveedor', e.target.value)} />
+      </>
+    ),
+    empresa: (
+      <>
+        <label style={lbl}>EMPRESA</label>
+        <select className="form-select" value={form.empresa} onChange={e => { set('empresa', e.target.value); if (setEmpresaSeleccionada) setEmpresaSeleccionada(e.target.value); }}>
+          {(empresas || []).map(e => <option key={e}>{e}</option>)}
+        </select>
+      </>
+    ),
+    cliente: (
+      <>
+        <label style={lbl}>CLIENTE *</label>
+        <input className="form-input" value={form.cliente} onChange={e => set('cliente', e.target.value)} />
+      </>
+    ),
+    fecha: (
+      <>
+        <label style={lbl}>FECHA *</label>
+        <input type="date" className="form-input" value={form.fecha} onChange={e => set('fecha', e.target.value)} />
+      </>
+    ),
+    servicio: (
+      <>
+        <label style={lbl}>SERVICIO</label>
+        <select className="form-select" value={form.servicio} onChange={e => set('servicio', e.target.value)}>
+          <option>Instalación</option><option>Desinstalación</option>
+          <option>Mantención</option><option>Reinstalación</option><option>Visita Fallida</option>
+        </select>
+      </>
+    ),
+    ppuVinIn: (
+      <>
+        <label style={lbl}>PPU/VIN IN</label>
+        <input className="form-input" value={form.ppuVinIn} onChange={e => set('ppuVinIn', e.target.value.toUpperCase())} style={{ textTransform:'uppercase' }} />
+      </>
+    ),
+    ppuVinOut: (
+      <>
+        <label style={{ ...lbl, display:'flex', alignItems:'center', gap:6, cursor:'pointer' }}>
+          <input type="checkbox" checked={showPpuOut} onChange={e => setShowPpuOut(e.target.checked)}
+            style={{ width:16, height:16, accentColor:'#3b82f6', cursor:'pointer' }} />
+          PPU/VIN OUT
+        </label>
+        {showPpuOut && (
+          <input className="form-input" value={form.ppuVinOut} onChange={e => set('ppuVinOut', e.target.value.toUpperCase())} style={{ textTransform:'uppercase' }} />
+        )}
+      </>
+    ),
+    marca: (
+      <>
+        <label style={lbl}>MARCA</label>
+        <select className="form-select" value={form.marca} onChange={e => set('marca', e.target.value)}>
+          <option value="">Seleccionar...</option>
+          {MARCAS_VAL.map(m => <option key={m}>{m}</option>)}
+        </select>
+      </>
+    ),
+    modelo: (
+      <>
+        <label style={lbl}>MODELO</label>
+        <input className="form-input" value={form.modelo} onChange={e => set('modelo', e.target.value)} />
+      </>
+    ),
+    anio: (
+      <>
+        <label style={lbl}>AÑO</label>
+        <select className="form-select" value={form.anio} onChange={e => set('anio', e.target.value)}>
+          <option value="">Seleccionar...</option>
+          {AÑOS_VAL.map(a => <option key={a}>{a}</option>)}
+        </select>
+      </>
+    ),
+    gpsIn: (
+      <>
+        <label style={lbl}>GPS IN (IMEI)</label>
+        <div style={{ position:'relative' }}>
+          <input className="form-input" type="tel" inputMode="numeric" pattern="[0-9]*"
+            value={form.gpsIn} onChange={e => set('gpsIn', e.target.value)}
+            style={{ paddingRight: gpsInEstado ? '72px' : undefined }} />
+          {gpsInEstado && <span style={badge(gpsInEstado)}>{gpsInEstado}</span>}
+        </div>
+      </>
+    ),
+    gpsOut: (
+      <>
+        <label style={{ ...lbl, display:'flex', alignItems:'center', gap:6, cursor:'pointer' }}>
+          <input type="checkbox" checked={showGpsOut} onChange={e => setShowGpsOut(e.target.checked)}
+            style={{ width:16, height:16, accentColor:'#3b82f6', cursor:'pointer' }} />
+          GPS OUT
+        </label>
+        {showGpsOut && (
+          <div style={{ position:'relative' }}>
+            <input className="form-input" type="tel" inputMode="numeric" pattern="[0-9]*"
+              value={form.gpsOut} onChange={e => set('gpsOut', e.target.value)}
+              style={{ paddingRight: gpsOutEstado ? '72px' : undefined }} />
+            {gpsOutEstado && <span style={badge(gpsOutEstado)}>{gpsOutEstado}</span>}
+          </div>
+        )}
+      </>
+    ),
+    kms: (
+      <>
+        <label style={lbl}>KMS ODÓMETRO</label>
+        <input type="number" className="form-input" value={form.kms} onChange={e => set('kms', e.target.value)} />
+      </>
+    ),
+    ubicacion: (
+      <>
+        <label style={lbl}>UBICACIÓN</label>
+        <input className="form-input" value={form.ubicacion} onChange={e => set('ubicacion', e.target.value)} />
+      </>
+    ),
+    perifericos: (
+      <>
+        <label style={lbl}>PERIFÉRICOS</label>
+        <PerifeDropdown selected={form.perifericos} onChange={v => set('perifericos', v)} />
+      </>
+    ),
+    detalles: (
+      <>
+        <label style={lbl}>DETALLES</label>
+        <textarea className="form-input" rows={2} value={form.detalles}
+          onChange={e => set('detalles', e.target.value)} style={{ resize:'vertical' }} />
+      </>
+    ),
+    trabajo: (
+      <>
+        <label style={lbl}>TRABAJO</label>
+        <input className="form-input" value={form.trabajo} onChange={e => set('trabajo', e.target.value)} />
+      </>
+    ),
+    destino: form.servicio === 'Desinstalación' ? (
+      <>
+        <label style={lbl}>DESTINO GPS OUT</label>
+        <select className="form-select" value={form.destinoDesinstalacion} onChange={e => set('destinoDesinstalacion', e.target.value)}>
+          <option value="Retirado">Retirado</option>
+          <option value="Malo">Malo</option>
+        </select>
+      </>
+    ) : null,
+  };
+  const camposVisibles = ordenCampos.filter(k => nodosCampos[k] != null);
+
   return (
     <div className="page-container">
       <div className="page-content">
@@ -400,140 +601,44 @@ const ValidacionWhatsapp = ({
           </div>
 
           <div className="form-container" style={{ borderLeft: '4px solid #25D366' }}>
-            <div className="form-grid three-cols">
-              <div>
-                <label style={lbl}>EMPRESA</label>
-                <select className="form-select" value={form.empresa} onChange={e => { set('empresa', e.target.value); if (setEmpresaSeleccionada) setEmpresaSeleccionada(e.target.value); }}>
-                  {(empresas || []).map(e => <option key={e}>{e}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={lbl}>CLIENTE *</label>
-                <input className="form-input" value={form.cliente} onChange={e => set('cliente', e.target.value)} />
-              </div>
-              <div>
-                <label style={lbl}>FECHA *</label>
-                <input type="date" className="form-input" value={form.fecha} onChange={e => set('fecha', e.target.value)} />
-              </div>
-              <div>
-                <label style={lbl}>SERVICIO</label>
-                <select className="form-select" value={form.servicio} onChange={e => set('servicio', e.target.value)}>
-                  <option>Instalación</option><option>Desinstalación</option>
-                  <option>Mantención</option><option>Reinstalación</option><option>Visita Fallida</option>
-                </select>
-              </div>
-              <div>
-                <label style={lbl}>PPU/VIN IN</label>
-                <input className="form-input" value={form.ppuVinIn} onChange={e => set('ppuVinIn', e.target.value.toUpperCase())} style={{ textTransform:'uppercase' }} />
-              </div>
-              <div>
-                <label style={{ ...lbl, display:'flex', alignItems:'center', gap:6, cursor:'pointer' }}>
-                  <input type="checkbox" checked={showPpuOut} onChange={e => setShowPpuOut(e.target.checked)}
-                    style={{ width:16, height:16, accentColor:'#3b82f6', cursor:'pointer' }} />
-                  PPU/VIN OUT
-                </label>
-                {showPpuOut && (
-                  <input className="form-input" value={form.ppuVinOut} onChange={e => set('ppuVinOut', e.target.value.toUpperCase())} style={{ textTransform:'uppercase' }} />
-                )}
-              </div>
-              <div>
-                <label style={lbl}>MARCA</label>
-                <select className="form-select" value={form.marca} onChange={e => set('marca', e.target.value)}>
-                  <option value="">Seleccionar...</option>
-                  {MARCAS_VAL.map(m => <option key={m}>{m}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={lbl}>MODELO</label>
-                <input className="form-input" value={form.modelo} onChange={e => set('modelo', e.target.value)} />
-              </div>
-              <div>
-                <label style={lbl}>AÑO</label>
-                <select className="form-select" value={form.anio} onChange={e => set('anio', e.target.value)}>
-                  <option value="">Seleccionar...</option>
-                  {AÑOS_VAL.map(a => <option key={a}>{a}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={lbl}>GPS IN (IMEI)</label>
-                <div style={{ position:'relative' }}>
-                  <input className="form-input" type="tel" inputMode="numeric" pattern="[0-9]*"
-                    value={form.gpsIn} onChange={e => set('gpsIn', e.target.value)}
-                    style={{ paddingRight: gpsInEstado ? '72px' : undefined }} />
-                  {gpsInEstado && <span style={badge(gpsInEstado)}>{gpsInEstado}</span>}
-                </div>
-              </div>
-              <div>
-                <label style={{ ...lbl, display:'flex', alignItems:'center', gap:6, cursor:'pointer' }}>
-                  <input type="checkbox" checked={showGpsOut} onChange={e => setShowGpsOut(e.target.checked)}
-                    style={{ width:16, height:16, accentColor:'#3b82f6', cursor:'pointer' }} />
-                  GPS OUT
-                </label>
-                {showGpsOut && (
-                  <div style={{ position:'relative' }}>
-                    <input className="form-input" type="tel" inputMode="numeric" pattern="[0-9]*"
-                      value={form.gpsOut} onChange={e => set('gpsOut', e.target.value)}
-                      style={{ paddingRight: gpsOutEstado ? '72px' : undefined }} />
-                    {gpsOutEstado && <span style={badge(gpsOutEstado)}>{gpsOutEstado}</span>}
-                  </div>
-                )}
-              </div>
-              <div>
-                <label style={lbl}>KMS ODÓMETRO</label>
-                <input type="number" className="form-input" value={form.kms} onChange={e => set('kms', e.target.value)} />
-              </div>
-              <div>
-                <label style={lbl}>UBICACIÓN</label>
-                <input className="form-input" value={form.ubicacion} onChange={e => set('ubicacion', e.target.value)} />
-              </div>
-              <div>
-                <label style={lbl}>PERIFÉRICOS</label>
-                <PerifeDropdown selected={form.perifericos} onChange={v => set('perifericos', v)} />
-              </div>
-              <div style={{ gridColumn:'span 2' }}>
-                <label style={lbl}>DETALLES</label>
-                <textarea className="form-input" rows={2} value={form.detalles}
-                  onChange={e => set('detalles', e.target.value)} style={{ resize:'vertical' }} />
-              </div>
-              <div>
-                <label style={lbl}>TRABAJO</label>
-                <input className="form-input" value={form.trabajo} onChange={e => set('trabajo', e.target.value)} />
-              </div>
-              {form.servicio === 'Desinstalación' && (
-                <div>
-                  <label style={lbl}>DESTINO GPS OUT</label>
-                  <select className="form-select" value={form.destinoDesinstalacion} onChange={e => set('destinoDesinstalacion', e.target.value)}>
-                    <option value="Retirado">Retirado</option>
-                    <option value="Malo">Malo</option>
-                  </select>
-                </div>
-              )}
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12, flexWrap:'wrap', gap:8 }}>
+              <span style={{ ...lbl, marginBottom:0, color: modoOrden ? '#3b82f6' : undefined }}>
+                {modoOrden ? 'Usa las flechas para mover cada campo' : ''}
+              </span>
+              <button type="button" onClick={() => setModoOrden(o => !o)}
+                className={modoOrden ? 'btn btn-primary' : 'btn btn-secondary'}
+                style={{ fontSize:'0.7em', display:'flex', alignItems:'center', gap:6 }}>
+                {modoOrden ? '✓ Listo' : '↕ Reordenar Campos'}
+              </button>
             </div>
 
-            <div style={{ marginTop:15 }}>
-              <label style={lbl}>CAMPOS ADICIONALES (PROVEEDOR GPS)</label>
-              <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-                {ordenExtra.map((k, i) => (
-                  <div key={k} style={{ display:'flex', alignItems:'center', gap:8 }}>
-                    <div style={{ display:'flex', flexDirection:'column' }}>
-                      <button type="button" onClick={() => moverCampoExtra(i, -1)} disabled={i === 0}
+            <div className="form-grid three-cols">
+              {camposVisibles.map((k, i) => (
+                <div key={k} style={{
+                  display:'flex', gap:6, gridColumn: k === 'detalles' ? 'span 2' : undefined,
+                  background: modoOrden ? 'rgba(59,130,246,0.08)' : undefined,
+                  border: modoOrden ? '1px dashed #93c5fd' : undefined,
+                  borderRadius: modoOrden ? 8 : undefined, padding: modoOrden ? 6 : undefined,
+                }}>
+                  {modoOrden && (
+                    <div style={{ display:'flex', flexDirection:'column', flexShrink:0 }}>
+                      <button type="button" onClick={() => moverCampo(k, -1, camposVisibles)} disabled={i === 0}
                         className="btn btn-secondary" style={{ padding:2, lineHeight:0, opacity: i === 0 ? 0.3 : 1 }}
                         title="Mover arriba">
                         <ChevronUp size={14} />
                       </button>
-                      <button type="button" onClick={() => moverCampoExtra(i, 1)} disabled={i === ordenExtra.length - 1}
-                        className="btn btn-secondary" style={{ padding:2, lineHeight:0, opacity: i === ordenExtra.length - 1 ? 0.3 : 1 }}
+                      <button type="button" onClick={() => moverCampo(k, 1, camposVisibles)} disabled={i === camposVisibles.length - 1}
+                        className="btn btn-secondary" style={{ padding:2, lineHeight:0, opacity: i === camposVisibles.length - 1 ? 0.3 : 1 }}
                         title="Mover abajo">
                         <ChevronDown size={14} />
                       </button>
                     </div>
-                    <div style={{ flex:1 }}>
-                      <label style={lbl}>{CAMPOS_EXTRA[k]}</label>
-                      <input className="form-input" value={form[k]} onChange={e => set(k, e.target.value)} />
-                    </div>
+                  )}
+                  <div style={{ flex:1, minWidth:0 }}>
+                    {nodosCampos[k]}
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
 
             <div className="val-preview" style={{ marginTop:15, padding:12, backgroundColor:'#f0fdf4', border:'1px solid #86efac', borderRadius:8, fontFamily:'monospace', fontSize:'0.8em', whiteSpace:'pre-wrap', color:'#166534', lineHeight:1.6 }}>

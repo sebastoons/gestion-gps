@@ -145,6 +145,8 @@ const App = () => {
   });
   const [otQueue, setOtQueue] = useState([]);
   const [pendingOT, setPendingOT] = useState(null);
+  const [actualizacionDisponible, setActualizacionDisponible] = useState(false);
+  const versionActual = useRef(null);
   const [darkMode, setDarkMode] = useState(() => {
     const s = localStorage.getItem('theme');
     return s !== null ? s === 'dark' : true;
@@ -278,8 +280,46 @@ const App = () => {
     return () => supabase.removeChannel(ch);
   }, [loaded]);
 
+  // Avisa cuando Netlify publicó una versión nueva de la app. build/version.json
+  // se sobrescribe en cada build (ver scripts/write-version.js) con un id
+  // distinto; si al comparar cambia respecto al que se cargó al abrir la app,
+  // muestra el aviso para recargar. No usa un service worker (el anterior
+  // dejaba dispositivos atrapados en versiones viejas — ver src/index.js).
+  useEffect(() => {
+    const revisar = async () => {
+      try {
+        const res = await fetch(`/version.json?t=${Date.now()}`, { cache: 'no-store' });
+        if (!res.ok) return;
+        const { version } = await res.json();
+        if (versionActual.current === null) { versionActual.current = version; return; }
+        if (version !== versionActual.current) setActualizacionDisponible(true);
+      } catch { /* sin conexión; se vuelve a intentar en el próximo ciclo */ }
+    };
+    revisar();
+    const intervalo = setInterval(revisar, 5 * 60 * 1000);
+    const alVolver = () => { if (document.visibilityState === 'visible') revisar(); };
+    document.addEventListener('visibilitychange', alVolver);
+    return () => { clearInterval(intervalo); document.removeEventListener('visibilitychange', alVolver); };
+  }, []);
+
   return (
-    <div className="font-sans">
+    <div className="font-sans" style={actualizacionDisponible ? { paddingTop: 44 } : undefined}>
+      {actualizacionDisponible && (
+        <div style={{
+          position:'fixed', top:0, left:0, right:0, zIndex:2000,
+          display:'flex', alignItems:'center', justifyContent:'center', gap:12, flexWrap:'wrap',
+          padding:'10px 16px', background:'#3b82f6', color:'#fff',
+          fontFamily:'Quantico', fontSize:'0.75em', fontWeight:'bold', textTransform:'uppercase',
+          boxShadow:'0 2px 10px rgba(0,0,0,0.25)',
+        }}>
+          <span>🔄 Hay una actualización disponible. Recarga la página para continuar.</span>
+          <button onClick={() => window.location.reload()} className="btn btn-secondary"
+            style={{ fontSize:'1em', padding:'4px 12px', background:'#fff', color:'#3b82f6', borderColor:'#fff' }}>
+            Recargar ahora
+          </button>
+        </div>
+      )}
+
       {currentView !== 'home' && (
         <div style={{ position:'fixed', bottom:'10px', right:'15px', display:'flex', flexDirection:'column', gap:'8px', zIndex:1000 }}>
           <button onClick={() => setDarkMode(d => !d)} className="btn btn-secondary" style={{ boxShadow:'0 4px 12px rgba(0,0,0,0.2)', justifyContent:'center' }} title="Cambiar tema">
