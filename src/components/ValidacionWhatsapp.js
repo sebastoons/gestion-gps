@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Home } from 'lucide-react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { deleteFromTable, syncTable, nextTrabajoId, nextEquipoId, nextClienteId } from '../lib/supabase';
 import { formatFecha } from '../utils/dateUtils';
 
@@ -28,7 +28,22 @@ const VACIO = {
   ppuVinIn: '', ppuVinOut: '', marca: '', modelo: '', anio: '',
   gpsIn: '', gpsOut: '', kms: '',
   ubicacion: '', perifericos: [], detalles: '', trabajo: '',
-  destinoDesinstalacion: 'Retirado'
+  destinoDesinstalacion: 'Retirado',
+  proveedor: '', idProveedor: ''
+};
+
+// Campos adicionales que algunas empresas GPS piden en la validación (ej. Mavi
+// GPS). El orden en que aparecen es editable por el usuario y se guarda por
+// dispositivo, igual que otras preferencias de interfaz (theme, tipoDocumento).
+const CAMPOS_EXTRA = { proveedor: 'PROVEEDOR', idProveedor: 'ID PROVEEDOR' };
+const ORDEN_EXTRA_KEY = 'ordenCamposExtraValidacion';
+const cargarOrdenExtra = () => {
+  try {
+    const guardado = JSON.parse(localStorage.getItem(ORDEN_EXTRA_KEY));
+    if (Array.isArray(guardado) && guardado.length === Object.keys(CAMPOS_EXTRA).length
+      && guardado.every(k => CAMPOS_EXTRA[k])) return guardado;
+  } catch { /* usa el default */ }
+  return Object.keys(CAMPOS_EXTRA);
 };
 
 const COSTOS_PERIFERICOS = {
@@ -112,9 +127,20 @@ const ValidacionWhatsapp = ({
   const [ultimoRegistro, setUltimoRegistro] = useState(null);
   const [showPpuOut, setShowPpuOut] = useState(false);
   const [showGpsOut, setShowGpsOut] = useState(false);
+  const [ordenExtra, setOrdenExtra] = useState(cargarOrdenExtra);
 
   const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : '';
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
+  const moverCampoExtra = (i, dir) => {
+    setOrdenExtra(prev => {
+      const j = i + dir;
+      if (j < 0 || j >= prev.length) return prev;
+      const nuevo = [...prev];
+      [nuevo[i], nuevo[j]] = [nuevo[j], nuevo[i]];
+      try { localStorage.setItem(ORDEN_EXTRA_KEY, JSON.stringify(nuevo)); } catch { /* localStorage no disponible */ }
+      return nuevo;
+    });
+  };
 
   const crearDraftOT = () => {
     const esReinst = form.servicio === 'Reinstalación';
@@ -191,6 +217,7 @@ const ValidacionWhatsapp = ({
     if (form.perifericos.length) lineas.push(`*PERIFERICOS*: ${form.perifericos.join(', ')}`);
     if (form.detalles) lineas.push(`*DETALLES*: ${cap(form.detalles)}`);
     if (form.trabajo) lineas.push(`*TRABAJO*: ${cap(form.trabajo)}`);
+    ordenExtra.forEach(k => { if (form[k]) lineas.push(`*${CAMPOS_EXTRA[k]}*: ${form[k]}`); });
     return lineas.join('\n');
   };
 
@@ -481,6 +508,32 @@ const ValidacionWhatsapp = ({
                   </select>
                 </div>
               )}
+            </div>
+
+            <div style={{ marginTop:15 }}>
+              <label style={lbl}>CAMPOS ADICIONALES (PROVEEDOR GPS)</label>
+              <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                {ordenExtra.map((k, i) => (
+                  <div key={k} style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    <div style={{ display:'flex', flexDirection:'column' }}>
+                      <button type="button" onClick={() => moverCampoExtra(i, -1)} disabled={i === 0}
+                        className="btn btn-secondary" style={{ padding:2, lineHeight:0, opacity: i === 0 ? 0.3 : 1 }}
+                        title="Mover arriba">
+                        <ChevronUp size={14} />
+                      </button>
+                      <button type="button" onClick={() => moverCampoExtra(i, 1)} disabled={i === ordenExtra.length - 1}
+                        className="btn btn-secondary" style={{ padding:2, lineHeight:0, opacity: i === ordenExtra.length - 1 ? 0.3 : 1 }}
+                        title="Mover abajo">
+                        <ChevronDown size={14} />
+                      </button>
+                    </div>
+                    <div style={{ flex:1 }}>
+                      <label style={lbl}>{CAMPOS_EXTRA[k]}</label>
+                      <input className="form-input" value={form[k]} onChange={e => set(k, e.target.value)} />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="val-preview" style={{ marginTop:15, padding:12, backgroundColor:'#f0fdf4', border:'1px solid #86efac', borderRadius:8, fontFamily:'monospace', fontSize:'0.8em', whiteSpace:'pre-wrap', color:'#166534', lineHeight:1.6 }}>

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Home, FileImage, Table2, DollarSign, ListChecks, ChevronDown } from 'lucide-react';
+import { Home, FileImage, Table2, DollarSign, ListChecks, ChevronDown, Calendar } from 'lucide-react';
 import { exportToVisualImage } from '../utils/visualExportUtils';
 import '../styles/Dashboard.css';
 
@@ -40,7 +40,19 @@ const calcularFinal = (pesos, kmValor, tipoDocumento) => {
   return { subtotal, final: subtotal + iva, extra: iva, extraLabel: 'IVA (19%)', extraCorto: 'IVA' };
 };
 
-const Dashboard = ({ setCurrentView, trabajos, empresas }) => {
+// Mismo rango que usa el selector de mes de Trabajos del Mes, para que las
+// opciones disponibles sean coherentes entre las dos pantallas.
+const opcionesMes = () => {
+  const now = new Date();
+  const out = [];
+  for (let i = -4; i <= 8; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    out.push(`${MESES_ES[d.getMonth()]} ${d.getFullYear()}`);
+  }
+  return out;
+};
+
+const Dashboard = ({ setCurrentView, trabajos, empresas, mesSeleccionado, setMesSeleccionado }) => {
   const [metrica, setMetrica] = useState('pesos'); // 'pesos' | 'cantidad'
   const [verTabla, setVerTabla] = useState(false);
   const [hover, setHover] = useState(null);
@@ -59,11 +71,33 @@ const Dashboard = ({ setCurrentView, trabajos, empresas }) => {
 
   const colorFor = (empresa) => `var(--series-${(Math.max(0, empresas.indexOf(empresa)) % 7) + 1})`;
 
+  // "Trabajos por mes" (el gráfico) siempre usa TODOS los meses, para dar
+  // contexto/tendencia — es la única sección que sigue siendo un acumulado.
+  // El resto (hero + lista por empresa) se calcula sólo con el mes elegido
+  // en el filtro de arriba, así el total ya no suma todo el historial.
+  const datosGrafico = useMemo(() => {
+    const porMesMap = new Map();
+    trabajos.forEach(t => {
+      const pesos = parseFloat(t.valorPesos) || 0;
+      if (!porMesMap.has(t.mes)) porMesMap.set(t.mes, { mes: t.mes, ...parseMes(t.mes), porEmpresa: new Map(), totalPesos: 0, totalCantidad: 0 });
+      const m = porMesMap.get(t.mes);
+      if (!m.porEmpresa.has(t.empresa)) m.porEmpresa.set(t.empresa, { pesos: 0, cantidad: 0 });
+      const me = m.porEmpresa.get(t.empresa);
+      me.pesos += pesos; me.cantidad += 1;
+      m.totalPesos += pesos; m.totalCantidad += 1;
+    });
+    const mesesOrdenados = Array.from(porMesMap.values()).sort((a, b) => a.sortKey - b.sortKey);
+    const mesesOcultos = Math.max(0, mesesOrdenados.length - MESES_A_MOSTRAR);
+    return { mesesVisibles: mesesOrdenados.slice(-MESES_A_MOSTRAR), mesesOcultos };
+  }, [trabajos]);
+  const { mesesVisibles, mesesOcultos } = datosGrafico;
+
+  const trabajosDelMes = useMemo(() => trabajos.filter(t => t.mes === mesSeleccionado), [trabajos, mesSeleccionado]);
+
   const datos = useMemo(() => {
     const porEmpresa = new Map(empresas.map(e => [e, { pesos: 0, uf: 0, cantidad: 0, km: 0, kmValor: 0 }]));
-    const porMesMap = new Map();
 
-    trabajos.forEach(t => {
+    trabajosDelMes.forEach(t => {
       const pesos = parseFloat(t.valorPesos) || 0;
       const uf = parseFloat(t.valorUF) || 0;
       const km = parseFloat(t.km) || 0;
@@ -72,33 +106,22 @@ const Dashboard = ({ setCurrentView, trabajos, empresas }) => {
       if (!porEmpresa.has(t.empresa)) porEmpresa.set(t.empresa, { pesos: 0, uf: 0, cantidad: 0, km: 0, kmValor: 0 });
       const e = porEmpresa.get(t.empresa);
       e.pesos += pesos; e.uf += uf; e.cantidad += 1; e.km += km; e.kmValor += kmValor;
-
-      if (!porMesMap.has(t.mes)) porMesMap.set(t.mes, { mes: t.mes, ...parseMes(t.mes), porEmpresa: new Map(), totalPesos: 0, totalCantidad: 0 });
-      const m = porMesMap.get(t.mes);
-      if (!m.porEmpresa.has(t.empresa)) m.porEmpresa.set(t.empresa, { pesos: 0, cantidad: 0 });
-      const me = m.porEmpresa.get(t.empresa);
-      me.pesos += pesos; me.cantidad += 1;
-      m.totalPesos += pesos; m.totalCantidad += 1;
     });
 
-    const mesesOrdenados = Array.from(porMesMap.values()).sort((a, b) => a.sortKey - b.sortKey);
-    const mesesOcultos = Math.max(0, mesesOrdenados.length - MESES_A_MOSTRAR);
-    const mesesVisibles = mesesOrdenados.slice(-MESES_A_MOSTRAR);
-
-    const granTotalPesos = trabajos.reduce((s, t) => s + (parseFloat(t.valorPesos) || 0), 0);
-    const granTotalUF = trabajos.reduce((s, t) => s + (parseFloat(t.valorUF) || 0), 0);
-    const granTotalCantidad = trabajos.length;
-    const granTotalKm = trabajos.reduce((s, t) => s + (parseFloat(t.km) || 0), 0);
-    const granTotalKmValor = trabajos.reduce((s, t) => s + (parseFloat(t.km) || 0) * valorKmDe(t.empresa), 0);
+    const granTotalPesos = trabajosDelMes.reduce((s, t) => s + (parseFloat(t.valorPesos) || 0), 0);
+    const granTotalUF = trabajosDelMes.reduce((s, t) => s + (parseFloat(t.valorUF) || 0), 0);
+    const granTotalCantidad = trabajosDelMes.length;
+    const granTotalKm = trabajosDelMes.reduce((s, t) => s + (parseFloat(t.km) || 0), 0);
+    const granTotalKmValor = trabajosDelMes.reduce((s, t) => s + (parseFloat(t.km) || 0) * valorKmDe(t.empresa), 0);
 
     const empresasOrdenadas = Array.from(porEmpresa.entries())
       .map(([empresa, v]) => ({ empresa, ...v }))
       .sort((a, b) => b.pesos - a.pesos);
 
-    return { porEmpresa, mesesVisibles, mesesOcultos, granTotalPesos, granTotalUF, granTotalCantidad, granTotalKm, granTotalKmValor, empresasOrdenadas };
-  }, [trabajos, empresas]);
+    return { porEmpresa, granTotalPesos, granTotalUF, granTotalCantidad, granTotalKm, granTotalKmValor, empresasOrdenadas };
+  }, [trabajosDelMes, empresas]);
 
-  const { mesesVisibles, mesesOcultos, granTotalPesos, granTotalUF, granTotalCantidad, granTotalKm, granTotalKmValor, empresasOrdenadas } = datos;
+  const { granTotalPesos, granTotalUF, granTotalCantidad, granTotalKm, granTotalKmValor, empresasOrdenadas } = datos;
   const granFinal = calcularFinal(granTotalPesos, granTotalKmValor, tipoDocumento);
 
   const valorMes = (m, emp) => {
@@ -114,6 +137,7 @@ const Dashboard = ({ setCurrentView, trabajos, empresas }) => {
   const maxEmpresa = Math.max(1, ...empresasOrdenadas.map(valorEmpresa));
 
   const hayDatos = trabajos.length > 0;
+  const hayDatosMes = trabajosDelMes.length > 0;
 
   return (
     <div className="page-container">
@@ -134,6 +158,12 @@ const Dashboard = ({ setCurrentView, trabajos, empresas }) => {
           ) : (
             <>
               <div className="db-toolbar">
+                <div className="db-mes-filter">
+                  <Calendar size={14} />
+                  <select className="form-select" value={mesSeleccionado} onChange={e => setMesSeleccionado(e.target.value)}>
+                    {opcionesMes().map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                </div>
                 <div className="db-metric-toggle">
                   <button className={`btn ${metrica === 'pesos' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setMetrica('pesos')}>
                     <DollarSign size={15} /> Monto
@@ -155,9 +185,14 @@ const Dashboard = ({ setCurrentView, trabajos, empresas }) => {
               </div>
 
               <div id="dashboard-export">
-                {/* ── Hero: total general — líquido, km y retención/IVA de TODAS las empresas ── */}
+                {!hayDatosMes ? (
+                  <p className="empty-state">Sin trabajos registrados en {mesSeleccionado}.</p>
+                ) : (
+                <>
+                {/* ── Hero: total del mes elegido arriba — líquido, km y retención/IVA
+                     de todas las empresas, ya no un acumulado de todos los meses ── */}
                 <div className="db-hero">
-                  <span className="db-hero-label">Total {tipoDocumento === 'boleta' ? 'Boleta' : 'Factura'} — Todas las Empresas</span>
+                  <span className="db-hero-label">Total {tipoDocumento === 'boleta' ? 'Boleta' : 'Factura'} — {mesSeleccionado}</span>
                   <div className="db-hero-stats">
                     <div className="db-hero-stat">
                       <span className="db-hero-stat-label">Líquido</span>
@@ -223,6 +258,8 @@ const Dashboard = ({ setCurrentView, trabajos, empresas }) => {
                     );
                   })}
                 </div>
+                </>
+                )}
 
                 {/* ── Trabajos por mes ── */}
                 <h3 className="db-section-title">Trabajos por Mes</h3>

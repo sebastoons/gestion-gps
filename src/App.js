@@ -313,7 +313,8 @@ const App = () => {
       {currentView === 'valores' && <ValoresTrabajos setCurrentView={setCurrentView} />}
 
       {currentView === 'dashboard' && (
-        <Dashboard setCurrentView={setCurrentView} trabajos={trabajos} empresas={empresas} />
+        <Dashboard setCurrentView={setCurrentView} trabajos={trabajos} empresas={empresas}
+          mesSeleccionado={mesSeleccionado} setMesSeleccionado={setMesSeleccionado} />
       )}
 
       {currentView === 'ordenes' && (
