@@ -54,6 +54,15 @@ const Materiales = ({
   const filtMl  = equiposMalos.filter(e => e.empresa === emp);
   const filtMat = (materiales || []).filter(m => m.empresa === emp);
 
+  // Ninguno de los flujos en vivo (acá y en EscanerGPS) avisaba si un IMEI ya
+  // estaba en el inventario de esta empresa — un doble escaneo por error, o
+  // reescanear un equipo ya retirado, creaba una fila duplicada en silencio.
+  const imeiYaExiste = (imei, excludeId) => {
+    const i = (imei || '').trim();
+    if (!i) return false;
+    return [...filtN, ...filtR, ...filtMl].some(e => e.imei === i && e.id !== excludeId);
+  };
+
   const countOf = (key) => {
     if (key === 'nuevos')    return filtN.length;
     if (key === 'retirados') return filtR.length;
@@ -118,6 +127,8 @@ const Materiales = ({
 
   const saveNuevo = async () => {
     if (!formN.imei || !formN.fechaRecepcion) { alert('IMEI y Fecha requeridos'); return; }
+    if (!editingId && imeiYaExiste(formN.imei)
+      && !window.confirm(`El IMEI ${formN.imei} ya está en el inventario de ${emp}. ¿Agregar de todas formas?`)) return;
     if (editingId) {
       setEquiposNuevos(prev => prev.map(e => e.id===editingId ? {...formN,id:editingId,empresa:emp} : e));
     } else {
@@ -129,6 +140,8 @@ const Materiales = ({
 
   const saveRetirado = async () => {
     if (!formR.imei || !formR.fecha || !formR.cliente) { alert('Completa todos los campos'); return; }
+    if (!editingId && imeiYaExiste(formR.imei)
+      && !window.confirm(`El IMEI ${formR.imei} ya está en el inventario de ${emp}. ¿Agregar de todas formas?`)) return;
     if (editingId) {
       setEquiposRetirados(prev => prev.map(e => e.id===editingId ? {...formR,id:editingId,empresa:emp} : e));
     } else {
@@ -140,6 +153,8 @@ const Materiales = ({
 
   const saveMalo = async () => {
     if (!formMl.imei) { alert('IMEI requerido'); return; }
+    if (!editingId && imeiYaExiste(formMl.imei)
+      && !window.confirm(`El IMEI ${formMl.imei} ya está en el inventario de ${emp}. ¿Agregar de todas formas?`)) return;
     if (editingId) {
       setEquiposMalos(prev => prev.map(e => e.id===editingId ? {...formMl,id:editingId,empresa:emp} : e));
     } else {
@@ -149,13 +164,17 @@ const Materiales = ({
     setShowForm(false); setEditingId(null);
   };
 
-  const saveMaterial = () => {
+  const saveMaterial = async () => {
     const qty = Math.max(1, parseInt(formMat.cantidad)||1);
-    const base = Date.now();
-    setMateriales(prev => [...prev, ...Array.from({length:qty}, (_,i) => ({
-      tipo:formMat.tipo, serial:qty===1?formMat.serial:'',
-      fecha:formMat.fecha, id:`MAT${base+i}`, empresa:emp,
-    }))]);
+    // Antes el id salía de Date.now() (sin pasar por el contador atómico que
+    // usan equipos/trabajos/clientes, y sin el prefijo de empresa) — mismo
+    // riesgo de colisión que ya se corrigió en el resto de la app.
+    const nuevos = [];
+    for (let i = 0; i < qty; i++) {
+      const id = await nextEquipoId('materiales', emp, materiales, 'MAT', empresas);
+      nuevos.push({ tipo:formMat.tipo, serial:qty===1?formMat.serial:'', fecha:formMat.fecha, id, empresa:emp });
+    }
+    setMateriales(prev => [...prev, ...nuevos]);
     setShowForm(false);
   };
 
@@ -176,8 +195,12 @@ const Materiales = ({
     selectedType==='retirados' ? 'equipos_retirados' :
     selectedType==='malos'     ? 'equipos_malos'     : 'materiales';
 
-  const applyDelete = (ids) => {
-    deleteFromTable(deleteTbl(), ids);
+  const applyDelete = async (ids) => {
+    // Sin await/chequeo de error: si la baja remota fallaba (sin conexión,
+    // etc.) la fila igual desaparecía de la pantalla y volvía a aparecer en
+    // el próximo reload — parecía borrado pero seguía en Supabase.
+    const err = await deleteFromTable(deleteTbl(), ids);
+    if (err) { alert('No se pudo eliminar. Verifica tu conexión e intenta de nuevo.'); return; }
     if (selectedType==='nuevos')    setEquiposNuevos(p  => p.filter(e => !ids.includes(e.id)));
     if (selectedType==='retirados') setEquiposRetirados(p => p.filter(e => !ids.includes(e.id)));
     if (selectedType==='malos')     setEquiposMalos(p   => p.filter(e => !ids.includes(e.id)));
@@ -185,10 +208,10 @@ const Materiales = ({
       setMateriales(p => p.filter(m => !ids.includes(m.id)));
   };
 
-  const handleDelete = () => { applyDelete([deleteId]); setDeleteId(null); };
+  const handleDelete = async () => { await applyDelete([deleteId]); setDeleteId(null); };
 
-  const handleBulkDelete = () => {
-    applyDelete([...selectedRows]);
+  const handleBulkDelete = async () => {
+    await applyDelete([...selectedRows]);
     setSelectedRows(new Set());
     setShowBulkConfirm(false);
   };

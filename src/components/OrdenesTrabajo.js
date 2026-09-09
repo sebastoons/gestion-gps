@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Download, Search, ChevronLeft, X, Trash2, Check, Home as HomeIcon, ChevronDown, FileImage, Eye } from 'lucide-react';
-import { supabase, loadTable, syncTable, deleteFromTable, empresaPrefix } from '../lib/supabase';
+import { supabase, loadTable, syncTable, deleteFromTable, nextOtNumero } from '../lib/supabase';
 import { formatFecha } from '../utils/dateUtils';
 import '../styles/OrdenesTrabajo.css';
 
@@ -324,7 +324,6 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
   const [firma,setFirma] = useState(null);
   const [search,setSearch] = useState('');
   const [filterMes,setFilterMes] = useState('');
-  const [counters,setCounters] = useState({});
   const [historyOT,setHistoryOT] = useState(null);
   const [previewOT,setPreviewOT] = useState(null);
   const [downloading,setDownloading] = useState(false);
@@ -332,15 +331,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
   const isDrawing = useRef(false);
 
   useEffect(()=>{
-    const load = async () => {
-      const [ots, ctrs] = await Promise.all([
-        loadTable('ordenes_trabajo'),
-        loadTable('ot_counters'),
-      ]);
-      setOtsList(ots);
-      setCounters(Object.fromEntries(ctrs.map(c => [c.empresa, c.counter || 1])));
-    };
-    load();
+    loadTable('ordenes_trabajo').then(setOtsList);
   },[]);
 
   // Realtime: refleja en vivo las OT creadas/editadas/borradas desde otro dispositivo
@@ -386,15 +377,16 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
   };
 
   const finalizeSession=async()=>{
-    const emp=sessionEmpresa,prefix=empresaPrefix(emp, empresas);
-    const start=counters[emp]||1;
+    const emp=sessionEmpresa;
     const sid=Date.now().toString();
-    const newOTs=sessionOTs.map((ot,i)=>({...ot,id:`${sid}-${i}`,numero:`${prefix}${start+i}`,
+    // Números atómicos (next_counter en Postgres) uno por uno, en vez del
+    // contador local + upsert simple de antes — evita que dos dispositivos
+    // creando OTs casi al mismo tiempo emitan el mismo número.
+    const numeros=[];
+    for (let i=0;i<sessionOTs.length;i++) numeros.push(await nextOtNumero(emp, otsList, empresas));
+    const newOTs=sessionOTs.map((ot,i)=>({...ot,id:`${sid}-${i}`,numero:numeros[i],
       sessionId:sid,empresa:emp,cliente:clienteData.nombre,rutCliente:clienteData.rut,
       firma,aceptacion,createdAt:new Date().toISOString(),emailEnviado:false}));
-    const nn=start+sessionOTs.length;
-    await syncTable('ot_counters', [{ id: emp, empresa: emp, counter: nn }]);
-    setCounters(p=>({...p,[emp]:nn}));
     saveOTs([...otsList,...newOTs]);
     setSessionOTs(newOTs);
     setStep('preview');
@@ -428,7 +420,13 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
   const isVF=currentOT.tipoServicio==='Visita Fallida';
 
   const cargarDesdeQueue = (item) => {
-    const { _empresa, ...otData } = item;
+    // nombreCliente es sólo el nombre escrito rápido en Validación WhatsApp
+    // (ej. "Juan"), no el nombre oficial que se pide a continuación en el
+    // paso "Datos del Cliente" (ej. "Juan Pérez Soto", el que va en la OT
+    // firmada). Si se deja en currentOT, sobrevive sin cambios hasta la OT
+    // final y el documento impreso/guardado terminaba mostrando el nombre
+    // viejo en vez del que el técnico realmente tipeó en este paso.
+    const { _empresa, nombreCliente, ...otData } = item;
     setSessionEmpresa(_empresa || empresaSeleccionada);
     setSessionOTs([]);
     setCurrentOT(otData);
@@ -526,7 +524,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
         <div style={{position:'absolute',left:'-9999px',top:0,width:'420px',background:'#f8fafc'}}>
           <div id="ot-history-render">
             <OTDoc ot={historyOT} numero={historyOT.numero} empresa={historyOT.empresa}
-              cliente={historyOT.nombreCliente || historyOT.cliente} rut={historyOT.rutCliente} firma={historyOT.firma} aceptacion={historyOT.aceptacion}/>
+              cliente={historyOT.cliente || historyOT.nombreCliente} rut={historyOT.rutCliente} firma={historyOT.firma} aceptacion={historyOT.aceptacion}/>
           </div>
         </div>
       )}
@@ -539,7 +537,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
               <button className="btn btn-secondary" style={{fontSize:'0.65em'}} onClick={()=>setPreviewOT(null)}><X size={12}/> Cerrar</button>
             </div>
             <OTDoc ot={previewOT} numero={previewOT.numero} empresa={previewOT.empresa}
-              cliente={previewOT.nombreCliente || previewOT.cliente} rut={previewOT.rutCliente} firma={previewOT.firma} aceptacion={previewOT.aceptacion}/>
+              cliente={previewOT.cliente || previewOT.nombreCliente} rut={previewOT.rutCliente} firma={previewOT.firma} aceptacion={previewOT.aceptacion}/>
           </div>
         </div>
       )}
@@ -787,7 +785,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
 
   // ── PREVIEW ───────────────────────────────────────────────────────────────
   const otDocProps = (ot) => ({ot, numero:ot.numero, empresa:sessionEmpresa,
-    cliente: ot.nombreCliente || clienteData.nombre, rut:clienteData.rut, firma, aceptacion});
+    cliente: ot.cliente || clienteData.nombre || ot.nombreCliente, rut:clienteData.rut, firma, aceptacion});
 
   if(step==='preview') return (
     <div className="page-container">

@@ -1,6 +1,22 @@
 import React, { useEffect, useRef } from 'react';
-import { Html5Qrcode } from 'html5-qrcode';
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { X } from 'lucide-react';
+
+// Mismos formatos que EscanerGPS.js. Antes acá se usaba [0,1,2,3,4,5,6,7,8]
+// como si fueran los códigos de FORMATS de esa pantalla, pero el enum real
+// de html5-qrcode es QR_CODE=0, AZTEC=1, CODABAR=2, CODE_39=3, CODE_93=4,
+// CODE_128=5, DATA_MATRIX=6, MAXICODE=7, ITF=8, EAN_13=9 — ese rango deja
+// AFUERA a EAN_13 (el formato que sí usa el otro escáner para IMEIs) y de
+// paso agrega AZTEC/CODABAR/MAXICODE sin querer.
+const FORMATS = [
+  Html5QrcodeSupportedFormats.QR_CODE,
+  Html5QrcodeSupportedFormats.CODE_128,
+  Html5QrcodeSupportedFormats.CODE_39,
+  Html5QrcodeSupportedFormats.CODE_93,
+  Html5QrcodeSupportedFormats.EAN_13,
+  Html5QrcodeSupportedFormats.DATA_MATRIX,
+  Html5QrcodeSupportedFormats.ITF,
+];
 
 const BarcodeScanner = ({ onScanSuccess, onClose }) => {
   const scannerId = useRef('bs_' + Math.random().toString(36).slice(2)).current;
@@ -33,7 +49,7 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
         const config = {
           fps: 15,
           qrbox: { width: 280, height: 100 },
-          formatsToSupport: [0,1,2,3,4,5,6,7,8],
+          formatsToSupport: FORMATS,
           videoConstraints: {
             facingMode: { ideal: 'environment' },
             width:  { ideal: 1920, min: 1280 },

@@ -51,9 +51,12 @@ const formatValue = (value, key) => {
     return value ? 'Sí' : 'No';
   }
   
-  // Formatear números de pesos
-  if (key === 'valorPesos' && typeof value === 'string') {
-    const num = parseInt(value);
+  // Formatear números de pesos — antes sólo entraba si value ya era string;
+  // un valorPesos numérico (como lo produce excelExport.js) se exportaba sin
+  // el "$" ni el separador de miles, inconsistente según de dónde viniera el
+  // dato.
+  if (key === 'valorPesos' && (typeof value === 'string' || typeof value === 'number')) {
+    const num = typeof value === 'number' ? value : parseInt(value, 10);
     return isNaN(num) ? value : `$${num.toLocaleString('es-CL')}`;
   }
   
@@ -102,7 +105,7 @@ export const exportToCSV = (data, filename) => {
       header.length,
       ...formattedData.map(row => {
         const value = row[header];
-        return value ? value.toString().length : 0;
+        return value !== undefined && value !== null ? value.toString().length : 0;
       })
     );
     return { wch: Math.min(maxLength + 2, 50) }; // Máximo 50 caracteres de ancho

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Briefcase, Archive, DollarSign, MessageCircle, ClipboardList, Sun, Moon, Settings, DatabaseBackup, LayoutDashboard } from 'lucide-react';
+import { Briefcase, Archive, DollarSign, MessageCircle, ClipboardList, Sun, Moon, Settings, DatabaseBackup, LayoutDashboard, Users } from 'lucide-react';
 import '../styles/Home.css';
 
 const Home = ({ setCurrentView, darkMode, setDarkMode, empresas, onManageEmpresas, onRespaldo }) => {
@@ -75,6 +75,14 @@ const Home = ({ setCurrentView, darkMode, setDarkMode, empresas, onManageEmpresa
             </div>
             <h2 className="card-title">Dashboard</h2>
             <p className="card-description">Totales por empresa, mes y general</p>
+          </button>
+
+          <button onClick={() => setCurrentView('clientes')} className="home-card">
+            <div className="card-icon-wrap red">
+              <Users size={24} color="#ef4444" />
+            </div>
+            <h2 className="card-title">Clientes</h2>
+            <p className="card-description">Directorio de clientes por empresa</p>
           </button>
 
         </div>

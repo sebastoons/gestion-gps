@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Download, Plus, Edit2, Trash2, Home, Search } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
+import { deleteFromTable, nextClienteId } from '../lib/supabase';
 
 const Clientes = ({ 
   setCurrentView,
@@ -14,7 +15,7 @@ const Clientes = ({
   const [formData, setFormData] = useState({
     id: '',
     nombreCliente: '',
-    empresa: 'Location World',
+    empresa: empresas?.[0] || '',
     nombreContacto1: '',
     telefono1: '',
     nombreContacto2: '',
@@ -96,7 +97,7 @@ const Clientes = ({
     'Otros'
   ];
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.nombreCliente || !formData.empresa) {
       alert('Por favor completa los campos obligatorios (Nombre y Empresa)');
       return;
@@ -106,12 +107,15 @@ const Clientes = ({
       setClientes(clientes.map(c => c.id === editingItem.id ? { ...formData, id: editingItem.id } : c));
       setEditingItem(null);
     } else {
-      const newId = `CL${String(clientes.length + 1).padStart(3, '0')}`;
+      // Contador atómico (igual que trabajos/equipos): un id calculado sólo
+      // de clientes.length puede repetirse si se borró un cliente antes, o
+      // si dos dispositivos agregan casi al mismo tiempo — pisando datos.
+      const newId = await nextClienteId(clientes);
       setClientes([...clientes, { ...formData, id: newId }]);
     }
     setShowForm(false);
     setFormData({
-      id: '', nombreCliente: '', empresa: 'Location World',
+      id: '', nombreCliente: '', empresa: empresas?.[0] || '',
       nombreContacto1: '', telefono1: '', nombreContacto2: '', telefono2: '',
       region: '', ciudad: '', comuna: '', direccion: '', tipoVehiculo: ''
     });
@@ -126,6 +130,10 @@ const Clientes = ({
   const handleDelete = (id) => {
     if (window.confirm('¿Estás seguro de eliminar este cliente?')) {
       setClientes(clientes.filter(c => c.id !== id));
+      // Sin esto el cliente sólo se borraba localmente: syncTable únicamente
+      // hace upsert (nunca DELETE), así que en Supabase seguía existiendo y
+      // volvía a aparecer en el próximo reload o sync desde otro dispositivo.
+      deleteFromTable('clientes', id);
     }
   };
 
@@ -170,7 +178,7 @@ const Clientes = ({
                 setShowForm(true);
                 setEditingItem(null);
                 setFormData({
-                  id: '', nombreCliente: '', empresa: 'Location World',
+                  id: '', nombreCliente: '', empresa: empresas?.[0] || '',
                   nombreContacto1: '', telefono1: '', nombreContacto2: '', telefono2: '',
                   region: '', ciudad: '', comuna: '', direccion: '', tipoVehiculo: ''
                 });
