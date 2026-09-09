@@ -39,6 +39,8 @@ const Materiales = ({
   const [deleteId, setDeleteId]         = useState(null);
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [showBulkConfirm, setShowBulkConfirm] = useState(false);
+  const [saving, setSaving]   = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const [formN,   setFormN]   = useState({ fechaRecepcion:TODAY, imei:'', estado:'disponible', nombreCliente:'' });
   const [formR,   setFormR]   = useState({ fecha:TODAY, cliente:'', imei:'' });
@@ -178,15 +180,24 @@ const Materiales = ({
     setShowForm(false);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const card = CARDS.find(c=>c.key===formType);
     if (!card) return;
-    if (card.cat === 'equipo') {
-      if (formType==='nuevos')    saveNuevo();
-      if (formType==='retirados') saveRetirado();
-      if (formType==='malos')     saveMalo();
-    } else {
-      saveMaterial();
+    // saveMaterial pide un id atómico por unidad (uno por cada ida y vuelta
+    // de red) cuando la cantidad es alta — deshabilitar el botón mientras
+    // tanto evita un doble-guardado si el usuario reintenta el clic
+    // pensando que no pasó nada.
+    setSaving(true);
+    try {
+      if (card.cat === 'equipo') {
+        if (formType==='nuevos')    await saveNuevo();
+        if (formType==='retirados') await saveRetirado();
+        if (formType==='malos')     await saveMalo();
+      } else {
+        await saveMaterial();
+      }
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -208,10 +219,15 @@ const Materiales = ({
       setMateriales(p => p.filter(m => !ids.includes(m.id)));
   };
 
-  const handleDelete = async () => { await applyDelete([deleteId]); setDeleteId(null); };
+  const handleDelete = async () => {
+    setDeleting(true);
+    try { await applyDelete([deleteId]); } finally { setDeleting(false); }
+    setDeleteId(null);
+  };
 
   const handleBulkDelete = async () => {
-    await applyDelete([...selectedRows]);
+    setDeleting(true);
+    try { await applyDelete([...selectedRows]); } finally { setDeleting(false); }
     setSelectedRows(new Set());
     setShowBulkConfirm(false);
   };
@@ -401,10 +417,10 @@ const Materiales = ({
               )}
 
               <div className="form-actions">
-                <button onClick={handleSave} className="btn btn-success">
-                  {editingId ? 'Actualizar' : `Guardar${!isEquipoForm&&parseInt(formMat.cantidad)>1?` (${formMat.cantidad})`:''}`}
+                <button onClick={handleSave} className="btn btn-success" disabled={saving}>
+                  {saving ? 'Guardando...' : (editingId ? 'Actualizar' : `Guardar${!isEquipoForm&&parseInt(formMat.cantidad)>1?` (${formMat.cantidad})`:''}`)}
                 </button>
-                <button onClick={()=>{setShowForm(false);setEditingId(null);}} className="btn btn-secondary">Cancelar</button>
+                <button onClick={()=>{setShowForm(false);setEditingId(null);}} className="btn btn-secondary" disabled={saving}>Cancelar</button>
               </div>
             </div>
           )}
@@ -519,8 +535,8 @@ const Materiales = ({
             <p className="modal-message">¿Eliminar este elemento de forma permanente?</p>
           </div>
           <div className="modal-actions">
-            <button onClick={handleDelete} className="btn btn-danger modal-btn">Eliminar</button>
-            <button onClick={()=>setDeleteId(null)} className="btn btn-secondary modal-btn">Cancelar</button>
+            <button onClick={handleDelete} className="btn btn-danger modal-btn" disabled={deleting}>{deleting ? 'Eliminando...' : 'Eliminar'}</button>
+            <button onClick={()=>setDeleteId(null)} className="btn btn-secondary modal-btn" disabled={deleting}>Cancelar</button>
           </div>
         </div></div>
       )}
@@ -539,10 +555,10 @@ const Materiales = ({
             </p>
           </div>
           <div className="modal-actions">
-            <button onClick={handleBulkDelete} className="btn btn-danger modal-btn">
-              Eliminar {selectedRows.size}
+            <button onClick={handleBulkDelete} className="btn btn-danger modal-btn" disabled={deleting}>
+              {deleting ? 'Eliminando...' : `Eliminar ${selectedRows.size}`}
             </button>
-            <button onClick={()=>setShowBulkConfirm(false)} className="btn btn-secondary modal-btn">Cancelar</button>
+            <button onClick={()=>setShowBulkConfirm(false)} className="btn btn-secondary modal-btn" disabled={deleting}>Cancelar</button>
           </div>
         </div></div>
       )}

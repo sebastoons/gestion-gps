@@ -3,11 +3,13 @@ import { Download, Plus, Edit2, Trash2, Home, Search } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
 import { deleteFromTable, nextClienteId } from '../lib/supabase';
 
-const Clientes = ({ 
+const Clientes = ({
   setCurrentView,
   clientes,
   setClientes,
-  empresas
+  empresas,
+  empresaSeleccionada,
+  setEmpresaSeleccionada,
 }) => {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -15,7 +17,7 @@ const Clientes = ({
   const [formData, setFormData] = useState({
     id: '',
     nombreCliente: '',
-    empresa: empresas?.[0] || '',
+    empresa: empresaSeleccionada || empresas?.[0] || '',
     nombreContacto1: '',
     telefono1: '',
     nombreContacto2: '',
@@ -115,7 +117,7 @@ const Clientes = ({
     }
     setShowForm(false);
     setFormData({
-      id: '', nombreCliente: '', empresa: empresas?.[0] || '',
+      id: '', nombreCliente: '', empresa: empresaSeleccionada || empresas?.[0] || '',
       nombreContacto1: '', telefono1: '', nombreContacto2: '', telefono2: '',
       region: '', ciudad: '', comuna: '', direccion: '', tipoVehiculo: ''
     });
@@ -137,9 +139,13 @@ const Clientes = ({
     }
   };
 
-  const clientesFiltrados = clientes.filter(cliente =>
+  // Filtrado por empresa, igual que Trabajos del Mes / Inventario GPS —
+  // antes esta pantalla ni siquiera estaba conectada a la app; al recién
+  // agregarla mostraba todos los clientes de todas las empresas mezclados,
+  // sin la separación por empresa que tiene el resto de la app.
+  const clientesEmpresa = clientes.filter(cliente => cliente.empresa === empresaSeleccionada);
+  const clientesFiltrados = clientesEmpresa.filter(cliente =>
     cliente.nombreCliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cliente.empresa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cliente.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cliente.telefono1?.includes(searchTerm) ||
     cliente.ciudad?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -162,12 +168,21 @@ const Clientes = ({
             </button>
           </div>
 
+          <div className="filter-container">
+            <div>
+              <label className="filter-label">Empresa</label>
+              <select value={empresaSeleccionada} onChange={e => setEmpresaSeleccionada(e.target.value)} className="form-select">
+                {(empresas || []).map(emp => <option key={emp} value={emp}>{emp}</option>)}
+              </select>
+            </div>
+          </div>
+
           <div className="toolbar">
             <div className="search-container">
               <Search className="search-icon" size={20} />
               <input
                 type="text"
-                placeholder="Buscar por nombre, empresa, ID, teléfono o ciudad..."
+                placeholder="Buscar por nombre, ID, teléfono o ciudad..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="search-input"
@@ -178,7 +193,7 @@ const Clientes = ({
                 setShowForm(true);
                 setEditingItem(null);
                 setFormData({
-                  id: '', nombreCliente: '', empresa: empresas?.[0] || '',
+                  id: '', nombreCliente: '', empresa: empresaSeleccionada || empresas?.[0] || '',
                   nombreContacto1: '', telefono1: '', nombreContacto2: '', telefono2: '',
                   region: '', ciudad: '', comuna: '', direccion: '', tipoVehiculo: ''
                 });
@@ -188,7 +203,7 @@ const Clientes = ({
               <Plus size={20} /> Agregar Cliente
             </button>
             <button
-              onClick={() => exportToCSV(clientes, `clientes_${new Date().toISOString().split('T')[0]}`)}
+              onClick={() => exportToCSV(clientesEmpresa, `clientes_${empresaSeleccionada}_${new Date().toISOString().split('T')[0]}`)}
               className="btn btn-success"
             >
               <Download size={20} /> Exportar
@@ -306,7 +321,7 @@ const Clientes = ({
           )}
 
           <div style={{ marginBottom: '1rem', fontSize: '0.55em', color: '#6b7280', fontFamily: 'Quantico', textTransform: 'uppercase' }}>
-            Mostrando {clientesFiltrados.length} de {clientes.length} clientes
+            Mostrando {clientesFiltrados.length} de {clientesEmpresa.length} clientes — {empresaSeleccionada}
           </div>
 
           <div className="table-container">

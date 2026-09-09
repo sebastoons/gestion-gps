@@ -103,8 +103,12 @@ const Trabajos = ({
       setTrabajos(trabajosActualizados);
       syncTable('trabajos', cambiados);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [valorUFMes, empresaSeleccionada, mesSeleccionado]);
+    // Sin trabajos/setTrabajos en las deps, filas que llegan de otro
+    // dispositivo (o de restaurar un respaldo) mientras el usuario se queda
+    // en la misma empresa/mes/tarifa no se recalculaban hasta tocar algo —
+    // se agregan de nuevo: el efecto ya es idempotente (sólo escribe cuando
+    // "cambiados" tiene algo), así que no genera un loop.
+  }, [valorUFMes, empresaSeleccionada, mesSeleccionado, trabajos, setTrabajos]);
 
   useEffect(() => {
     const totalUF = calcularUF(formData.servicio, formData.accesorios);
@@ -251,6 +255,12 @@ const Trabajos = ({
           ...formData, id: idInst, empresa: empresaSeleccionada, mes: mesSeleccionado,
           servicio: 'Instalación', ppuIn: formData.ppuIn, ppuOut: '',
           imeiIn: formData.imeiIn, imeiOut: '',
+          // El km del odómetro es de UN solo vehículo/visita: si se deja en
+          // ambas mitades (job1 Y job2 heredan formData.km sin tocarlo), el
+          // total de km del mes queda contado el doble por cada
+          // Reinstalación. Se conserva sólo en job1, igual que en
+          // ValidacionWhatsapp.js.
+          km: '',
           valorUF: ufInst.toString(), valorPesos: Math.round(ufInst * valorUFMes).toString()
         };
         setTrabajos(prev => [...prev, job1, job2]);

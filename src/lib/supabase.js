@@ -87,7 +87,7 @@ export const empresaPrefix = (empresa, todasLasEmpresas) => {
     // exacto (fuera del rango 0..mismos.length-1 ya usado arriba) evita la
     // colisión sin necesitar que "empresa" esté en la lista.
     idx = mismos.length + Math.abs(
-      [...empresa].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0)
+      [...(empresa || '')].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0)
     ) % 97;
   }
   return `${nombre}-${idx + 1}`;

@@ -135,21 +135,22 @@ export const exportTrabajosToExcel = async (trabajos, filename, { empresa, mes, 
     ws.getCell(r, 1).alignment = { horizontal: 'center', vertical: 'middle' };
     r += 1;
 
-    // Total UF/Total KM antes se escribían tal cual (sin redondear ni
-    // separador de miles), al lado de Total Pesos/Valor KM que sí llevan
-    // formato — un totalUF con decimales largos (ej. 12.456789) quedaba
-    // desprolijo justo al lado de un monto en pesos bien formateado.
+    // Total UF/Total KM quedan como números nativos de Excel (con numFmt),
+    // no como texto — así se pueden sumar/usar en fórmulas igual que
+    // cualquier otra celda numérica, en vez de quedar "inertes" como texto
+    // con apariencia de número.
     const filasResumen = [
-      ['Total UF', Number(totales.totalUF.toFixed(2))],
-      ['Total Pesos', `$${Math.round(totales.totalPesos).toLocaleString('es-CL')}`],
-      ['Total KM', Number(totales.totalKm).toLocaleString('es-CL')],
-      ['Valor KM', `$${Math.round(totales.totalValorKm).toLocaleString('es-CL')}`],
+      ['Total UF', Number(totales.totalUF.toFixed(2)), '#,##0.00'],
+      ['Total Pesos', `$${Math.round(totales.totalPesos).toLocaleString('es-CL')}`, null],
+      ['Total KM', Number(totales.totalKm), '#,##0'],
+      ['Valor KM', `$${Math.round(totales.totalValorKm).toLocaleString('es-CL')}`, null],
     ];
-    filasResumen.forEach(([label, val]) => {
+    filasResumen.forEach(([label, val, numFmt]) => {
       ws.getCell(r, 1).value = label;
       ws.getCell(r, 1).font = { bold: true };
       ws.getCell(r, 2).value = val;
       ws.getCell(r, 2).alignment = { horizontal: 'right' };
+      if (numFmt) ws.getCell(r, 2).numFmt = numFmt;
       r += 1;
     });
     r += 1;
