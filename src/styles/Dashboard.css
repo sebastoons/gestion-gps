@@ -32,6 +32,15 @@
    segundo grupo Factura/Boleta, "Ver tabla"/"Imagen" quedaban cortados). */
 .db-toolbar .btn { flex-shrink: 0; }
 .db-metric-toggle { display: flex; gap: 4px; }
+.db-mes-filter {
+  display: flex; align-items: center; gap: 6px;
+  color: #6b7280; flex-shrink: 0;
+}
+.dark .db-mes-filter { color: #94a3b8; }
+.db-mes-filter .form-select {
+  width: auto; padding: 7px 10px; font-family: 'Quantico'; font-size: 0.7em;
+  font-weight: bold; text-transform: uppercase;
+}
 
 .db-note {
   font-family: 'Quantico'; font-size: 0.6em; text-transform: uppercase;
