@@ -44,12 +44,15 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
     const id = scannerId;
     const startScanner = async () => {
       try {
-        const qr = new Html5Qrcode(id);
+        // formatsToSupport va en el CONSTRUCTOR de Html5Qrcode, no en la
+        // config de start() — ahí la librería lo ignora (usa el set completo
+        // de formatos por default, EAN_13 incluido, así que igual detectaba
+        // el código, pero también aceptaba UPC/PDF417/RSS sin querer).
+        const qr = new Html5Qrcode(id, { formatsToSupport: FORMATS, verbose: false });
         html5QrcodeRef.current = qr;
         const config = {
           fps: 15,
           qrbox: { width: 280, height: 100 },
-          formatsToSupport: FORMATS,
           videoConstraints: {
             facingMode: { ideal: 'environment' },
             width:  { ideal: 1920, min: 1280 },
