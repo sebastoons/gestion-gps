@@ -135,10 +135,14 @@ export const exportTrabajosToExcel = async (trabajos, filename, { empresa, mes, 
     ws.getCell(r, 1).alignment = { horizontal: 'center', vertical: 'middle' };
     r += 1;
 
+    // Total UF/Total KM antes se escribían tal cual (sin redondear ni
+    // separador de miles), al lado de Total Pesos/Valor KM que sí llevan
+    // formato — un totalUF con decimales largos (ej. 12.456789) quedaba
+    // desprolijo justo al lado de un monto en pesos bien formateado.
     const filasResumen = [
-      ['Total UF', totales.totalUF],
+      ['Total UF', Number(totales.totalUF.toFixed(2))],
       ['Total Pesos', `$${Math.round(totales.totalPesos).toLocaleString('es-CL')}`],
-      ['Total KM', totales.totalKm],
+      ['Total KM', Number(totales.totalKm).toLocaleString('es-CL')],
       ['Valor KM', `$${Math.round(totales.totalValorKm).toLocaleString('es-CL')}`],
     ];
     filasResumen.forEach(([label, val]) => {

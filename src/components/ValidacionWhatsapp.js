@@ -3,6 +3,7 @@ import { Home } from 'lucide-react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { deleteFromTable, syncTable, nextTrabajoId, nextEquipoId, nextClienteId } from '../lib/supabase';
 import { formatFecha } from '../utils/dateUtils';
+import { getValorUFActual } from '../utils/pricing';
 
 const COSTOS = {
   'Instalación': 0.8, 'Desinstalación': 0.5,
@@ -67,7 +68,21 @@ const SEGMENTO_DE_CAMPO = {
 const COSTOS_PERIFERICOS = {
   'ON BATT': 0.6, 'edata': 0.6, 'dallas': 0.4, 'buzzer': 0.4, 'sos': 0.4,
   'inmovilizador 12v': 0.4, 'inmovilizador 24v': 0.4,
-  'GPS externo': 0.3, 'sensor T°': 0.4, 'sensor puerta': 0.4,
+  'GPS externo': 0.3, 'sensor T°': 0.4, 'sensor puerta': 0.6,
+};
+
+// "ON BATT" en una Instalación no es un accesorio que se SUMA al valor base:
+// es un tipo de instalación alternativo con su propio precio total (0.6 UF),
+// igual que en Trabajos.js. Sumarlo aparte cobraba 1.2 UF (0.6 base + 0.6
+// accesorio) por el mismo trabajo que acá se cobra 0.6.
+const calcularUFValidacion = (servicio, perifericos) => {
+  const tieneOnBatt = perifericos.includes('ON BATT');
+  const usaInstOnBatt = servicio === 'Instalación' && tieneOnBatt;
+  const costoServicio = usaInstOnBatt ? 0.6 : (COSTOS[servicio] || 0);
+  const costoPerif = perifericos
+    .filter(p => !(usaInstOnBatt && p === 'ON BATT'))
+    .reduce((sum, p) => sum + (COSTOS_PERIFERICOS[p] || 0), 0);
+  return costoServicio + costoPerif;
 };
 
 const MESES_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -195,8 +210,13 @@ const ValidacionWhatsapp = ({
     tipoServicio: 'Desinstalación',
     region: '', ciudad: '', comuna: '',
     tecnico: 'Sebastian Parra', empresaInstaladora: 'Sebastian Parra',
-    ppu: (showPpuOut ? form.ppuVinOut : '').toUpperCase(),
-    marca: '', modelo: '', anio: '',
+    // Es el mismo vehículo que la mitad de Instalación de esta Reinstalación:
+    // si no se usó el checkbox "PPU/VIN OUT" (lo normal, es el mismo auto),
+    // usa el PPU IN en vez de dejarlo vacío — antes quedaba vacío junto con
+    // marca/modelo/año, bloqueando el guardado de la OT hasta escribirlos de
+    // nuevo a mano pese a que ya se habían ingresado una vez.
+    ppu: (showPpuOut && form.ppuVinOut ? form.ppuVinOut : form.ppuVinIn).toUpperCase(),
+    marca: form.marca, modelo: form.modelo, anio: form.anio,
     color: '', kilometraje: '',
     imeiIn: '',
     imeiOut: showGpsOut ? (form.gpsOut || '') : '',
@@ -223,10 +243,13 @@ const ValidacionWhatsapp = ({
       case 'fecha': return `*FECHA*: ${formatFecha(form.fecha)}`;
       case 'servicio': return `*SERVICIO*: ${cap(form.servicio)}`;
       case 'ppu': {
-        if (!form.ppuVinIn && !form.ppuVinOut) return null;
+        // form.ppuVinOut no se limpia al desmarcar "PPU/VIN OUT" (sólo se
+        // oculta el input) — sin este guard, el mensaje seguía mostrando un
+        // valor que el usuario ya había "quitado" en la pantalla.
+        if (!form.ppuVinIn && !(showPpuOut && form.ppuVinOut)) return null;
         const p = [];
         if (form.ppuVinIn) p.push(`*PPU/VIN IN*: ${form.ppuVinIn.toUpperCase()}`);
-        if (form.ppuVinOut) p.push(`*PPU/VIN OUT*: ${form.ppuVinOut.toUpperCase()}`);
+        if (showPpuOut && form.ppuVinOut) p.push(`*PPU/VIN OUT*: ${form.ppuVinOut.toUpperCase()}`);
         return p.join(' | ');
       }
       case 'vehiculo': {
@@ -270,11 +293,14 @@ const ValidacionWhatsapp = ({
     const gpsOut = showGpsOut ? form.gpsOut?.trim() : '';
     const quitarInventario = imei => {
       const enNuevos = equiposNuevos.find(e => e.imei === imei && e.empresa === form.empresa);
-      if (enNuevos) { deleteFromTable('equipos_nuevos', enNuevos.id); setEquiposNuevos(prev => prev.filter(e => e.id !== enNuevos.id)); }
-      else {
-        const enRet = equiposRetirados.find(e => e.imei === imei && e.empresa === form.empresa);
-        if (enRet) { deleteFromTable('equipos_retirados', enRet.id); setEquiposRetirados(prev => prev.filter(e => e.id !== enRet.id)); }
-      }
+      if (enNuevos) { deleteFromTable('equipos_nuevos', enNuevos.id); setEquiposNuevos(prev => prev.filter(e => e.id !== enNuevos.id)); return; }
+      const enRet = equiposRetirados.find(e => e.imei === imei && e.empresa === form.empresa);
+      if (enRet) { deleteFromTable('equipos_retirados', enRet.id); setEquiposRetirados(prev => prev.filter(e => e.id !== enRet.id)); return; }
+      // Un GPS "malo" reparado y reinstalado (el badge "MALO" en GPS IN ya
+      // avisa que está ahí) también debe salir de ese inventario — si no,
+      // queda contado dos veces: como reinstalado Y como malo para siempre.
+      const enMalo = equiposMalos.find(e => e.imei === imei && e.empresa === form.empresa);
+      if (enMalo) { deleteFromTable('equipos_malos', enMalo.id); setEquiposMalos(prev => prev.filter(e => e.id !== enMalo.id)); }
     };
     const descontarMateriales = (perifericos, empresa) => {
       if (!materiales?.length) return;
@@ -311,7 +337,10 @@ const ValidacionWhatsapp = ({
 
   const agregarClienteSiNoExiste = async (nombre, empresa) => {
     if (!nombre?.trim() || !clientes || !setClientes) return;
-    const existe = clientes.some(c => c.nombreCliente.trim().toLowerCase() === nombre.trim().toLowerCase());
+    // Sin filtrar por empresa, un cliente con el mismo nombre en OTRA
+    // empresa hacía que este nunca se creara para la empresa actual.
+    const existe = clientes.some(c => c.empresa === empresa
+      && c.nombreCliente.trim().toLowerCase() === nombre.trim().toLowerCase());
     if (!existe) {
       const newId = await nextClienteId(clientes);
       setClientes(prev => [...prev, {
@@ -329,20 +358,22 @@ const ValidacionWhatsapp = ({
   const agregarATrabajos = async () => {
     const emp = form.empresa;
     const mes = getMesFacturacion(form.fecha, emp) || mesSeleccionado;
-    const costoPerif = form.perifericos.reduce((sum, p) => sum + (COSTOS_PERIFERICOS[p] || 0), 0);
+    // Mismo valor de UF que usan Trabajos del Mes y Valor de Trabajos — antes
+    // estaba fijo en 39000 acá, distinto del resto de la app, así que el
+    // mismo trabajo quedaba facturado distinto según por dónde se ingresara.
+    const valorUFMes = getValorUFActual();
 
     if (form.servicio === 'Reinstalación') {
       const id1 = await nextTrabajoId(emp, trabajos, empresas);
       const id2 = await nextTrabajoId(emp, trabajos, empresas);
-      const ufInstBase = form.perifericos.includes('ON BATT') ? 0.6 : COSTOS['Instalación'];
-      const ufInst = ufInstBase + costoPerif;
+      const ufInst = calcularUFValidacion('Instalación', form.perifericos);
       const ufDes = COSTOS['Desinstalación'];
       const job1 = {
         id: id1, nombreCliente: form.cliente, fecha: form.fecha,
         servicio: 'Desinstalación', accesorios: [],
         ppuIn: '', ppuOut: showPpuOut ? form.ppuVinOut.toUpperCase() : '',
         imeiIn: '', imeiOut: showGpsOut ? form.gpsOut : '',
-        km: '', valorUF: ufDes.toString(), valorPesos: Math.round(ufDes * 39000).toString(),
+        km: form.kms || '', valorUF: ufDes.toString(), valorPesos: Math.round(ufDes * valorUFMes).toString(),
         empresa: emp, mes
       };
       const job2 = {
@@ -350,22 +381,25 @@ const ValidacionWhatsapp = ({
         servicio: 'Instalación', accesorios: form.perifericos,
         ppuIn: form.ppuVinIn.toUpperCase(), ppuOut: '',
         imeiIn: form.gpsIn, imeiOut: '',
-        km: '', valorUF: ufInst.toString(), valorPesos: Math.round(ufInst * 39000).toString(),
+        km: '', valorUF: ufInst.toString(), valorPesos: Math.round(ufInst * valorUFMes).toString(),
         empresa: emp, mes
       };
       setTrabajos(prev => [...prev, job1, job2]);
       await syncTable('trabajos', [job1, job2]);
     } else {
       const newId = await nextTrabajoId(emp, trabajos, empresas);
-      const baseUF = (form.servicio === 'Instalación' && form.perifericos.includes('ON BATT'))
-        ? 0.6 : (COSTOS[form.servicio] || 0.8);
-      const uf = baseUF + costoPerif;
+      const uf = calcularUFValidacion(form.servicio, form.perifericos);
       const newJob = {
         id: newId, nombreCliente: form.cliente, fecha: form.fecha,
         servicio: form.servicio, accesorios: form.perifericos,
         ppuIn: form.ppuVinIn.toUpperCase(), ppuOut: showPpuOut ? form.ppuVinOut.toUpperCase() : '',
         imeiIn: form.gpsIn, imeiOut: showGpsOut ? form.gpsOut : '',
-        km: '', valorUF: uf.toString(), valorPesos: Math.round(uf * 39000).toString(),
+        // El odómetro que se pidió en el formulario (form.kms) nunca se
+        // guardaba acá — quedaba en '' aunque el usuario sí lo hubiera
+        // ingresado, así que los km facturados en Trabajos del Mes/Dashboard
+        // para cualquier trabajo cargado por Validación WhatsApp eran
+        // siempre 0.
+        km: form.kms || '', valorUF: uf.toString(), valorPesos: Math.round(uf * valorUFMes).toString(),
         empresa: emp, mes
       };
       setTrabajos(prev => [...prev, newJob]);

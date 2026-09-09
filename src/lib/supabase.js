@@ -20,12 +20,15 @@ export const syncTable = async (name, items) => {
   return null;
 };
 
-// Baja explícita: elimina uno o varios IDs.
+// Baja explícita: elimina uno o varios IDs. Devuelve el error de Supabase (o
+// null si salió bien) para que quien llama pueda reaccionar — antes se
+// perdía silenciosamente y el estado local quedaba desincronizado del remoto.
 export const deleteFromTable = async (name, ids) => {
   const list = Array.isArray(ids) ? ids : [ids];
-  if (!list.length) return;
+  if (!list.length) return null;
   const { error } = await supabase.from(name).delete().in('id', list);
-  if (error) console.error(`delete ${name}:`, error);
+  if (error) { console.error(`delete ${name}:`, error); return error; }
+  return null;
 };
 
 // ── Generador de IDs sin colisiones (multi-dispositivo, multi-empresa) ──────
@@ -75,7 +78,18 @@ export const empresaPrefix = (empresa, todasLasEmpresas) => {
   // resultante no puede coincidir con el de ninguna otra empresa sin importar
   // cuántos dígitos tenga el contador.
   const mismos = lista.filter(e => nombreClave(e) === nombre);
-  const idx = Math.max(0, mismos.indexOf(empresa));
+  let idx = mismos.indexOf(empresa);
+  if (idx === -1) {
+    // "empresa" no aparece igual (string exacto) dentro de la lista — puede
+    // pasar si quien llama tiene espacios/mayúsculas distintas a la lista
+    // vigente. Antes esto caía siempre a idx 0, lo que podía hacer chocar a
+    // dos empresas de este mismo grupo. Un offset estable derivado del texto
+    // exacto (fuera del rango 0..mismos.length-1 ya usado arriba) evita la
+    // colisión sin necesitar que "empresa" esté en la lista.
+    idx = mismos.length + Math.abs(
+      [...empresa].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0)
+    ) % 97;
+  }
   return `${nombre}-${idx + 1}`;
 };
 
@@ -93,16 +107,32 @@ const nextId = async (counterKey, existingItems, prefix) => {
 };
 
 // IDs para trabajos: prefijo = letra(s) de empresa, únicas frente al resto de empresas (ej. "U004").
+// La clave del contador usa el nombre normalizado (nombreClave), no el string
+// crudo: si "empresa" llegara con distinto espaciado/mayúsculas entre dos
+// llamadas (mismo prefijo visual, según empresaPrefix), usar el string crudo
+// como clave crearía dos contadores independientes que podrían emitir el
+// mismo id final — justo la colisión que el prefijo intenta evitar.
 export const nextTrabajoId = (empresa, trabajosActuales, todasLasEmpresas) =>
-  nextId(`trabajos_${empresa}`, trabajosActuales.filter(t => t.empresa === empresa), empresaPrefix(empresa, todasLasEmpresas));
+  nextId(`trabajos_${nombreClave(empresa)}`, trabajosActuales.filter(t => t.empresa === empresa), empresaPrefix(empresa, todasLasEmpresas));
 
 // IDs para equipos/materiales: prefijo = letra(s) de empresa + código de tipo (ej. "UN004").
 export const nextEquipoId = (tabla, empresa, itemsActuales, tipoCodigo, todasLasEmpresas) =>
-  nextId(`${tabla}_${empresa}`, itemsActuales.filter(it => it.empresa === empresa), `${empresaPrefix(empresa, todasLasEmpresas)}${tipoCodigo}`);
+  nextId(`${tabla}_${nombreClave(empresa)}`, itemsActuales.filter(it => it.empresa === empresa), `${empresaPrefix(empresa, todasLasEmpresas)}${tipoCodigo}`);
 
 // IDs para clientes: prefijo fijo "CL" (compartido entre todas las empresas).
 export const nextClienteId = (clientesActuales) =>
   nextId('clientes', clientesActuales, 'CL');
+
+// Números de Órdenes de Trabajo: antes usaban un contador local (estado de
+// React, cargado una vez desde la tabla ot_counters y actualizado con un
+// upsert simple) — dos dispositivos creando OTs casi al mismo tiempo podían
+// leer el mismo contador de partida y terminar emitiendo el mismo número.
+// Usa el mismo contador atómico que trabajos/equipos/clientes, sembrado a
+// partir del número más alto ya emitido para esa empresa.
+export const nextOtNumero = (empresa, otsActuales, todasLasEmpresas) =>
+  nextId(`ot_${nombreClave(empresa)}`, (otsActuales || [])
+    .filter(o => o.empresa === empresa)
+    .map(o => ({ id: o.numero })), empresaPrefix(empresa, todasLasEmpresas));
 
 // ── Respaldo (exportar / importar todo) ─────────────────────────────────────
 export const BACKUP_TABLES = [
@@ -110,12 +140,27 @@ export const BACKUP_TABLES = [
   'clientes', 'materiales', 'ordenes_trabajo', 'ot_counters',
 ];
 
+// Devuelve la lista de tablas que no se pudieron leer (vacía si todo salió
+// bien), para que quien llama pueda avisar si el respaldo quedó incompleto —
+// antes un error de red silencioso podía exportar una tabla como "vacía" sin
+// ningún aviso.
 export const exportBackup = async () => {
   const tablas = {};
-  for (const t of BACKUP_TABLES) tablas[t] = await loadTable(t);
+  const fallos = [];
+  for (const t of BACKUP_TABLES) {
+    const { data, error } = await supabase.from(t).select('data');
+    if (error) { console.error(`export ${t}:`, error); fallos.push(t); tablas[t] = []; }
+    else tablas[t] = data.map(r => r.data);
+  }
+  const { data: empData, error: empError } = await supabase.from('empresas').select('data');
+  if (empError) { console.error('export empresas:', empError); fallos.push('empresas'); }
+  const empresasList = empError
+    ? JSON.parse(localStorage.getItem('empresas') || '[]')
+    : empData.map(r => r.data.nombre);
+
   const payload = {
     app: 'ServiTrak', version: 1, exportedAt: new Date().toISOString(),
-    empresas: JSON.parse(localStorage.getItem('empresas') || '[]'),
+    empresas: empresasList,
     tablas,
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -128,9 +173,14 @@ export const exportBackup = async () => {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+  return fallos;
 };
 
-// Lee un archivo de respaldo y sobrescribe (upsert) las tablas en Supabase.
+// Lee un archivo de respaldo y sobrescribe (upsert) las tablas en Supabase —
+// incluyendo empresas, que antes sólo se restauraba en localStorage y por lo
+// tanto quedaba pisada por la carga inicial de la app en cuanto Supabase ya
+// tuviera alguna empresa guardada. Si alguna tabla falla al sincronizar, la
+// promesa se rechaza en vez de resolver como si todo hubiera salido bien.
 export const importBackup = (file) => new Promise((resolve, reject) => {
   const reader = new FileReader();
   reader.onload = async () => {
@@ -140,12 +190,19 @@ export const importBackup = (file) => new Promise((resolve, reject) => {
         reject(new Error('Archivo de respaldo inválido'));
         return;
       }
+      const fallos = [];
       for (const t of BACKUP_TABLES) {
         const items = Array.isArray(payload.tablas[t]) ? payload.tablas[t] : [];
-        if (items.length) await syncTable(t, items);
+        if (items.length && await syncTable(t, items)) fallos.push(t);
       }
       if (Array.isArray(payload.empresas) && payload.empresas.length) {
-        localStorage.setItem('empresas', JSON.stringify(payload.empresas));
+        const err = await syncTable('empresas', payload.empresas.map(nombre => ({ id: nombre, nombre })));
+        if (err) fallos.push('empresas');
+        else localStorage.setItem('empresas', JSON.stringify(payload.empresas));
+      }
+      if (fallos.length) {
+        reject(new Error(`No se pudieron restaurar: ${fallos.join(', ')}. Vuelve a intentar.`));
+        return;
       }
       resolve();
     } catch (e) {

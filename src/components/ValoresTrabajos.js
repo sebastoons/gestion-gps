@@ -1,10 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Home, Edit2, Save, X, FileText, Camera, Trash2, Plus } from 'lucide-react';
+import { getValorUFActual, setValorUFActual } from '../utils/pricing';
 import '../styles/ValoresTrabajos.css';
 
 const ValoresTrabajos = ({ setCurrentView }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [valorUF, setValorUF] = useState(38500);
+  // Mismo valor de UF que usan Trabajos del Mes y Validación WhatsApp para
+  // cobrar de verdad — antes esta pantalla mostraba/guardaba un número
+  // propio (38500) que nada más leía, totalmente desconectado de lo que se
+  // terminaba facturando.
+  const [valorUF, setValorUF] = useState(getValorUFActual);
   const exportRef = useRef(null);
 
   const serviciosIniciales = [
@@ -26,8 +31,9 @@ const ValoresTrabajos = ({ setCurrentView }) => {
     detallesServicios: 'Incluye instalación, configuración y prueba del equipo GPS.',
     tipoBoleta: 'Factura o Boleta de Honorarios',
     usarLogo: true, // Nueva opción para usar logo
-    //rutEmpresa: '12.345.678-9',
-    //direccion: 'Av. Providencia 1234, Santiago',
+    nombreEmpresa: '',
+    rutEmpresa: '',
+    direccion: '',
     telefono: '+56 9 26266291',
     email: 'sebas.parragps@gmail.com'
   };
@@ -47,17 +53,21 @@ const ValoresTrabajos = ({ setCurrentView }) => {
           setEditedServicios(data.servicios);
         }
         if (data.infoAdicional) {
-          // Asegurar que usarLogo esté presente
-          const infoConLogo = {
+          // Completa con los defaults cualquier campo que un respaldo viejo
+          // no tuviera (ej. nombreEmpresa/rutEmpresa/direccion, agregados
+          // después) — si no, quedaban en undefined: el input arrancaba "no
+          // controlado" y sólo se veía controlado (y el campo visible)
+          // después de escribir algo una vez.
+          const infoCompleta = {
+            ...infoIniciales,
             ...data.infoAdicional,
             usarLogo: data.infoAdicional.usarLogo !== undefined ? data.infoAdicional.usarLogo : true
           };
-          setInfoAdicional(infoConLogo);
-          setEditedInfo(infoConLogo);
+          setInfoAdicional(infoCompleta);
+          setEditedInfo(infoCompleta);
         }
-        if (data.valorUF) {
-          setValorUF(data.valorUF);
-        }
+        // valorUF ya no se lee del blob viejo de esta pantalla — ver
+        // getValorUFActual(), la fuente compartida con Trabajos del Mes.
       } catch (error) {
         console.error('Error al cargar datos:', error);
       }
@@ -68,14 +78,14 @@ const ValoresTrabajos = ({ setCurrentView }) => {
   const handleSave = () => {
     setServicios([...editedServicios]);
     setInfoAdicional({...editedInfo});
-    
+
     const dataToSave = {
       servicios: editedServicios,
       infoAdicional: editedInfo,
-      valorUF
     };
     localStorage.setItem('valoresTrabajos', JSON.stringify(dataToSave));
-    
+    setValorUFActual(valorUF);
+
     setIsEditing(false);
     alert('✓ Cambios guardados correctamente');
   };
@@ -83,6 +93,7 @@ const ValoresTrabajos = ({ setCurrentView }) => {
   const handleCancel = () => {
     setEditedServicios([...servicios]);
     setEditedInfo({...infoAdicional});
+    setValorUF(getValorUFActual());
     setIsEditing(false);
   };
 

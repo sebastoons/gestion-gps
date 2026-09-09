@@ -7,6 +7,7 @@ import OrdenesTrabajo from './components/OrdenesTrabajo';
 import EscanerGPS from './components/EscanerGPS';
 import Materiales from './components/Materiales';
 import Dashboard from './components/Dashboard';
+import Clientes from './components/Clientes';
 import { Sun, Moon, X, Plus, Download, Upload } from 'lucide-react';
 import { supabase, loadTable, syncTable, deleteFromTable, exportBackup, importBackup } from './lib/supabase';
 import './styles/Common.css';
@@ -93,7 +94,12 @@ const RespaldoModal = ({ onClose }) => {
           Tus datos se sincronizan automáticamente entre dispositivos vía Supabase. Exporta un archivo igual como respaldo extra o para migrar a otra cuenta.
         </p>
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-          <button className="btn btn-primary" onClick={async () => { await exportBackup(); setMsg({ ok:true, text:'Archivo descargado.' }); }}>
+          <button className="btn btn-primary" onClick={async () => {
+            const fallos = await exportBackup();
+            setMsg(fallos.length
+              ? { ok:false, text:`Archivo descargado, pero no se pudo leer: ${fallos.join(', ')}. Vuelve a intentar antes de confiar en este respaldo.` }
+              : { ok:true, text:'Archivo descargado.' });
+          }}>
             <Download size={15}/> Exportar respaldo
           </button>
           <button className="btn btn-secondary" disabled={busy} onClick={() => fileRef.current?.click()}>
@@ -164,9 +170,12 @@ const App = () => {
     }
   }, [empresas, empresaSeleccionada]);
 
-  const onRemoveEmpresa = (nombre) => {
+  const onRemoveEmpresa = async (nombre) => {
     setEmpresas(prev => prev.filter(x => x !== nombre));
-    deleteFromTable('empresas', nombre);
+    const err = await deleteFromTable('empresas', nombre);
+    // Si la baja remota falla, revierte para no dejar el dispositivo
+    // "creyendo" que la empresa se borró cuando en Supabase sigue existiendo.
+    if (err) setEmpresas(prev => prev.includes(nombre) ? prev : [...prev, nombre]);
   };
 
   // Cargar desde Supabase al iniciar — única fuente de verdad
@@ -193,8 +202,12 @@ const App = () => {
       setEquiposNuevos(en.map(norm));
       setEquiposRetirados(er.map(norm));
       setEquiposMalos(em.map(norm));
-      if (cl?.length) setClientes(cl);
-      if (mat?.length) setMateriales(mat);
+      // clientes/materiales también llevan "empresa": sin normalizar, un
+      // registro guardado con un nombre viejo de empresa (ej. "LW" antes de
+      // renombrarse a "Entel") deja de coincidir con el filtro por empresa
+      // vigente y desaparece silenciosamente de la vista de esa empresa.
+      setClientes((cl || []).map(norm));
+      setMateriales((mat || []).map(norm));
       if (emp.length) setEmpresas(emp.map(e => e.nombre));
       setLoaded(true);
     };
@@ -271,11 +284,14 @@ const App = () => {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'equipos_malos' },
         async () => { const d = await loadTable('equipos_malos'); skipSync.current.equiposMalos = true; setEquiposMalos(d.map(norm)); })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'clientes' },
-        async () => { const d = await loadTable('clientes'); skipSync.current.clientes = true; setClientes(d); })
+        async () => { const d = await loadTable('clientes'); skipSync.current.clientes = true; setClientes(d.map(norm)); })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'materiales' },
-        async () => { const d = await loadTable('materiales'); if (d.length > 0) { skipSync.current.materiales = true; setMateriales(d); } })
+        // Sin el guard "d.length > 0" que tenía antes: si otro dispositivo
+        // borra el último material/empresa, este también debe reflejar la
+        // lista vacía en vez de quedarse para siempre con datos ya borrados.
+        async () => { const d = await loadTable('materiales'); skipSync.current.materiales = true; setMateriales(d.map(norm)); })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'empresas' },
-        async () => { const d = await loadTable('empresas'); if (d.length > 0) { skipSync.current.empresas = true; setEmpresas(d.map(e => e.nombre)); } })
+        async () => { const d = await loadTable('empresas'); skipSync.current.empresas = true; setEmpresas(d.map(e => e.nombre)); })
       .subscribe();
     return () => supabase.removeChannel(ch);
   }, [loaded]);
@@ -351,6 +367,10 @@ const App = () => {
       )}
 
       {currentView === 'valores' && <ValoresTrabajos setCurrentView={setCurrentView} />}
+
+      {currentView === 'clientes' && (
+        <Clientes setCurrentView={setCurrentView} clientes={clientes} setClientes={setClientes} empresas={empresas} />
+      )}
 
       {currentView === 'dashboard' && (
         <Dashboard setCurrentView={setCurrentView} trabajos={trabajos} empresas={empresas}
