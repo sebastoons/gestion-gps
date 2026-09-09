@@ -246,7 +246,7 @@ const ValidacionWhatsapp = ({
       case 'detalles': return form.detalles ? `*DETALLES*: ${cap(form.detalles)}` : null;
       case 'trabajo': return form.trabajo ? `*TRABAJO*: ${cap(form.trabajo)}` : null;
       case 'compania': return form.compania ? `*COMPAÑÍA*: ${form.compania}` : null;
-      case 'idProveedor': return form.idProveedor ? `*ID PROVEEDOR*: ${form.idProveedor}` : null;
+      case 'idProveedor': return form.idProveedor ? `*ID TICKET*: ${form.idProveedor}` : null;
       default: return null;
     }
   };
@@ -440,7 +440,7 @@ const ValidacionWhatsapp = ({
     ),
     idProveedor: (
       <>
-        <label style={lbl}>ID PROVEEDOR</label>
+        <label style={lbl}>ID TICKET</label>
         <input className="form-input" value={form.idProveedor} onChange={e => set('idProveedor', e.target.value)} />
       </>
     ),
