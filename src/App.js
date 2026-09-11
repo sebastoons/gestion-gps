@@ -346,26 +346,38 @@ const App = () => {
     return () => supabase.removeChannel(ch);
   }, [loaded]);
 
-  // Avisa cuando Netlify publicó una versión nueva de la app. build/version.json
-  // se sobrescribe en cada build (ver scripts/write-version.js) con un id
-  // distinto; si al comparar cambia respecto al que se cargó al abrir la app,
-  // muestra el aviso para recargar. No usa un service worker (el anterior
-  // dejaba dispositivos atrapados en versiones viejas — ver src/index.js).
+  // Avisa cuando Netlify publicó una versión nueva de la app. Usa
+  // asset-manifest.json — lo genera react-scripts en cada build sin
+  // depender de ningún script propio (a diferencia de un archivo de
+  // versión escrito a mano, que sólo se actualiza si el comando de build
+  // configurado en Netlify realmente dispara ese script) — y su nombre de
+  // archivo principal (main.[hash].js) cambia únicamente cuando el código
+  // servido realmente cambió. Si al comparar difiere del que se cargó al
+  // abrir la app, muestra el aviso para recargar. No usa un service worker
+  // (el anterior dejaba dispositivos atrapados en versiones viejas — ver
+  // src/index.js).
   useEffect(() => {
     const revisar = async () => {
       try {
-        const res = await fetch(`/version.json?t=${Date.now()}`, { cache: 'no-store' });
+        const res = await fetch(`/asset-manifest.json?t=${Date.now()}`, { cache: 'no-store' });
         if (!res.ok) return;
-        const { version } = await res.json();
+        const { files } = await res.json();
+        const version = files?.['main.js'];
+        if (!version) return;
         if (versionActual.current === null) { versionActual.current = version; return; }
         if (version !== versionActual.current) setActualizacionDisponible(true);
       } catch { /* sin conexión; se vuelve a intentar en el próximo ciclo */ }
     };
     revisar();
-    const intervalo = setInterval(revisar, 5 * 60 * 1000);
+    const intervalo = setInterval(revisar, 2 * 60 * 1000);
     const alVolver = () => { if (document.visibilityState === 'visible') revisar(); };
     document.addEventListener('visibilitychange', alVolver);
-    return () => { clearInterval(intervalo); document.removeEventListener('visibilitychange', alVolver); };
+    window.addEventListener('focus', revisar);
+    return () => {
+      clearInterval(intervalo);
+      document.removeEventListener('visibilitychange', alVolver);
+      window.removeEventListener('focus', revisar);
+    };
   }, []);
 
   return (
