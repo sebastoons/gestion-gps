@@ -55,36 +55,11 @@ const Trabajos = ({
     mes: mesSeleccionado
   });
 
-  // Recalcular valores en pesos cuando cambia el valor UF, y sincronizar el
-  // resultado a Supabase — antes esto sólo mutaba el estado local: al abrir
-  // la app en otro dispositivo (o simplemente recargar), la tabla volvía a
-  // mostrar los valores viejos, distintos de lo que esta pantalla mostró.
-  useEffect(() => {
-    if (!trabajos.length) return;
-    const cambiados = [];
-    const trabajosActualizados = trabajos.map(trabajo => {
-      if (trabajo.empresa === empresaSeleccionada && trabajo.mes === mesSeleccionado) {
-        const valorUFTrabajo = parseFloat(trabajo.valorUF) || 0;
-        const nuevoValorPesos = Math.round(valorUFTrabajo * valorUFMes).toString();
-        if (nuevoValorPesos !== trabajo.valorPesos) {
-          const actualizado = { ...trabajo, valorPesos: nuevoValorPesos };
-          cambiados.push(actualizado);
-          return actualizado;
-        }
-      }
-      return trabajo;
-    });
-
-    if (cambiados.length) {
-      setTrabajos(trabajosActualizados);
-      syncTable('trabajos', cambiados);
-    }
-    // Sin trabajos/setTrabajos en las deps, filas que llegan de otro
-    // dispositivo (o de restaurar un respaldo) mientras el usuario se queda
-    // en la misma empresa/mes/tarifa no se recalculaban hasta tocar algo —
-    // se agregan de nuevo: el efecto ya es idempotente (sólo escribe cuando
-    // "cambiados" tiene algo), así que no genera un loop.
-  }, [valorUFMes, empresaSeleccionada, mesSeleccionado, trabajos, setTrabajos]);
+  // El recálculo retroactivo de trabajos ya guardados (cuando cambia algún
+  // precio de la empresa) vive centralizado en App.js — así aplica a TODOS
+  // los meses de esa empresa, no sólo al mes que esta pantalla tiene abierto
+  // en este momento, y sigue funcionando aunque el precio se edite desde
+  // "Valor de Trabajos" en vez de acá.
 
   useEffect(() => {
     const totalUF = calcularUF(formData.servicio, formData.accesorios, precios);
