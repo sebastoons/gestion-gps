@@ -10,6 +10,7 @@ import Dashboard from './components/Dashboard';
 import Clientes from './components/Clientes';
 import { Sun, Moon, X, Plus, Download, Upload } from 'lucide-react';
 import { supabase, loadTable, syncTable, deleteFromTable, exportBackup, importBackup } from './lib/supabase';
+import { preciosDe, calcularUF } from './utils/pricing';
 import './styles/Common.css';
 
 // ── Gestión de empresas ───────────────────────────────────────────────────────
@@ -273,6 +274,36 @@ const App = () => {
     if (!items.length) return;
     const t = setTimeout(() => syncTable('precios_empresa', items), 300);
     return () => clearTimeout(t);
+  }, [preciosEmpresas, loaded]);
+
+  // Coherencia con "Valor de Trabajos": si se edita el precio de un
+  // servicio/accesorio o el valor UF de una empresa, los trabajos YA
+  // INGRESADOS de esa empresa tienen que reflejar el precio nuevo — no sólo
+  // los que se creen de ahora en adelante. Se recalcula valorUF/valorPesos
+  // de CADA trabajo a partir de su servicio/accesorios y los precios
+  // vigentes de su empresa (no sólo el mes que esté abierto en Trabajos del
+  // Mes en este momento), y sólo se sincroniza lo que realmente cambió.
+  useEffect(() => {
+    if (!loaded || !trabajos.length) return;
+    const cambiados = [];
+    const actualizados = trabajos.map(t => {
+      const precios = preciosDe(t.empresa, preciosEmpresas);
+      const nuevoUF = calcularUF(t.servicio, t.accesorios || [], precios);
+      const nuevoUFStr = nuevoUF % 1 === 0 ? nuevoUF.toString() : parseFloat(nuevoUF.toFixed(2)).toString();
+      const nuevoPesos = Math.round(nuevoUF * precios.valorUF).toString();
+      if (nuevoUFStr !== t.valorUF || nuevoPesos !== t.valorPesos) {
+        const actualizado = { ...t, valorUF: nuevoUFStr, valorPesos: nuevoPesos };
+        cambiados.push(actualizado);
+        return actualizado;
+      }
+      return t;
+    });
+    if (cambiados.length) {
+      skipSync.current.trabajos = true; // ya se sincroniza explícito abajo, sólo lo cambiado
+      setTrabajos(actualizados);
+      syncTable('trabajos', cambiados);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [preciosEmpresas, loaded]);
 
   useEffect(() => {
