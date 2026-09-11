@@ -132,9 +132,12 @@ const App = () => {
   const [clientes, setClientes] = useState([]);
   const [materiales, setMateriales] = useState([]);
   const [loaded, setLoaded] = useState(false);
-  const skipSync = useRef({ trabajos: true, equiposNuevos: true, equiposRetirados: true, equiposMalos: true, clientes: true, materiales: true, empresas: true });
+  const skipSync = useRef({ trabajos: true, equiposNuevos: true, equiposRetirados: true, equiposMalos: true, clientes: true, materiales: true, empresas: true, preciosEmpresas: true });
   const [escanerReturn, setEscanerReturn] = useState('home');
   const [materError, setMaterError] = useState(null);
+  // Precios (valor UF, valor km, tablas de servicios/accesorios) por
+  // empresa — objeto {nombreEmpresa: {valorUF, valorKm, servicios, accesorios}}.
+  const [preciosEmpresas, setPreciosEmpresas] = useState({});
 
   const [empresas, setEmpresas] = useState(() => {
     try { const s = localStorage.getItem('empresas'); return s ? JSON.parse(s) : ['UGPS']; } catch { return ['UGPS']; }
@@ -181,7 +184,7 @@ const App = () => {
   // Cargar desde Supabase al iniciar — única fuente de verdad
   useEffect(() => {
     const loadData = async () => {
-      const [t, en, er, em, cl, mat, emp] = await Promise.all([
+      const [t, en, er, em, cl, mat, emp, prec] = await Promise.all([
         loadTable('trabajos'),
         loadTable('equipos_nuevos'),
         loadTable('equipos_retirados'),
@@ -189,6 +192,7 @@ const App = () => {
         loadTable('clientes'),
         loadTable('materiales'),
         loadTable('empresas'),
+        loadTable('precios_empresa'),
       ]);
       // Si Supabase ya tiene empresas guardadas, esas mandan (skip del eco de
       // sincronización). Si la tabla está vacía (proyecto recién conectado),
@@ -196,7 +200,7 @@ const App = () => {
       // la nube con lo que ya tenía este dispositivo.
       skipSync.current = {
         trabajos: true, equiposNuevos: true, equiposRetirados: true, equiposMalos: true,
-        clientes: true, materiales: true, empresas: emp.length > 0,
+        clientes: true, materiales: true, empresas: emp.length > 0, preciosEmpresas: true,
       };
       setTrabajos(t.map(norm));
       setEquiposNuevos(en.map(norm));
@@ -209,6 +213,7 @@ const App = () => {
       setClientes((cl || []).map(norm));
       setMateriales((mat || []).map(norm));
       if (emp.length) setEmpresas(emp.map(e => e.nombre));
+      setPreciosEmpresas(Object.fromEntries((prec || []).map(p => [p.empresa, p])));
       setLoaded(true);
     };
     loadData();
@@ -258,6 +263,18 @@ const App = () => {
     return () => clearTimeout(t);
   }, [empresas, loaded]);
 
+  // Precios por empresa (valor UF, valor km, servicios, accesorios) — se
+  // sincroniza igual que empresas, reenviando el objeto completo cada vez
+  // (son pocas empresas con pocos campos cada una, el payload es chico).
+  useEffect(() => {
+    if (!loaded) return;
+    if (skipSync.current.preciosEmpresas) { skipSync.current.preciosEmpresas = false; return; }
+    const items = Object.entries(preciosEmpresas).map(([empresa, cfg]) => ({ id: empresa, empresa, ...cfg }));
+    if (!items.length) return;
+    const t = setTimeout(() => syncTable('precios_empresa', items), 300);
+    return () => clearTimeout(t);
+  }, [preciosEmpresas, loaded]);
+
   useEffect(() => {
     if (!loaded) return;
     if (skipSync.current.materiales) { skipSync.current.materiales = false; return; }
@@ -292,6 +309,8 @@ const App = () => {
         async () => { const d = await loadTable('materiales'); skipSync.current.materiales = true; setMateriales(d.map(norm)); })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'empresas' },
         async () => { const d = await loadTable('empresas'); skipSync.current.empresas = true; setEmpresas(d.map(e => e.nombre)); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'precios_empresa' },
+        async () => { const d = await loadTable('precios_empresa'); skipSync.current.preciosEmpresas = true; setPreciosEmpresas(Object.fromEntries(d.map(p => [p.empresa, p]))); })
       .subscribe();
     return () => supabase.removeChannel(ch);
   }, [loaded]);
@@ -363,10 +382,15 @@ const App = () => {
           mesSeleccionado={mesSeleccionado} setMesSeleccionado={setMesSeleccionado}
           equiposNuevos={equiposNuevos} setEquiposNuevos={setEquiposNuevos}
           equiposRetirados={equiposRetirados} setEquiposRetirados={setEquiposRetirados}
-          clientes={clientes} setClientes={setClientes} />
+          clientes={clientes} setClientes={setClientes}
+          preciosEmpresas={preciosEmpresas} setPreciosEmpresas={setPreciosEmpresas} />
       )}
 
-      {currentView === 'valores' && <ValoresTrabajos setCurrentView={setCurrentView} />}
+      {currentView === 'valores' && (
+        <ValoresTrabajos setCurrentView={setCurrentView} empresas={empresas}
+          empresaSeleccionada={empresaSeleccionada} setEmpresaSeleccionada={setEmpresaSeleccionada}
+          preciosEmpresas={preciosEmpresas} setPreciosEmpresas={setPreciosEmpresas} />
+      )}
 
       {currentView === 'clientes' && (
         <Clientes setCurrentView={setCurrentView} clientes={clientes} setClientes={setClientes} empresas={empresas}
@@ -375,7 +399,8 @@ const App = () => {
 
       {currentView === 'dashboard' && (
         <Dashboard setCurrentView={setCurrentView} trabajos={trabajos} empresas={empresas}
-          mesSeleccionado={mesSeleccionado} setMesSeleccionado={setMesSeleccionado} />
+          mesSeleccionado={mesSeleccionado} setMesSeleccionado={setMesSeleccionado}
+          preciosEmpresas={preciosEmpresas} />
       )}
 
       {currentView === 'ordenes' && (
@@ -403,7 +428,8 @@ const App = () => {
           materiales={materiales} setMateriales={setMateriales}
           mesSeleccionado={mesSeleccionado} setMesSeleccionado={setMesSeleccionado} setOtQueue={setOtQueue}
           empresaSeleccionada={empresaSeleccionada} setEmpresaSeleccionada={setEmpresaSeleccionada}
-          pendingOT={pendingOT} setPendingOT={setPendingOT} />
+          pendingOT={pendingOT} setPendingOT={setPendingOT}
+          preciosEmpresas={preciosEmpresas} />
       )}
 
       {(currentView === 'materiales' || currentView === 'equipos') && (

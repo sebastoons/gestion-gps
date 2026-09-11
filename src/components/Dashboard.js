@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Home, FileImage, Table2, DollarSign, ListChecks, ChevronDown, Calendar } from 'lucide-react';
 import { exportToVisualImage } from '../utils/visualExportUtils';
+import { preciosDe } from '../utils/pricing';
 import '../styles/Dashboard.css';
 
 const MESES_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -22,9 +23,11 @@ const fmtCompacto = (n) => {
 
 const MESES_A_MOSTRAR = 12;
 
-// Mismo valor por km que usa Trabajos del Mes (empresaSeleccionada === 'Entel' ? 200 : 250),
-// pero aplicado por trabajo según SU propia empresa (acá conviven varias a la vez).
-const valorKmDe = (empresa) => (empresa === 'Entel' ? 200 : 250);
+// Valor por km configurado para esa empresa en "Valor de Trabajos" — antes
+// era un valor fijo (Entel=200, resto=250) igual para toda la app; ahora
+// cada empresa tiene el suyo, aplicado por trabajo según SU propia empresa
+// (acá conviven varias a la vez).
+const valorKmDe = (empresa, preciosEmpresas) => preciosDe(empresa, preciosEmpresas).valorKm;
 
 // Réplica de calcularTotales() de Trabajos.js: como IVA/retención son proporciones
 // fijas del subtotal, sumar subtotales y aplicar el % una sola vez al final da el
@@ -52,7 +55,7 @@ const opcionesMes = () => {
   return out;
 };
 
-const Dashboard = ({ setCurrentView, trabajos, empresas, mesSeleccionado, setMesSeleccionado }) => {
+const Dashboard = ({ setCurrentView, trabajos, empresas, mesSeleccionado, setMesSeleccionado, preciosEmpresas }) => {
   const [metrica, setMetrica] = useState('pesos'); // 'pesos' | 'cantidad'
   const [verTabla, setVerTabla] = useState(false);
   const [hover, setHover] = useState(null);
@@ -101,7 +104,7 @@ const Dashboard = ({ setCurrentView, trabajos, empresas, mesSeleccionado, setMes
       const pesos = parseFloat(t.valorPesos) || 0;
       const uf = parseFloat(t.valorUF) || 0;
       const km = parseFloat(t.km) || 0;
-      const kmValor = km * valorKmDe(t.empresa);
+      const kmValor = km * valorKmDe(t.empresa, preciosEmpresas);
 
       if (!porEmpresa.has(t.empresa)) porEmpresa.set(t.empresa, { pesos: 0, uf: 0, cantidad: 0, km: 0, kmValor: 0 });
       const e = porEmpresa.get(t.empresa);
@@ -112,14 +115,14 @@ const Dashboard = ({ setCurrentView, trabajos, empresas, mesSeleccionado, setMes
     const granTotalUF = trabajosDelMes.reduce((s, t) => s + (parseFloat(t.valorUF) || 0), 0);
     const granTotalCantidad = trabajosDelMes.length;
     const granTotalKm = trabajosDelMes.reduce((s, t) => s + (parseFloat(t.km) || 0), 0);
-    const granTotalKmValor = trabajosDelMes.reduce((s, t) => s + (parseFloat(t.km) || 0) * valorKmDe(t.empresa), 0);
+    const granTotalKmValor = trabajosDelMes.reduce((s, t) => s + (parseFloat(t.km) || 0) * valorKmDe(t.empresa, preciosEmpresas), 0);
 
     const empresasOrdenadas = Array.from(porEmpresa.entries())
       .map(([empresa, v]) => ({ empresa, ...v }))
       .sort((a, b) => b.pesos - a.pesos);
 
     return { porEmpresa, granTotalPesos, granTotalUF, granTotalCantidad, granTotalKm, granTotalKmValor, empresasOrdenadas };
-  }, [trabajosDelMes, empresas]);
+  }, [trabajosDelMes, empresas, preciosEmpresas]);
 
   const { granTotalPesos, granTotalUF, granTotalCantidad, granTotalKm, granTotalKmValor, empresasOrdenadas } = datos;
   const granFinal = calcularFinal(granTotalPesos, granTotalKmValor, tipoDocumento);
