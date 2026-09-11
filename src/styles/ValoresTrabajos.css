@@ -483,3 +483,24 @@
 .dark .valores-table tbody tr:hover { background-color: #1e3a5f !important; }
 .dark .valores-table td       { border-color: #334155; color: #cbd5e1; }
 .dark .valores-table th       { background-color: #0f172a; color: #94a3b8; border-color: #334155; }
+
+/* El resto de la página (labels, inputs sueltos, texto de "Información
+   Adicional") no tenía overrides — en modo oscuro el texto oscuro por
+   defecto quedaba casi invisible sobre el fondo oscuro de la tarjeta. */
+.dark .valores-label          { color: #94a3b8; }
+.dark .valores-input,
+.dark .valores-input-table,
+.dark .valores-input-uf,
+.dark .valores-input-km,
+.dark .valores-input-boleta,
+.dark .valores-textarea       { background-color: #0f172a; border-color: #334155; color: #e2e8f0; }
+.dark .valores-empresa-info   { color: #94a3b8; }
+.dark .valores-empresa-nombre { color: #e2e8f0; }
+.dark .valores-info-adicional { background-color: #0f172a; border-color: #334155; }
+.dark .valores-info-title     { color: #e2e8f0; }
+.dark .valores-info-item strong { color: #cbd5e1; }
+.dark .valores-detalles-text  { color: #94a3b8; }
+.dark .valores-boleta-text    { color: #94a3b8; }
+.dark .valores-footer         { color: #94a3b8; border-color: #334155; }
+.dark .valores-logo-toggle    { background-color: rgba(59,130,246,0.15); }
+.dark .valores-logo-toggle .checkbox-text { color: #93c5fd; }

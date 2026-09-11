@@ -1,25 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { Home, Edit2, Save, X, FileText, Camera, Trash2, Plus } from 'lucide-react';
+import { Home, Edit2, Save, X, FileText, Camera } from 'lucide-react';
 import { SERVICIOS, ACCESORIOS, preciosDe } from '../utils/pricing';
 import '../styles/ValoresTrabajos.css';
 
 const ValoresTrabajos = ({ setCurrentView, empresas, empresaSeleccionada, setEmpresaSeleccionada, preciosEmpresas, setPreciosEmpresas }) => {
   const [isEditing, setIsEditing] = useState(false);
   const exportRef = useRef(null);
-
-  const serviciosIniciales = [
-    { detalle: 'INSTALACION ON BATT - OBD', uf: 0.6 },
-    { detalle: 'INSTALACION BASICA', uf: 0.8 },
-    { detalle: 'MANTENIMIENTO', uf: 0.7 },
-    { detalle: 'MIGRACION', uf: 1.1 },
-    { detalle: 'DESINSTALACION', uf: 0.5 },
-    { detalle: 'DESINSTALACION GPS EXTERNO', uf: 0.3 },
-    { detalle: 'VISITA FALLIDA (45 MIN)', uf: 0.5 },
-    { detalle: 'INSTALACION CANBUS', uf: 0.6 },
-    { detalle: 'ACCESORIOS (SOS, IBUTTON, BUZZER, BLOQUEO)', uf: 0.4 },
-    { detalle: 'SENSOR TEMPERATURA', uf: 0.4 },
-    { detalle: 'SENSOR PUERTA', uf: 0.6 }
-  ];
 
   const infoIniciales = {
     detallesServicios: 'Incluye instalación, configuración y prueba del equipo GPS.',
@@ -32,9 +18,7 @@ const ValoresTrabajos = ({ setCurrentView, empresas, empresaSeleccionada, setEmp
     email: 'sebas.parragps@gmail.com'
   };
 
-  const [servicios, setServicios] = useState(serviciosIniciales);
   const [infoAdicional, setInfoAdicional] = useState(infoIniciales);
-  const [editedServicios, setEditedServicios] = useState([...serviciosIniciales]);
   const [editedInfo, setEditedInfo] = useState({...infoIniciales});
   // Precios reales (motor de cobro) de la empresa elegida arriba — null
   // cuando no se está editando; se llena con una copia fresca al entrar a
@@ -46,18 +30,13 @@ const ValoresTrabajos = ({ setCurrentView, empresas, empresaSeleccionada, setEmp
     if (stored) {
       try {
         const data = JSON.parse(stored);
-        if (data.servicios) {
-          setServicios(data.servicios);
-          setEditedServicios(data.servicios);
-        }
         if (data.infoAdicional) {
           // Completa con los defaults cualquier campo que un respaldo viejo
           // no tuviera — si no, quedaban en undefined: el input arrancaba
           // "no controlado" y sólo se veía controlado después de escribir
-          // algo una vez. valorKm quedó afuera: ahora es parte de los
-          // precios reales por empresa (ver más abajo), no de este bloque
-          // de datos "para el documento impreso".
-          const { valorKm, ...resto } = data.infoAdicional;
+          // algo una vez. valorKm/servicios quedaron afuera: ahora son parte
+          // de los precios reales por empresa (ver más abajo).
+          const { valorKm, servicios, ...resto } = data.infoAdicional;
           const infoCompleta = {
             ...infoIniciales,
             ...resto,
@@ -80,21 +59,14 @@ const ValoresTrabajos = ({ setCurrentView, empresas, empresaSeleccionada, setEmp
   const displayPrecios = isEditing ? editedPrecios : precios;
 
   const startEdit = () => {
-    setEditedServicios([...servicios]);
     setEditedInfo({...infoAdicional});
     setEditedPrecios(preciosDe(empresaSeleccionada, preciosEmpresas));
     setIsEditing(true);
   };
 
   const handleSave = () => {
-    setServicios([...editedServicios]);
     setInfoAdicional({...editedInfo});
-
-    const dataToSave = {
-      servicios: editedServicios,
-      infoAdicional: editedInfo,
-    };
-    localStorage.setItem('valoresTrabajos', JSON.stringify(dataToSave));
+    localStorage.setItem('valoresTrabajos', JSON.stringify({ infoAdicional: editedInfo }));
     setPreciosEmpresas(prev => ({ ...prev, [empresaSeleccionada]: editedPrecios }));
 
     setIsEditing(false);
@@ -103,7 +75,6 @@ const ValoresTrabajos = ({ setCurrentView, empresas, empresaSeleccionada, setEmp
   };
 
   const handleCancel = () => {
-    setEditedServicios([...servicios]);
     setEditedInfo({...infoAdicional});
     setEditedPrecios(null);
     setIsEditing(false);
@@ -113,9 +84,6 @@ const ValoresTrabajos = ({ setCurrentView, empresas, empresaSeleccionada, setEmp
   const setValorKm = (valor) => setEditedPrecios(p => ({ ...p, valorKm: valor }));
   const setPrecioServicio = (servicio, valor) => setEditedPrecios(p => ({ ...p, servicios: { ...p.servicios, [servicio]: valor } }));
   const setPrecioAccesorio = (acc, valor) => setEditedPrecios(p => ({ ...p, accesorios: { ...p.accesorios, [acc]: valor } }));
-
-  const eliminarServicio = (idx) => setEditedServicios(prev => prev.filter((_, i) => i !== idx));
-  const agregarServicio = () => setEditedServicios(prev => [...prev, { detalle: 'NUEVO SERVICIO', uf: 0 }]);
 
   const exportToPDF = async () => {
     try {
@@ -170,8 +138,19 @@ const ValoresTrabajos = ({ setCurrentView, empresas, empresaSeleccionada, setEmp
     }
   };
 
-  const displayData = isEditing ? editedServicios : servicios;
   const displayInfo = isEditing ? editedInfo : infoAdicional;
+
+  // Una sola tabla de precios, con las mismas filas (servicios + accesorios)
+  // siempre — lo único que cambia según la empresa elegida arriba es el
+  // valor UF de cada fila. Antes había tres tablas mostrando lo mismo por
+  // duplicado (Servicios, Accesorios, y una tercera "Tabla de Precios" de
+  // texto libre) sin ninguna relación entre ellas.
+  const filasTabla = [
+    { tipo: 'seccion', label: 'Servicios' },
+    ...SERVICIOS.map(s => ({ tipo: 'servicio', nombre: s })),
+    { tipo: 'seccion', label: 'Accesorios' },
+    ...ACCESORIOS.map(a => ({ tipo: 'accesorio', nombre: a })),
+  ];
 
   return (
     <div className="valores-container">
@@ -187,16 +166,18 @@ const ValoresTrabajos = ({ setCurrentView, empresas, empresaSeleccionada, setEmp
             </button>
           </div>
 
-          <div className="valores-uf-input">
-            <label className="valores-label">Empresa</label>
-            <select
-              value={empresaSeleccionada}
-              onChange={(e) => setEmpresaSeleccionada(e.target.value)}
-              className="valores-input"
-              disabled={isEditing}
-            >
-              {(empresas || []).map(emp => <option key={emp} value={emp}>{emp}</option>)}
-            </select>
+          <div className="filter-container" style={{ marginBottom:'1rem' }}>
+            <div>
+              <label className="filter-label">Empresa</label>
+              <select
+                value={empresaSeleccionada}
+                onChange={(e) => setEmpresaSeleccionada(e.target.value)}
+                className="form-select"
+                disabled={isEditing}
+              >
+                {(empresas || []).map(emp => <option key={emp} value={emp}>{emp}</option>)}
+              </select>
+            </div>
           </div>
 
           <div className="valores-toolbar">
@@ -225,7 +206,7 @@ const ValoresTrabajos = ({ setCurrentView, empresas, empresaSeleccionada, setEmp
           </div>
 
           {isEditing && (
-            <div style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
+            <div style={{ display:'flex', gap:12, flexWrap:'wrap', marginTop:'1rem' }}>
               <div className="valores-uf-input">
                 <label className="valores-label">Valor UF Actual ($)</label>
                 <input
@@ -246,60 +227,6 @@ const ValoresTrabajos = ({ setCurrentView, empresas, empresaSeleccionada, setEmp
               </div>
             </div>
           )}
-        </div>
-
-        {/* Precios reales por empresa — esto es lo que usan Trabajos del Mes
-            y Validación WhatsApp para cobrar; antes era un solo valor
-            compartido por toda la app sin importar la empresa. */}
-        <div className="valores-header-card">
-          <h3 className="valores-tabla-title">Precios de Servicios y Accesorios — {empresaSeleccionada}</h3>
-          <div style={{ display:'flex', gap:16, flexWrap:'wrap' }}>
-            <div className="valores-table-container" style={{ flex:1, minWidth:220 }}>
-              <table className="valores-table">
-                <thead><tr><th className="text-left">Servicio</th><th className="text-center">UF</th></tr></thead>
-                <tbody>
-                  {SERVICIOS.map(s => (
-                    <tr key={s}>
-                      <td>{s}</td>
-                      <td className="text-center">
-                        {isEditing ? (
-                          <input type="number" step="0.1" value={displayPrecios.servicios[s]}
-                            onChange={e => setPrecioServicio(s, parseFloat(e.target.value) || 0)}
-                            className="valores-input-uf" />
-                        ) : (
-                          <span className="valores-uf-valor">{displayPrecios.servicios[s]}</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="valores-table-container" style={{ flex:1, minWidth:220 }}>
-              <table className="valores-table">
-                <thead><tr><th className="text-left">Accesorio</th><th className="text-center">UF</th></tr></thead>
-                <tbody>
-                  {ACCESORIOS.map(a => (
-                    <tr key={a}>
-                      <td>{a}</td>
-                      <td className="text-center">
-                        {isEditing ? (
-                          <input type="number" step="0.1" value={displayPrecios.accesorios[a]}
-                            onChange={e => setPrecioAccesorio(a, parseFloat(e.target.value) || 0)}
-                            className="valores-input-uf" />
-                        ) : (
-                          <span className="valores-uf-valor">{displayPrecios.accesorios[a]}</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <p style={{ fontFamily:'Quantico', fontSize:'0.6em', color:'#6b7280', textTransform:'uppercase', marginTop:10 }}>
-            "ON BATT" en una Instalación reemplaza el valor de Instalación (no se suma aparte).
-          </p>
         </div>
 
         <div ref={exportRef} className="valores-export-card">
@@ -379,7 +306,7 @@ const ValoresTrabajos = ({ setCurrentView, empresas, empresaSeleccionada, setEmp
           </div>
 
           <div className="valores-tabla-section">
-            <h3 className="valores-tabla-title">Tabla de Precios - Servicios GPS</h3>
+            <h3 className="valores-tabla-title">Tabla de Precios — {empresaSeleccionada}</h3>
 
             <div className="valores-table-container">
               <table className="valores-table">
@@ -387,69 +314,44 @@ const ValoresTrabajos = ({ setCurrentView, empresas, empresaSeleccionada, setEmp
                   <tr>
                     <th className="text-left">Detalle</th>
                     <th className="text-center">UF</th>
-                    {isEditing && <th></th>}
                   </tr>
                 </thead>
                 <tbody>
-                  {displayData.map((servicio, index) => (
-                    <tr key={index}>
-                      <td>
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            value={servicio.detalle}
-                            onChange={(e) => {
-                              const newServicios = [...editedServicios];
-                              newServicios[index].detalle = e.target.value;
-                              setEditedServicios(newServicios);
-                            }}
-                            className="valores-input-table"
-                          />
-                        ) : (
-                          <strong>{servicio.detalle}</strong>
-                        )}
-                      </td>
-                      <td className="text-center">
-                        {isEditing ? (
-                          <input
-                            type="number"
-                            step="0.1"
-                            value={servicio.uf}
-                            onChange={(e) => {
-                              const newServicios = [...editedServicios];
-                              newServicios[index].uf = parseFloat(e.target.value) || 0;
-                              setEditedServicios(newServicios);
-                            }}
-                            className="valores-input-uf"
-                          />
-                        ) : (
-                          <span className="valores-uf-valor">{servicio.uf}</span>
-                        )}
-                      </td>
-                      {isEditing && (
+                  {filasTabla.map((fila, i) => {
+                    if (fila.tipo === 'seccion') {
+                      return (
+                        <tr key={`sec-${i}`}>
+                          <td colSpan={2} style={{ fontWeight:'bold', background:'rgba(59,130,246,0.08)' }}>{fila.label}</td>
+                        </tr>
+                      );
+                    }
+                    const valor = fila.tipo === 'servicio' ? displayPrecios.servicios[fila.nombre] : displayPrecios.accesorios[fila.nombre];
+                    const setValor = fila.tipo === 'servicio' ? setPrecioServicio : setPrecioAccesorio;
+                    return (
+                      <tr key={fila.nombre}>
+                        <td><strong>{fila.nombre}</strong></td>
                         <td className="text-center">
-                          <button
-                            onClick={() => eliminarServicio(index)}
-                            title="Eliminar fila"
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '4px' }}
-                          >
-                            <Trash2 size={16} />
-                          </button>
+                          {isEditing ? (
+                            <input
+                              type="number"
+                              step="0.1"
+                              value={valor}
+                              onChange={(e) => setValor(fila.nombre, parseFloat(e.target.value) || 0)}
+                              className="valores-input-uf"
+                            />
+                          ) : (
+                            <span className="valores-uf-valor">{valor}</span>
+                          )}
                         </td>
-                      )}
-                    </tr>
-                  ))}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
-            {isEditing && (
-              <button
-                onClick={agregarServicio}
-                style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: '1px dashed #3b82f6', borderRadius: '6px', color: '#3b82f6', padding: '6px 14px', cursor: 'pointer', fontSize: '0.8em', fontFamily: 'Quantico' }}
-              >
-                <Plus size={14} /> Agregar fila
-              </button>
-            )}
+            <p style={{ fontFamily:'Quantico', fontSize:'0.6em', color:'#6b7280', textTransform:'uppercase', marginTop:10 }}>
+              "ON BATT" en una Instalación reemplaza el valor de Instalación (no se suma aparte).
+            </p>
           </div>
 
           <div className="valores-info-adicional">
