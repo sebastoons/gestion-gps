@@ -4,35 +4,7 @@ import { exportTrabajosToExcel } from '../utils/excelExport';
 import { exportToVisualImage } from '../utils/visualExportUtils';
 import { formatFecha } from '../utils/dateUtils';
 import { deleteFromTable, syncTable, nextTrabajoId, nextClienteId } from '../lib/supabase';
-import { VALOR_UF_KEY, getValorUFActual } from '../utils/pricing';
-
-// Mismo mapa en un solo lugar (antes estaba duplicado dentro de un useEffect
-// y otra vez a nivel de componente — podían divergir sin que nada lo avisara,
-// que es justo cómo "Sensor Puerta" terminó con un valor distinto al de la
-// planilla de precios real en ValoresTrabajos.js).
-const COSTOS_SERVICIOS = {
-  'Instalación': 0.8, 'Desinstalación': 0.5, 'Mantención': 0.7,
-  'Reinstalación': 0.8, 'Visita Fallida': 0.5, 'Sin Servicio': 0,
-};
-const ACCESORIOS_DISPONIBLES = {
-  'ON BATT': 0.6, 'Edata': 0.6, 'Dallas': 0.4, 'Buzzer': 0.4, 'SOS': 0.4,
-  'Inmovilizador 12v': 0.4, 'Inmovilizador 24v': 0.4, 'GPS Externo': 0.3,
-  'Sensor T°': 0.4, 'Sensor Puerta': 0.6,
-};
-// "ON BATT" en una Instalación no es un accesorio que se SUMA al valor base:
-// es un tipo de instalación alternativo con su propio precio total (0.6 UF),
-// igual como ya lo trataba el split de Reinstalación. Sumarlo aparte (como
-// hacía antes el cálculo normal) cobraba 1.4 UF por el mismo trabajo que acá
-// se cobra 0.6 — dos precios distintos para el mismo servicio real.
-const calcularUF = (servicio, accesorios) => {
-  const tieneOnBatt = accesorios.includes('ON BATT');
-  const usaInstOnBatt = servicio === 'Instalación' && tieneOnBatt;
-  const costoServicio = usaInstOnBatt ? 0.6 : (COSTOS_SERVICIOS[servicio] || 0);
-  const costoAccesorios = accesorios
-    .filter(acc => !(usaInstOnBatt && acc === 'ON BATT'))
-    .reduce((sum, acc) => sum + (ACCESORIOS_DISPONIBLES[acc] || 0), 0);
-  return costoServicio + costoAccesorios;
-};
+import { ACCESORIOS, preciosDe, calcularUF } from '../utils/pricing';
 
 const Trabajos = ({
   setCurrentView,
@@ -48,14 +20,24 @@ const Trabajos = ({
   equiposRetirados,
   setEquiposRetirados,
   clientes,
-  setClientes
+  setClientes,
+  preciosEmpresas,
+  setPreciosEmpresas
 }) => {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [accesoriosOpen, setAccesoriosOpen] = useState(false);
   const accesoriosRef = useRef(null);
-  const [valorUFMes, setValorUFMes] = useState(getValorUFActual);
   const [tipoDocumento, setTipoDocumento] = useState(() => localStorage.getItem('tipoDocumento') || 'factura');
+
+  // Precios de ESTA empresa (valor UF, valor km, servicios, accesorios) —
+  // cada empresa tiene los suyos, editables desde "Valor de Trabajos".
+  const precios = preciosDe(empresaSeleccionada, preciosEmpresas);
+  const valorUFMes = precios.valorUF;
+  const setValorUFMes = (valor) => setPreciosEmpresas(prev => ({
+    ...prev,
+    [empresaSeleccionada]: { ...preciosDe(empresaSeleccionada, prev), valorUF: valor },
+  }));
   const [formData, setFormData] = useState({
     id: '',
     nombreCliente: '',
@@ -72,12 +54,6 @@ const Trabajos = ({
     empresa: empresaSeleccionada,
     mes: mesSeleccionado
   });
-
-  // El valor UF es compartido (localStorage) con Validación WhatsApp — se
-  // persiste acá para que ambas pantallas usen siempre el mismo número.
-  useEffect(() => {
-    localStorage.setItem(VALOR_UF_KEY, String(valorUFMes));
-  }, [valorUFMes]);
 
   // Recalcular valores en pesos cuando cambia el valor UF, y sincronizar el
   // resultado a Supabase — antes esto sólo mutaba el estado local: al abrir
@@ -111,8 +87,8 @@ const Trabajos = ({
   }, [valorUFMes, empresaSeleccionada, mesSeleccionado, trabajos, setTrabajos]);
 
   useEffect(() => {
-    const totalUF = calcularUF(formData.servicio, formData.accesorios);
-    const totalPesos = Math.round(totalUF * valorUFMes);
+    const totalUF = calcularUF(formData.servicio, formData.accesorios, precios);
+    const totalPesos = Math.round(totalUF * precios.valorUF);
     const valorUFFormateado = totalUF % 1 === 0 ? totalUF.toString() : parseFloat(totalUF.toFixed(2)).toString();
 
     setFormData(prev => ({
@@ -120,7 +96,10 @@ const Trabajos = ({
       valorUF: valorUFFormateado,
       valorPesos: totalPesos.toString()
     }));
-  }, [formData.servicio, formData.accesorios, valorUFMes]);
+    // "precios" se recalcula cada render (nuevo objeto), así que se depende
+    // de empresaSeleccionada/preciosEmpresas — lo que realmente cambia.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.servicio, formData.accesorios, empresaSeleccionada, preciosEmpresas]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -148,7 +127,7 @@ const Trabajos = ({
     const totalUF = trabajosFiltrados.reduce((sum, t) => sum + (parseFloat(t.valorUF) || 0), 0);
     const totalPesos = trabajosFiltrados.reduce((sum, t) => sum + (parseFloat(t.valorPesos) || 0), 0);
     const totalKm = trabajosFiltrados.reduce((sum, t) => sum + (parseFloat(t.km) || 0), 0);
-    const valorKm = empresaSeleccionada === 'Entel' ? 200 : 250;
+    const valorKm = precios.valorKm;
     const totalValorKm = totalKm * valorKm;
     const subtotal = totalPesos + totalValorKm;
     const iva = subtotal * 0.19;
@@ -237,12 +216,13 @@ const Trabajos = ({
     } else {
       // Reinstalación con ambas PPU → split en Desinstalación + Instalación
       if (formData.servicio === 'Reinstalación' && formData.ppuIn && formData.ppuOut) {
-        const ufDes = 0.5;
-        // Misma regla que calcularUF(): con ON BATT no se cobra 0.8 + 0.6,
-        // sino que el valor de instalación pasa a ser 0.6 (y los DEMÁS
-        // accesorios elegidos sí se siguen sumando — antes se perdían del
-        // cálculo aunque seguían apareciendo en la columna "Accesorios").
-        const ufInst = calcularUF('Instalación', formData.accesorios);
+        const ufDes = precios.servicios['Desinstalación'] || 0;
+        // Misma regla que calcularUF(): con ON BATT no se cobra el valor de
+        // Instalación + el de ON BATT por separado, sino que el valor de
+        // instalación pasa a ser el de ON BATT (y los DEMÁS accesorios
+        // elegidos sí se siguen sumando — antes se perdían del cálculo
+        // aunque seguían apareciendo en la columna "Accesorios").
+        const ufInst = calcularUF('Instalación', formData.accesorios, precios);
         const idDes = await nextTrabajoId(empresaSeleccionada, trabajos, empresas);
         const idInst = await nextTrabajoId(empresaSeleccionada, trabajos, empresas);
         const job1 = {
@@ -543,7 +523,7 @@ const Trabajos = ({
                   </button>
                   {accesoriosOpen && (
                     <div className="acc-menu">
-                      {Object.keys(ACCESORIOS_DISPONIBLES).map(acc => (
+                      {ACCESORIOS.map(acc => (
                         <label key={acc} className="acc-item">
                           <input
                             type="checkbox"
@@ -556,7 +536,7 @@ const Trabajos = ({
                             }))}
                           />
                           <span style={{ flex: 1 }}>{acc}</span>
-                          <span className="acc-uf">+{ACCESORIOS_DISPONIBLES[acc]}UF</span>
+                          <span className="acc-uf">+{precios.accesorios[acc]}UF</span>
                         </label>
                       ))}
                     </div>

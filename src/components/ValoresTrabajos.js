@@ -1,15 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { Home, Edit2, Save, X, FileText, Camera, Trash2, Plus } from 'lucide-react';
-import { getValorUFActual, setValorUFActual } from '../utils/pricing';
+import { SERVICIOS, ACCESORIOS, preciosDe } from '../utils/pricing';
 import '../styles/ValoresTrabajos.css';
 
-const ValoresTrabajos = ({ setCurrentView }) => {
+const ValoresTrabajos = ({ setCurrentView, empresas, empresaSeleccionada, setEmpresaSeleccionada, preciosEmpresas, setPreciosEmpresas }) => {
   const [isEditing, setIsEditing] = useState(false);
-  // Mismo valor de UF que usan Trabajos del Mes y Validación WhatsApp para
-  // cobrar de verdad — antes esta pantalla mostraba/guardaba un número
-  // propio (38500) que nada más leía, totalmente desconectado de lo que se
-  // terminaba facturando.
-  const [valorUF, setValorUF] = useState(getValorUFActual);
   const exportRef = useRef(null);
 
   const serviciosIniciales = [
@@ -27,7 +22,6 @@ const ValoresTrabajos = ({ setCurrentView }) => {
   ];
 
   const infoIniciales = {
-    valorKm: 250,
     detallesServicios: 'Incluye instalación, configuración y prueba del equipo GPS.',
     tipoBoleta: 'Factura o Boleta de Honorarios',
     usarLogo: true, // Nueva opción para usar logo
@@ -42,8 +36,12 @@ const ValoresTrabajos = ({ setCurrentView }) => {
   const [infoAdicional, setInfoAdicional] = useState(infoIniciales);
   const [editedServicios, setEditedServicios] = useState([...serviciosIniciales]);
   const [editedInfo, setEditedInfo] = useState({...infoIniciales});
+  // Precios reales (motor de cobro) de la empresa elegida arriba — null
+  // cuando no se está editando; se llena con una copia fresca al entrar a
+  // modo edición y se descarta al cancelar/guardar.
+  const [editedPrecios, setEditedPrecios] = useState(null);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const stored = localStorage.getItem('valoresTrabajos');
     if (stored) {
       try {
@@ -54,26 +52,39 @@ const ValoresTrabajos = ({ setCurrentView }) => {
         }
         if (data.infoAdicional) {
           // Completa con los defaults cualquier campo que un respaldo viejo
-          // no tuviera (ej. nombreEmpresa/rutEmpresa/direccion, agregados
-          // después) — si no, quedaban en undefined: el input arrancaba "no
-          // controlado" y sólo se veía controlado (y el campo visible)
-          // después de escribir algo una vez.
+          // no tuviera — si no, quedaban en undefined: el input arrancaba
+          // "no controlado" y sólo se veía controlado después de escribir
+          // algo una vez. valorKm quedó afuera: ahora es parte de los
+          // precios reales por empresa (ver más abajo), no de este bloque
+          // de datos "para el documento impreso".
+          const { valorKm, ...resto } = data.infoAdicional;
           const infoCompleta = {
             ...infoIniciales,
-            ...data.infoAdicional,
+            ...resto,
             usarLogo: data.infoAdicional.usarLogo !== undefined ? data.infoAdicional.usarLogo : true
           };
           setInfoAdicional(infoCompleta);
           setEditedInfo(infoCompleta);
         }
-        // valorUF ya no se lee del blob viejo de esta pantalla — ver
-        // getValorUFActual(), la fuente compartida con Trabajos del Mes.
       } catch (error) {
         console.error('Error al cargar datos:', error);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Precios reales de la empresa seleccionada (valor UF, valor km, precio de
+  // cada servicio y accesorio) — cada empresa tiene los suyos, antes eran un
+  // solo valor compartido por toda la app.
+  const precios = preciosDe(empresaSeleccionada, preciosEmpresas);
+  const displayPrecios = isEditing ? editedPrecios : precios;
+
+  const startEdit = () => {
+    setEditedServicios([...servicios]);
+    setEditedInfo({...infoAdicional});
+    setEditedPrecios(preciosDe(empresaSeleccionada, preciosEmpresas));
+    setIsEditing(true);
+  };
 
   const handleSave = () => {
     setServicios([...editedServicios]);
@@ -84,18 +95,24 @@ const ValoresTrabajos = ({ setCurrentView }) => {
       infoAdicional: editedInfo,
     };
     localStorage.setItem('valoresTrabajos', JSON.stringify(dataToSave));
-    setValorUFActual(valorUF);
+    setPreciosEmpresas(prev => ({ ...prev, [empresaSeleccionada]: editedPrecios }));
 
     setIsEditing(false);
+    setEditedPrecios(null);
     alert('✓ Cambios guardados correctamente');
   };
 
   const handleCancel = () => {
     setEditedServicios([...servicios]);
     setEditedInfo({...infoAdicional});
-    setValorUF(getValorUFActual());
+    setEditedPrecios(null);
     setIsEditing(false);
   };
+
+  const setValorUF = (valor) => setEditedPrecios(p => ({ ...p, valorUF: valor }));
+  const setValorKm = (valor) => setEditedPrecios(p => ({ ...p, valorKm: valor }));
+  const setPrecioServicio = (servicio, valor) => setEditedPrecios(p => ({ ...p, servicios: { ...p.servicios, [servicio]: valor } }));
+  const setPrecioAccesorio = (acc, valor) => setEditedPrecios(p => ({ ...p, accesorios: { ...p.accesorios, [acc]: valor } }));
 
   const eliminarServicio = (idx) => setEditedServicios(prev => prev.filter((_, i) => i !== idx));
   const agregarServicio = () => setEditedServicios(prev => [...prev, { detalle: 'NUEVO SERVICIO', uf: 0 }]);
@@ -118,10 +135,10 @@ const ValoresTrabajos = ({ setCurrentView }) => {
 
       const imgWidth = 210;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
+
       pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
       pdf.save(`valores-trabajos-gps-${new Date().toISOString().split('T')[0]}.pdf`);
-      
+
       alert('✓ PDF descargado correctamente');
     } catch (error) {
       console.error('Error al generar PDF:', error);
@@ -170,10 +187,22 @@ const ValoresTrabajos = ({ setCurrentView }) => {
             </button>
           </div>
 
+          <div className="valores-uf-input">
+            <label className="valores-label">Empresa</label>
+            <select
+              value={empresaSeleccionada}
+              onChange={(e) => setEmpresaSeleccionada(e.target.value)}
+              className="valores-input"
+              disabled={isEditing}
+            >
+              {(empresas || []).map(emp => <option key={emp} value={emp}>{emp}</option>)}
+            </select>
+          </div>
+
           <div className="valores-toolbar">
             {!isEditing ? (
               <>
-                <button onClick={() => setIsEditing(true)} className="btn-valores btn-primary">
+                <button onClick={startEdit} className="btn-valores btn-primary">
                   <Edit2 size={18} /> Editar
                 </button>
                 <button onClick={exportToPDF} className="btn-valores btn-danger">
@@ -196,16 +225,81 @@ const ValoresTrabajos = ({ setCurrentView }) => {
           </div>
 
           {isEditing && (
-            <div className="valores-uf-input">
-              <label className="valores-label">Valor UF Actual ($)</label>
-              <input
-                type="number"
-                value={valorUF}
-                onChange={(e) => setValorUF(Number(e.target.value))}
-                className="valores-input"
-              />
+            <div style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
+              <div className="valores-uf-input">
+                <label className="valores-label">Valor UF Actual ($)</label>
+                <input
+                  type="number"
+                  value={editedPrecios.valorUF}
+                  onChange={(e) => setValorUF(Number(e.target.value))}
+                  className="valores-input"
+                />
+              </div>
+              <div className="valores-uf-input">
+                <label className="valores-label">Valor por KM recorrido ($)</label>
+                <input
+                  type="number"
+                  value={editedPrecios.valorKm}
+                  onChange={(e) => setValorKm(Number(e.target.value))}
+                  className="valores-input"
+                />
+              </div>
             </div>
           )}
+        </div>
+
+        {/* Precios reales por empresa — esto es lo que usan Trabajos del Mes
+            y Validación WhatsApp para cobrar; antes era un solo valor
+            compartido por toda la app sin importar la empresa. */}
+        <div className="valores-header-card">
+          <h3 className="valores-tabla-title">Precios de Servicios y Accesorios — {empresaSeleccionada}</h3>
+          <div style={{ display:'flex', gap:16, flexWrap:'wrap' }}>
+            <div className="valores-table-container" style={{ flex:1, minWidth:220 }}>
+              <table className="valores-table">
+                <thead><tr><th className="text-left">Servicio</th><th className="text-center">UF</th></tr></thead>
+                <tbody>
+                  {SERVICIOS.map(s => (
+                    <tr key={s}>
+                      <td>{s}</td>
+                      <td className="text-center">
+                        {isEditing ? (
+                          <input type="number" step="0.1" value={displayPrecios.servicios[s]}
+                            onChange={e => setPrecioServicio(s, parseFloat(e.target.value) || 0)}
+                            className="valores-input-uf" />
+                        ) : (
+                          <span className="valores-uf-valor">{displayPrecios.servicios[s]}</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="valores-table-container" style={{ flex:1, minWidth:220 }}>
+              <table className="valores-table">
+                <thead><tr><th className="text-left">Accesorio</th><th className="text-center">UF</th></tr></thead>
+                <tbody>
+                  {ACCESORIOS.map(a => (
+                    <tr key={a}>
+                      <td>{a}</td>
+                      <td className="text-center">
+                        {isEditing ? (
+                          <input type="number" step="0.1" value={displayPrecios.accesorios[a]}
+                            onChange={e => setPrecioAccesorio(a, parseFloat(e.target.value) || 0)}
+                            className="valores-input-uf" />
+                        ) : (
+                          <span className="valores-uf-valor">{displayPrecios.accesorios[a]}</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <p style={{ fontFamily:'Quantico', fontSize:'0.6em', color:'#6b7280', textTransform:'uppercase', marginTop:10 }}>
+            "ON BATT" en una Instalación reemplaza el valor de Instalación (no se suma aparte).
+          </p>
         </div>
 
         <div ref={exportRef} className="valores-export-card">
@@ -243,7 +337,7 @@ const ValoresTrabajos = ({ setCurrentView }) => {
                     className="valores-input"
                   />
                 )}
-                
+
                 <input
                   type="text"
                   value={editedInfo.rutEmpresa}
@@ -251,7 +345,7 @@ const ValoresTrabajos = ({ setCurrentView }) => {
                   placeholder="RUT"
                   className="valores-input"
                 />
-                
+
                 <input
                   type="text"
                   value={editedInfo.direccion}
@@ -286,7 +380,7 @@ const ValoresTrabajos = ({ setCurrentView }) => {
 
           <div className="valores-tabla-section">
             <h3 className="valores-tabla-title">Tabla de Precios - Servicios GPS</h3>
-            
+
             <div className="valores-table-container">
               <table className="valores-table">
                 <thead>
@@ -360,19 +454,10 @@ const ValoresTrabajos = ({ setCurrentView }) => {
 
           <div className="valores-info-adicional">
             <h4 className="valores-info-title">Información Adicional</h4>
-            
+
             <div className="valores-info-item">
               <strong>Valor por KM recorrido:</strong>
-              {isEditing ? (
-                <input
-                  type="number"
-                  value={editedInfo.valorKm}
-                  onChange={(e) => setEditedInfo({...editedInfo, valorKm: Number(e.target.value)})}
-                  className="valores-input-km"
-                />
-              ) : (
-                <span className="valores-km-valor">${displayInfo.valorKm.toLocaleString()}</span>
-              )}
+              <span className="valores-km-valor">${displayPrecios.valorKm.toLocaleString()}</span>
             </div>
 
             <div className="valores-info-item">
@@ -405,7 +490,7 @@ const ValoresTrabajos = ({ setCurrentView }) => {
           </div>
 
           <div className="valores-footer">
-            <p>Valor UF considerado: ${valorUF.toLocaleString()}</p>
+            <p>Empresa: {empresaSeleccionada} · Valor UF considerado: ${displayPrecios.valorUF.toLocaleString()}</p>
             <p>Documento generado el {new Date().toLocaleDateString('es-CL')}</p>
             <p className="valores-footer-italic">Precios sujetos a cambios según variación de la UF</p>
           </div>

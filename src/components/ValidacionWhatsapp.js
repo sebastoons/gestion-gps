@@ -3,14 +3,13 @@ import { Home } from 'lucide-react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { deleteFromTable, syncTable, nextTrabajoId, nextEquipoId, nextClienteId } from '../lib/supabase';
 import { formatFecha } from '../utils/dateUtils';
-import { getValorUFActual } from '../utils/pricing';
+import { ACCESORIOS, preciosDe, calcularUF } from '../utils/pricing';
 
-const COSTOS = {
-  'Instalación': 0.8, 'Desinstalación': 0.5,
-  'Mantención': 0.7, 'Reinstalación': 0.8, 'Visita Fallida': 0.5
-};
-
-const PERIFERICOS = ['ON BATT','edata','dallas','buzzer','sos','inmovilizador 12v','inmovilizador 24v','GPS externo','sensor T°','sensor puerta','cipia','dashcam','Básico'];
+// Mismo listado (y mismos nombres exactos) que usa Trabajos.js — antes cada
+// pantalla tenía su propia lista de periféricos con nombres distintos para
+// lo mismo (ej. "sensor puerta" acá, "Sensor Puerta" allá), así que un
+// precio editado en una no tenía cómo aplicarse en la otra.
+const PERIFERICOS = ACCESORIOS;
 
 const MARCAS_VAL = [
   'Alfa Romeo','Audi','BAIC','BMW','BYD','Changan','Chery','Chevrolet','Citroën',
@@ -63,26 +62,6 @@ const SEGMENTO_DE_CAMPO = {
   kms: 'kms', ubicacion: 'ubicacion', perifericos: 'perifericos',
   detalles: 'detalles', trabajo: 'trabajo',
   compania: 'compania', idProveedor: 'idProveedor',
-};
-
-const COSTOS_PERIFERICOS = {
-  'ON BATT': 0.6, 'edata': 0.6, 'dallas': 0.4, 'buzzer': 0.4, 'sos': 0.4,
-  'inmovilizador 12v': 0.4, 'inmovilizador 24v': 0.4,
-  'GPS externo': 0.3, 'sensor T°': 0.4, 'sensor puerta': 0.6,
-};
-
-// "ON BATT" en una Instalación no es un accesorio que se SUMA al valor base:
-// es un tipo de instalación alternativo con su propio precio total (0.6 UF),
-// igual que en Trabajos.js. Sumarlo aparte cobraba 1.2 UF (0.6 base + 0.6
-// accesorio) por el mismo trabajo que acá se cobra 0.6.
-const calcularUFValidacion = (servicio, perifericos) => {
-  const tieneOnBatt = perifericos.includes('ON BATT');
-  const usaInstOnBatt = servicio === 'Instalación' && tieneOnBatt;
-  const costoServicio = usaInstOnBatt ? 0.6 : (COSTOS[servicio] || 0);
-  const costoPerif = perifericos
-    .filter(p => !(usaInstOnBatt && p === 'ON BATT'))
-    .reduce((sum, p) => sum + (COSTOS_PERIFERICOS[p] || 0), 0);
-  return costoServicio + costoPerif;
 };
 
 const MESES_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -155,6 +134,7 @@ const ValidacionWhatsapp = ({
   mesSeleccionado, setMesSeleccionado, setOtQueue,
   empresaSeleccionada, setEmpresaSeleccionada,
   pendingOT, setPendingOT,
+  preciosEmpresas,
 }) => {
   const [form, setForm] = useState(() => ({ ...VACIO, empresa: empresaSeleccionada || empresas?.[0] || '' }));
   const [ultimoRegistro, setUltimoRegistro] = useState(null);
@@ -358,16 +338,18 @@ const ValidacionWhatsapp = ({
   const agregarATrabajos = async () => {
     const emp = form.empresa;
     const mes = getMesFacturacion(form.fecha, emp) || mesSeleccionado;
-    // Mismo valor de UF que usan Trabajos del Mes y Valor de Trabajos — antes
-    // estaba fijo en 39000 acá, distinto del resto de la app, así que el
-    // mismo trabajo quedaba facturado distinto según por dónde se ingresara.
-    const valorUFMes = getValorUFActual();
+    // Precios de la empresa elegida en ESTE formulario (form.empresa, no
+    // necesariamente la misma que empresaSeleccionada globalmente) — cada
+    // empresa tiene los suyos, editables desde "Valor de Trabajos". Antes el
+    // valor UF estaba fijo en 39000 acá, distinto del resto de la app.
+    const precios = preciosDe(emp, preciosEmpresas);
+    const valorUFMes = precios.valorUF;
 
     if (form.servicio === 'Reinstalación') {
       const id1 = await nextTrabajoId(emp, trabajos, empresas);
       const id2 = await nextTrabajoId(emp, trabajos, empresas);
-      const ufInst = calcularUFValidacion('Instalación', form.perifericos);
-      const ufDes = COSTOS['Desinstalación'];
+      const ufInst = calcularUF('Instalación', form.perifericos, precios);
+      const ufDes = precios.servicios['Desinstalación'] || 0;
       const job1 = {
         id: id1, nombreCliente: form.cliente, fecha: form.fecha,
         servicio: 'Desinstalación', accesorios: [],
@@ -388,7 +370,7 @@ const ValidacionWhatsapp = ({
       await syncTable('trabajos', [job1, job2]);
     } else {
       const newId = await nextTrabajoId(emp, trabajos, empresas);
-      const uf = calcularUFValidacion(form.servicio, form.perifericos);
+      const uf = calcularUF(form.servicio, form.perifericos, precios);
       const newJob = {
         id: newId, nombreCliente: form.cliente, fecha: form.fecha,
         servicio: form.servicio, accesorios: form.perifericos,
