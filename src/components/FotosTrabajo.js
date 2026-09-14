@@ -73,7 +73,7 @@ const FotosUpload = ({ fotos, onChange, onUploadingChange, carpeta }) => {
   );
 };
 
-const FotosTrabajo = ({ setCurrentView, registros, setRegistros, empresas, empresaSeleccionada, setEmpresaSeleccionada }) => {
+const FotosTrabajo = ({ setCurrentView, registros, setRegistros, empresas, empresaSeleccionada, setEmpresaSeleccionada, pendientes, setPendientes }) => {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -138,6 +138,27 @@ const FotosTrabajo = ({ setCurrentView, registros, setRegistros, empresas, empre
     setDeleteId(null);
   };
 
+  // Registros fotográficos que quedaron pendientes desde Validación WhatsApp
+  // (uno por cada vehículo validado, se van acumulando hasta que el usuario
+  // los llena o los descarta acá).
+  const llenarPendiente = (item) => {
+    if (item.empresa && item.empresa !== empresaSeleccionada) setEmpresaSeleccionada(item.empresa);
+    setEditingItem(null);
+    setFormData({
+      ...VACIO,
+      fecha: item.fecha || new Date().toISOString().split('T')[0],
+      servicio: SERVICIOS.includes(item.servicio) ? item.servicio : 'Instalación',
+      ppu: item.ppu || '', marca: item.marca || '', modelo: item.modelo || '',
+      anio: item.anio || '', cliente: item.cliente || '', ubicacion: item.ubicacion || '',
+    });
+    setShowForm(true);
+    if (setPendientes) setPendientes(prev => prev.filter(p => p._qid !== item._qid));
+  };
+
+  const descartarPendiente = (item) => {
+    if (setPendientes) setPendientes(prev => prev.filter(p => p._qid !== item._qid));
+  };
+
   return (
     <div className="page-container">
       <div className="page-content">
@@ -151,6 +172,16 @@ const FotosTrabajo = ({ setCurrentView, registros, setRegistros, empresas, empre
               <Home size={20} /> Inicio
             </button>
           </div>
+
+          {pendientes && pendientes.map(item => (
+            <div key={item._qid} className="ft-banner-pendiente">
+              <span>
+                📷 ¿Llenar fotos de {item.servicio} — {item.empresa} | {item.ppu || 'Sin PPU'} | {item.cliente || ''}?
+              </span>
+              <button className="btn btn-purple" onClick={() => llenarPendiente(item)}>Llenar ✓</button>
+              <button className="btn btn-secondary" onClick={() => descartarPendiente(item)}>✕</button>
+            </div>
+          ))}
 
           <div className="filter-container">
             <div>

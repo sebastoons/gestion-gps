@@ -134,6 +134,7 @@ const ValidacionWhatsapp = ({
   mesSeleccionado, setMesSeleccionado, setOtQueue,
   empresaSeleccionada, setEmpresaSeleccionada,
   pendingOT, setPendingOT,
+  setFotosPendientes,
   preciosEmpresas,
 }) => {
   const [form, setForm] = useState(() => ({ ...VACIO, empresa: empresaSeleccionada || empresas?.[0] || '' }));
@@ -205,6 +206,19 @@ const ValidacionWhatsapp = ({
     observaciones: [form.detalles, form.trabajo].filter(Boolean).join(' | '),
     _empresa: form.empresa,
     nombreCliente: form.cliente,
+  });
+
+  // Registro fotográfico pendiente para este trabajo — sólo los datos que
+  // Registro Fotográfico también pide (ver FotosTrabajo.js), para
+  // precargar el formulario cuando el usuario decida llenarlo.
+  const crearDraftFoto = () => ({
+    fecha: form.fecha,
+    servicio: form.servicio,
+    ppu: (form.ppuVinIn || '').toUpperCase(),
+    marca: form.marca, modelo: form.modelo, anio: form.anio,
+    cliente: form.cliente,
+    ubicacion: form.ubicacion || '',
+    empresa: form.empresa,
   });
 
   const verificarGPS = imei => {
@@ -391,6 +405,12 @@ const ValidacionWhatsapp = ({
     await agregarClienteSiNoExiste(form.cliente, empresa);
     setUltimoRegistro({ mes, empresa });
     if (setPendingOT) setPendingOT({ inst: crearDraftOT(), desinst: esReinst ? crearDraftOTDesinst() : null });
+    // A diferencia de pendingOT (que se pisa), acá se acumula: si se valida
+    // más de un vehículo seguido, Registro Fotográfico debe preguntar por
+    // todos, uno por uno, cuando el usuario finalmente entre a esa sección.
+    if (setFotosPendientes) {
+      setFotosPendientes(prev => [...prev, { ...crearDraftFoto(), _qid: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}` }]);
+    }
     setForm(prev => ({
       ...VACIO,
       cliente: prev.cliente,
