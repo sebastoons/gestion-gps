@@ -409,7 +409,7 @@ const ValidacionWhatsapp = ({
     // más de un vehículo seguido, Registro Fotográfico debe preguntar por
     // todos, uno por uno, cuando el usuario finalmente entre a esa sección.
     if (setFotosPendientes) {
-      setFotosPendientes(prev => [...prev, { ...crearDraftFoto(), _qid: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}` }]);
+      setFotosPendientes(prev => [...prev, { ...crearDraftFoto(), id: `FP${Date.now()}${Math.random().toString(36).slice(2, 6)}` }]);
     }
     setForm(prev => ({
       ...VACIO,

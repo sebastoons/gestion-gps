@@ -152,11 +152,17 @@ const FotosTrabajo = ({ setCurrentView, registros, setRegistros, empresas, empre
       anio: item.anio || '', cliente: item.cliente || '', ubicacion: item.ubicacion || '',
     });
     setShowForm(true);
-    if (setPendientes) setPendientes(prev => prev.filter(p => p._qid !== item._qid));
+    if (setPendientes) setPendientes(prev => prev.filter(p => p.id !== item.id));
+    // El efecto de sync de App.js sólo hace upsert de lo que queda en el
+    // array — sin este borrado explícito, el pendiente resuelto seguiría
+    // en la tabla remota y reaparecería en cualquier otro dispositivo (o
+    // al recargar) aunque ya se haya sacado de la lista local.
+    deleteFromTable('fotos_pendientes', item.id);
   };
 
   const descartarPendiente = (item) => {
-    if (setPendientes) setPendientes(prev => prev.filter(p => p._qid !== item._qid));
+    if (setPendientes) setPendientes(prev => prev.filter(p => p.id !== item.id));
+    deleteFromTable('fotos_pendientes', item.id);
   };
 
   return (
@@ -174,7 +180,7 @@ const FotosTrabajo = ({ setCurrentView, registros, setRegistros, empresas, empre
           </div>
 
           {pendientes && pendientes.map(item => (
-            <div key={item._qid} className="ft-banner-pendiente">
+            <div key={item.id} className="ft-banner-pendiente">
               <span>
                 📷 ¿Llenar fotos de {item.servicio} — {item.empresa} | {item.ppu || 'Sin PPU'} | {item.cliente || ''}?
               </span>
