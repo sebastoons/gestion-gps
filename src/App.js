@@ -170,6 +170,11 @@ const App = () => {
   });
   const [otQueue, setOtQueue] = useState([]);
   const [pendingOT, setPendingOT] = useState(null);
+  // Registros fotográficos pendientes: a diferencia de pendingOT (que se
+  // pisa con cada validación), acá se van acumulando — el usuario puede
+  // validar varios vehículos seguidos y recién después entrar a Registro
+  // Fotográfico a llenarlos todos, uno por uno.
+  const [fotosPendientes, setFotosPendientes] = useState([]);
   const [actualizacionDisponible, setActualizacionDisponible] = useState(false);
   const versionActual = useRef(null);
   const [darkMode, setDarkMode] = useState(() => {
@@ -473,7 +478,8 @@ const App = () => {
 
       {currentView === 'fotostrabajo' && (
         <FotosTrabajo setCurrentView={setCurrentView} registros={fotosTrabajo} setRegistros={setFotosTrabajo} empresas={empresas}
-          empresaSeleccionada={empresaSeleccionada} setEmpresaSeleccionada={setEmpresaSeleccionada} />
+          empresaSeleccionada={empresaSeleccionada} setEmpresaSeleccionada={setEmpresaSeleccionada}
+          pendientes={fotosPendientes} setPendientes={setFotosPendientes} />
       )}
 
       {currentView === 'dashboard' && (
@@ -508,6 +514,7 @@ const App = () => {
           mesSeleccionado={mesSeleccionado} setMesSeleccionado={setMesSeleccionado} setOtQueue={setOtQueue}
           empresaSeleccionada={empresaSeleccionada} setEmpresaSeleccionada={setEmpresaSeleccionada}
           pendingOT={pendingOT} setPendingOT={setPendingOT}
+          setFotosPendientes={setFotosPendientes}
           preciosEmpresas={preciosEmpresas} />
       )}
 
