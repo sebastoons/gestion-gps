@@ -8,6 +8,7 @@ import EscanerGPS from './components/EscanerGPS';
 import Materiales from './components/Materiales';
 import Dashboard from './components/Dashboard';
 import Clientes from './components/Clientes';
+import FotosTrabajo from './components/FotosTrabajo';
 import { Sun, Moon, X, Plus, Download, Upload } from 'lucide-react';
 import { supabase, loadTable, syncTable, deleteFromTable, exportBackup, importBackup } from './lib/supabase';
 import { preciosDe, calcularUF, formatUF } from './utils/pricing';
@@ -131,9 +132,10 @@ const App = () => {
   const [equiposRetirados, setEquiposRetirados] = useState([]);
   const [equiposMalos, setEquiposMalos] = useState([]);
   const [clientes, setClientes] = useState([]);
+  const [fotosTrabajo, setFotosTrabajo] = useState([]);
   const [materiales, setMateriales] = useState([]);
   const [loaded, setLoaded] = useState(false);
-  const skipSync = useRef({ trabajos: true, equiposNuevos: true, equiposRetirados: true, equiposMalos: true, clientes: true, materiales: true, empresas: true, preciosEmpresas: true });
+  const skipSync = useRef({ trabajos: true, equiposNuevos: true, equiposRetirados: true, equiposMalos: true, clientes: true, materiales: true, empresas: true, preciosEmpresas: true, fotosTrabajo: true });
   const [escanerReturn, setEscanerReturn] = useState('home');
   const [materError, setMaterError] = useState(null);
   // Precios (valor UF, valor km, tablas de servicios/accesorios) por
@@ -198,7 +200,7 @@ const App = () => {
   // Cargar desde Supabase al iniciar — única fuente de verdad
   useEffect(() => {
     const loadData = async () => {
-      const [t, en, er, em, cl, mat, emp, prec] = await Promise.all([
+      const [t, en, er, em, cl, mat, emp, prec, fotos] = await Promise.all([
         loadTable('trabajos'),
         loadTable('equipos_nuevos'),
         loadTable('equipos_retirados'),
@@ -207,6 +209,7 @@ const App = () => {
         loadTable('materiales'),
         loadTable('empresas'),
         loadTable('precios_empresa'),
+        loadTable('fotos_trabajo'),
       ]);
       // Si Supabase ya tiene empresas guardadas, esas mandan (skip del eco de
       // sincronización). Si la tabla está vacía (proyecto recién conectado),
@@ -214,7 +217,7 @@ const App = () => {
       // la nube con lo que ya tenía este dispositivo.
       skipSync.current = {
         trabajos: true, equiposNuevos: true, equiposRetirados: true, equiposMalos: true,
-        clientes: true, materiales: true, empresas: emp.length > 0, preciosEmpresas: true,
+        clientes: true, materiales: true, empresas: emp.length > 0, preciosEmpresas: true, fotosTrabajo: true,
       };
       setTrabajos(t.map(norm));
       setEquiposNuevos(en.map(norm));
@@ -228,6 +231,7 @@ const App = () => {
       setMateriales((mat || []).map(norm));
       if (emp.length) setEmpresas(emp.map(e => e.nombre));
       setPreciosEmpresas(Object.fromEntries((prec || []).map(p => [p.empresa, p])));
+      setFotosTrabajo((fotos || []).map(norm));
       setLoaded(true);
     };
     loadData();
@@ -268,6 +272,13 @@ const App = () => {
     const t = setTimeout(() => syncTable('clientes', clientes), 300);
     return () => clearTimeout(t);
   }, [clientes, loaded]);
+
+  useEffect(() => {
+    if (!loaded) return;
+    if (skipSync.current.fotosTrabajo) { skipSync.current.fotosTrabajo = false; return; }
+    const t = setTimeout(() => syncTable('fotos_trabajo', fotosTrabajo), 300);
+    return () => clearTimeout(t);
+  }, [fotosTrabajo, loaded]);
 
   // Empresas: agregar sincroniza (upsert); quitar es explícito, ver onRemoveEmpresa.
   useEffect(() => {
@@ -351,6 +362,8 @@ const App = () => {
         async () => { const d = await loadTable('equipos_malos'); skipSync.current.equiposMalos = true; setEquiposMalos(d.map(norm)); })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'clientes' },
         async () => { const d = await loadTable('clientes'); skipSync.current.clientes = true; setClientes(d.map(norm)); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'fotos_trabajo' },
+        async () => { const d = await loadTable('fotos_trabajo'); skipSync.current.fotosTrabajo = true; setFotosTrabajo(d.map(norm)); })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'materiales' },
         // Sin el guard "d.length > 0" que tenía antes: si otro dispositivo
         // borra el último material/empresa, este también debe reflejar la
@@ -455,6 +468,11 @@ const App = () => {
 
       {currentView === 'clientes' && (
         <Clientes setCurrentView={setCurrentView} clientes={clientes} setClientes={setClientes} empresas={empresas}
+          empresaSeleccionada={empresaSeleccionada} setEmpresaSeleccionada={setEmpresaSeleccionada} />
+      )}
+
+      {currentView === 'fotostrabajo' && (
+        <FotosTrabajo setCurrentView={setCurrentView} registros={fotosTrabajo} setRegistros={setFotosTrabajo} empresas={empresas}
           empresaSeleccionada={empresaSeleccionada} setEmpresaSeleccionada={setEmpresaSeleccionada} />
       )}
 

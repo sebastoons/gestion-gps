@@ -1,0 +1,46 @@
+/* ── Carga de fotos (formulario) ── */
+.ft-fotos-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-top:6px; }
+@media (min-width:480px) { .ft-fotos-grid { grid-template-columns:repeat(4,1fr); } }
+
+.ft-foto-slot {
+  position:relative; aspect-ratio:1/1; border-radius:8px; overflow:hidden;
+  background:#f3f4f6; border:1px solid #e5e7eb; display:block;
+}
+.ft-foto-slot img { width:100%; height:100%; object-fit:cover; display:block; }
+.ft-foto-remove {
+  position:absolute; top:3px; right:3px; width:20px; height:20px; border-radius:50%;
+  background:rgba(15,23,42,0.65); color:#fff; border:none; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+}
+.ft-foto-add {
+  aspect-ratio:1/1; width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:4px; background:none; border:1px dashed #a855f7; border-radius:8px; cursor:pointer;
+  color:#a855f7; font-family:'Quantico'; font-size:0.55em; text-transform:uppercase; text-align:center; padding:4px;
+}
+.ft-foto-uploading {
+  aspect-ratio:1/1; width:100%; display:flex; align-items:center; justify-content:center;
+  background:#f3f4f6; border-radius:8px; color:#6b7280; font-family:'Quantico'; font-size:0.55em; text-transform:uppercase;
+}
+.dark .ft-foto-slot, .dark .ft-foto-uploading { background:#0f172a; border-color:#334155; color:#94a3b8; }
+.dark .ft-foto-add { border-color:#a855f7; }
+
+/* ── Modal "Ver" (detalle + galería) ── */
+.ft-detalle-modal {
+  background:#f8fafc; border-radius:12px; padding:16px; width:100%; max-width:480px;
+  max-height:90vh; overflow-y:auto;
+}
+.dark .ft-detalle-modal { background:#1a2744; }
+.ft-detalle-info {
+  font-family:'Quantico'; font-size:0.65em; color:#6b7280; text-transform:uppercase;
+  margin:0 0 6px;
+}
+.dark .ft-detalle-info { color:#94a3b8; }
+.ft-detalle-seccion {
+  font-family:'Changa'; font-weight:bold; font-size:0.75em; text-transform:uppercase;
+  color:#a855f7; margin:14px 0 6px; padding-bottom:4px; border-bottom:1px solid #e9d5ff;
+}
+.dark .ft-detalle-seccion { border-color:#581c87; }
+.ft-detalle-vacio {
+  font-family:'Quantico'; font-size:0.6em; color:#9ca3af; text-transform:uppercase; margin:0;
+}
+.ft-fotos-grid--ver .ft-foto-slot { cursor:zoom-in; }

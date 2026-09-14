@@ -252,3 +252,47 @@ export const importBackup = (file) => new Promise((resolve, reject) => {
   reader.onerror = () => reject(reader.error);
   reader.readAsText(file);
 });
+
+// ── Fotos de Trabajo (registro fotográfico) ──────────────────────────────────
+// Se guardan en Supabase Storage (bucket "fotos-trabajo"), no como base64
+// adentro de la fila: hasta 8 fotos de 5MB cada una (~53MB en base64) por
+// registro haría carguísima cada sincronización/realtime, que hoy recarga la
+// tabla completa en cada cambio — con las fotos como blobs aparte, la fila
+// sólo guarda las URLs (texto liviano).
+export const MAX_FOTO_BYTES = 5 * 1024 * 1024;
+
+// IDs para fotos_trabajo: prefijo fijo "FT" (compartido entre todas las
+// empresas, igual que clientes).
+export const nextFotoTrabajoId = (registrosActuales) =>
+  nextId('fotos_trabajo', registrosActuales, 'FT');
+
+// Sube una foto y devuelve su URL pública. Lanza si excede el límite de
+// tamaño (el bucket también lo exige del lado del servidor) o si falla la
+// subida — quien llama decide cómo avisarle al usuario.
+export const subirFotoTrabajo = async (file, carpeta) => {
+  if (file.size > MAX_FOTO_BYTES) {
+    throw new Error(`"${file.name}" pesa más de 5MB — elige una foto más liviana.`);
+  }
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+  const ruta = `${carpeta}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error } = await supabase.storage.from('fotos-trabajo').upload(ruta, file, { contentType: file.type || undefined });
+  if (error) throw error;
+  const { data } = supabase.storage.from('fotos-trabajo').getPublicUrl(ruta);
+  return data.publicUrl;
+};
+
+// Borra una foto ya subida (best-effort: si falla, sólo se registra en
+// consola — no bloquea al usuario por una foto que de todos modos ya se
+// está sacando del registro localmente).
+export const eliminarFotoTrabajo = async (url) => {
+  try {
+    const marca = '/fotos-trabajo/';
+    const i = url.indexOf(marca);
+    if (i === -1) return;
+    const ruta = decodeURIComponent(url.slice(i + marca.length));
+    const { error } = await supabase.storage.from('fotos-trabajo').remove([ruta]);
+    if (error) console.error('eliminar foto trabajo:', error);
+  } catch (e) {
+    console.error('eliminar foto trabajo:', e);
+  }
+};

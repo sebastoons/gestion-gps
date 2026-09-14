@@ -134,6 +134,7 @@
 .card-icon-wrap.teal     { background: rgba(20,184,166,0.2); }
 .card-icon-wrap.purple   { background: rgba(168,85,247,0.14); }
 .card-icon-wrap.red      { background: rgba(239,68,68,0.13); }
+.card-icon-wrap.pink     { background: rgba(236,72,153,0.13); }
 
 .dark .card-icon-wrap.blue     { background: rgba(59,130,246,0.22); }
 .dark .card-icon-wrap.green    { background: rgba(34,197,94,0.18); }
@@ -142,6 +143,7 @@
 .dark .card-icon-wrap.yellow   { background: rgba(245,158,11,0.20); }
 .dark .card-icon-wrap.teal     { background: rgba(20,184,166,0.28); }
 .dark .card-icon-wrap.purple   { background: rgba(168,85,247,0.24); }
+.dark .card-icon-wrap.pink     { background: rgba(236,72,153,0.20); }
 .dark .card-icon-wrap.red      { background: rgba(239,68,68,0.20); }
 
 /* ── Card text ── */
