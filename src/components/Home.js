@@ -1,5 +1,5 @@
 import React from 'react';
-import { Briefcase, Archive, DollarSign, MessageCircle, ClipboardList, Sun, Moon, Settings, DatabaseBackup, LayoutDashboard, Users } from 'lucide-react';
+import { Briefcase, Archive, DollarSign, MessageCircle, ClipboardList, Sun, Moon, Settings, DatabaseBackup, LayoutDashboard, Users, Camera } from 'lucide-react';
 import '../styles/Home.css';
 
 const Home = ({ setCurrentView, darkMode, setDarkMode, empresas, onManageEmpresas, onRespaldo }) => {
@@ -83,6 +83,14 @@ const Home = ({ setCurrentView, darkMode, setDarkMode, empresas, onManageEmpresa
             </div>
             <h2 className="card-title">Clientes</h2>
             <p className="card-description">Directorio de clientes por empresa</p>
+          </button>
+
+          <button onClick={() => setCurrentView('fotostrabajo')} className="home-card">
+            <div className="card-icon-wrap pink">
+              <Camera size={24} color="#ec4899" />
+            </div>
+            <h2 className="card-title">Registro Fotográfico</h2>
+            <p className="card-description">Fotos del vehículo y del GPS por trabajo</p>
           </button>
 
         </div>
