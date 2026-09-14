@@ -223,7 +223,7 @@ const OTDoc = ({ ot, numero, empresa, cliente, rut, firma, aceptacion }) => {
               <OTField l="MODELO" v={ot.modelo}/>
               <OTField l="AÑO" v={ot.anio}/>
               <OTField l="COLOR" v={ot.color}/>
-              <OTField l="KM" v={ot.kilometraje?`${ot.kilometraje} km`:''}/>
+              <OTField l="ODÓMETRO" v={ot.kilometraje?`${ot.kilometraje} km`:''}/>
             </div>
           </div>
 
@@ -665,7 +665,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
                     <option value="">Seleccionar...</option>{COLORES.map(c=><option key={c}>{c}</option>)}
                   </select>
                 </div>
-                <div><label className="filter-label">Kilometraje</label>
+                <div><label className="filter-label">Odómetro</label>
                   <input type="number" className="form-input" value={currentOT.kilometraje}
                     onChange={e=>setOTField('kilometraje',e.target.value)} placeholder="km" min={0}/>
                 </div>

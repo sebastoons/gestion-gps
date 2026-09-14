@@ -341,7 +341,11 @@ const ValidacionWhatsapp = ({
         servicio: 'Desinstalación', accesorios: [],
         ppuIn: '', ppuOut: showPpuOut ? form.ppuVinOut.toUpperCase() : '',
         imeiIn: '', imeiOut: showGpsOut ? form.gpsOut : '',
-        km: form.kms || '', valorUF: formatUF(ufDes), valorPesos: Math.round(ufDes * valorUFMes).toString(),
+        // El odómetro (form.kms) NO se traspasa acá a propósito: el km de
+        // Trabajos del Mes es un dato distinto (los km que se facturan) que
+        // el usuario edita a mano después — mezclarlos con la lectura del
+        // odómetro del vehículo pisaría ese valor manual.
+        km: '', valorUF: formatUF(ufDes), valorPesos: Math.round(ufDes * valorUFMes).toString(),
         empresa: emp, mes
       };
       const job2 = {
@@ -362,12 +366,11 @@ const ValidacionWhatsapp = ({
         servicio: form.servicio, accesorios: form.perifericos,
         ppuIn: form.ppuVinIn.toUpperCase(), ppuOut: showPpuOut ? form.ppuVinOut.toUpperCase() : '',
         imeiIn: form.gpsIn, imeiOut: showGpsOut ? form.gpsOut : '',
-        // El odómetro que se pidió en el formulario (form.kms) nunca se
-        // guardaba acá — quedaba en '' aunque el usuario sí lo hubiera
-        // ingresado, así que los km facturados en Trabajos del Mes/Dashboard
-        // para cualquier trabajo cargado por Validación WhatsApp eran
-        // siempre 0.
-        km: form.kms || '', valorUF: formatUF(uf), valorPesos: Math.round(uf * valorUFMes).toString(),
+        // El odómetro (form.kms) NO se traspasa acá a propósito: el km de
+        // Trabajos del Mes es un dato distinto (los km que se facturan) que
+        // el usuario edita a mano después — mezclarlos con la lectura del
+        // odómetro del vehículo pisaría ese valor manual.
+        km: '', valorUF: formatUF(uf), valorPesos: Math.round(uf * valorUFMes).toString(),
         empresa: emp, mes
       };
       setTrabajos(prev => [...prev, newJob]);
