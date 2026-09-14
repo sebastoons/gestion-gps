@@ -135,7 +135,7 @@ const App = () => {
   const [fotosTrabajo, setFotosTrabajo] = useState([]);
   const [materiales, setMateriales] = useState([]);
   const [loaded, setLoaded] = useState(false);
-  const skipSync = useRef({ trabajos: true, equiposNuevos: true, equiposRetirados: true, equiposMalos: true, clientes: true, materiales: true, empresas: true, preciosEmpresas: true, fotosTrabajo: true });
+  const skipSync = useRef({ trabajos: true, equiposNuevos: true, equiposRetirados: true, equiposMalos: true, clientes: true, materiales: true, empresas: true, preciosEmpresas: true, fotosTrabajo: true, fotosPendientes: true });
   const [escanerReturn, setEscanerReturn] = useState('home');
   const [materError, setMaterError] = useState(null);
   // Precios (valor UF, valor km, tablas de servicios/accesorios) por
@@ -205,7 +205,7 @@ const App = () => {
   // Cargar desde Supabase al iniciar — única fuente de verdad
   useEffect(() => {
     const loadData = async () => {
-      const [t, en, er, em, cl, mat, emp, prec, fotos] = await Promise.all([
+      const [t, en, er, em, cl, mat, emp, prec, fotos, fotosPend] = await Promise.all([
         loadTable('trabajos'),
         loadTable('equipos_nuevos'),
         loadTable('equipos_retirados'),
@@ -215,6 +215,7 @@ const App = () => {
         loadTable('empresas'),
         loadTable('precios_empresa'),
         loadTable('fotos_trabajo'),
+        loadTable('fotos_pendientes'),
       ]);
       // Si Supabase ya tiene empresas guardadas, esas mandan (skip del eco de
       // sincronización). Si la tabla está vacía (proyecto recién conectado),
@@ -223,6 +224,7 @@ const App = () => {
       skipSync.current = {
         trabajos: true, equiposNuevos: true, equiposRetirados: true, equiposMalos: true,
         clientes: true, materiales: true, empresas: emp.length > 0, preciosEmpresas: true, fotosTrabajo: true,
+        fotosPendientes: true,
       };
       setTrabajos(t.map(norm));
       setEquiposNuevos(en.map(norm));
@@ -237,6 +239,7 @@ const App = () => {
       if (emp.length) setEmpresas(emp.map(e => e.nombre));
       setPreciosEmpresas(Object.fromEntries((prec || []).map(p => [p.empresa, p])));
       setFotosTrabajo((fotos || []).map(norm));
+      setFotosPendientes((fotosPend || []).map(norm));
       setLoaded(true);
     };
     loadData();
@@ -284,6 +287,16 @@ const App = () => {
     const t = setTimeout(() => syncTable('fotos_trabajo', fotosTrabajo), 300);
     return () => clearTimeout(t);
   }, [fotosTrabajo, loaded]);
+
+  // Este efecto sólo hace upsert (agrega/actualiza) — las bajas (cuando se
+  // llena o se descarta un pendiente) se hacen aparte con deleteFromTable,
+  // ver FotosTrabajo.js.
+  useEffect(() => {
+    if (!loaded) return;
+    if (skipSync.current.fotosPendientes) { skipSync.current.fotosPendientes = false; return; }
+    const t = setTimeout(() => syncTable('fotos_pendientes', fotosPendientes), 300);
+    return () => clearTimeout(t);
+  }, [fotosPendientes, loaded]);
 
   // Empresas: agregar sincroniza (upsert); quitar es explícito, ver onRemoveEmpresa.
   useEffect(() => {
@@ -369,6 +382,8 @@ const App = () => {
         async () => { const d = await loadTable('clientes'); skipSync.current.clientes = true; setClientes(d.map(norm)); })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'fotos_trabajo' },
         async () => { const d = await loadTable('fotos_trabajo'); skipSync.current.fotosTrabajo = true; setFotosTrabajo(d.map(norm)); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'fotos_pendientes' },
+        async () => { const d = await loadTable('fotos_pendientes'); skipSync.current.fotosPendientes = true; setFotosPendientes(d.map(norm)); })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'materiales' },
         // Sin el guard "d.length > 0" que tenía antes: si otro dispositivo
         // borra el último material/empresa, este también debe reflejar la
