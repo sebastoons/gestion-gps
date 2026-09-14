@@ -123,6 +123,46 @@ export const nextEquipoId = (tabla, empresa, itemsActuales, tipoCodigo, todasLas
 export const nextClienteId = (clientesActuales) =>
   nextId('clientes', clientesActuales, 'CL');
 
+// Nombre de cliente "limpio" para comparar sin que tildes/mayúsculas/espacios
+// de más hagan que el mismo cliente cuente como dos (ej. "José Pérez" vs
+// "jose perez" vs "Jose  Perez").
+const nombreClienteClave = (s) => (s || '')
+  .normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .trim().toLowerCase().replace(/\s+/g, ' ');
+
+// Crea el cliente si no existe (por empresa + nombre normalizado), o si ya
+// existe completa los campos que todavía tenga vacíos con lo que se le pase
+// acá — nunca pisa un dato que el usuario ya haya cargado. Antes Trabajos.js
+// y ValidacionWhatsapp.js tenían cada uno su propia copia de esta función
+// (sólo la mitad "crear si no existe", nunca "completar si ya existe"), así
+// que el RUT/nombre oficial que se pide al crear una Orden de Trabajo, por
+// ejemplo, nunca llegaba al directorio de Clientes — quedaba sólo en esa OT.
+export const agregarOActualizarCliente = async (datos, clientesActuales, setClientes) => {
+  const nombreCliente = datos?.nombreCliente?.trim();
+  const empresa = datos?.empresa;
+  if (!nombreCliente || !empresa || !setClientes) return;
+  const clave = nombreClienteClave(nombreCliente);
+  const existente = clientesActuales.find(c => c.empresa === empresa && nombreClienteClave(c.nombreCliente) === clave);
+  if (existente) {
+    const CAMPOS_RELLENABLES = ['rut', 'nombreContacto1', 'telefono1', 'nombreContacto2', 'telefono2', 'region', 'ciudad', 'comuna', 'direccion', 'tipoVehiculo'];
+    const relleno = {};
+    let hayRelleno = false;
+    CAMPOS_RELLENABLES.forEach(campo => {
+      if (datos[campo] && !existente[campo]) { relleno[campo] = datos[campo]; hayRelleno = true; }
+    });
+    if (hayRelleno) setClientes(prev => prev.map(c => c.id === existente.id ? { ...c, ...relleno } : c));
+    return;
+  }
+  const newId = await nextClienteId(clientesActuales);
+  setClientes(prev => [...prev, {
+    id: newId,
+    nombreCliente, empresa,
+    rut: datos.rut || '',
+    nombreContacto1: '', telefono1: '', nombreContacto2: '', telefono2: '',
+    region: '', ciudad: '', comuna: '', direccion: '', tipoVehiculo: ''
+  }]);
+};
+
 // Números de Órdenes de Trabajo: antes usaban un contador local (estado de
 // React, cargado una vez desde la tabla ot_counters y actualizado con un
 // upsert simple) — dos dispositivos creando OTs casi al mismo tiempo podían

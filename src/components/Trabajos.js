@@ -3,8 +3,8 @@ import { Download, Plus, Home, Edit2, Trash2, AlertCircle, FileImage, ChevronDow
 import { exportTrabajosToExcel } from '../utils/excelExport';
 import { exportToVisualImage } from '../utils/visualExportUtils';
 import { formatFecha } from '../utils/dateUtils';
-import { deleteFromTable, syncTable, nextTrabajoId, nextClienteId } from '../lib/supabase';
-import { ACCESORIOS, preciosDe, calcularUF } from '../utils/pricing';
+import { deleteFromTable, syncTable, nextTrabajoId, agregarOActualizarCliente } from '../lib/supabase';
+import { ACCESORIOS, preciosDe, calcularUF, formatUF } from '../utils/pricing';
 
 const Trabajos = ({
   setCurrentView,
@@ -64,7 +64,7 @@ const Trabajos = ({
   useEffect(() => {
     const totalUF = calcularUF(formData.servicio, formData.accesorios, precios);
     const totalPesos = Math.round(totalUF * precios.valorUF);
-    const valorUFFormateado = totalUF % 1 === 0 ? totalUF.toString() : parseFloat(totalUF.toFixed(2)).toString();
+    const valorUFFormateado = formatUF(totalUF);
 
     setFormData(prev => ({
       ...prev,
@@ -158,24 +158,8 @@ const Trabajos = ({
     }
   };
 
-  const agregarClienteSiNoExiste = async (nombre) => {
-    if (!nombre?.trim() || !clientes || !setClientes) return;
-    // Sin filtrar por empresa: dos empresas con un cliente de igual nombre
-    // (ej. "Juan Perez" en dos compañías distintas) hacían que la segunda
-    // nunca se creara — el registro "existente" era en realidad de otra
-    // empresa.
-    const existe = clientes.some(c => c.empresa === empresaSeleccionada
-      && c.nombreCliente.trim().toLowerCase() === nombre.trim().toLowerCase());
-    if (!existe) {
-      const newId = await nextClienteId(clientes);
-      setClientes(prev => [...prev, {
-        id: newId,
-        nombreCliente: nombre.trim(), empresa: empresaSeleccionada,
-        nombreContacto1: '', telefono1: '', nombreContacto2: '', telefono2: '',
-        region: '', ciudad: '', comuna: '', direccion: '', tipoVehiculo: ''
-      }]);
-    }
-  };
+  const agregarClienteSiNoExiste = (nombre) =>
+    agregarOActualizarCliente({ nombreCliente: nombre, empresa: empresaSeleccionada }, clientes, setClientes);
 
   const handleSubmit = async () => {
     if (!formData.nombreCliente || !formData.fecha) {
@@ -204,7 +188,7 @@ const Trabajos = ({
           ...formData, id: idDes, empresa: empresaSeleccionada, mes: mesSeleccionado,
           servicio: 'Desinstalación', ppuIn: '', ppuOut: formData.ppuOut,
           imeiIn: '', imeiOut: formData.imeiOut, accesorios: [],
-          valorUF: ufDes.toString(), valorPesos: Math.round(ufDes * valorUFMes).toString()
+          valorUF: formatUF(ufDes), valorPesos: Math.round(ufDes * valorUFMes).toString()
         };
         const job2 = {
           ...formData, id: idInst, empresa: empresaSeleccionada, mes: mesSeleccionado,
@@ -216,7 +200,7 @@ const Trabajos = ({
           // Reinstalación. Se conserva sólo en job1, igual que en
           // ValidacionWhatsapp.js.
           km: '',
-          valorUF: ufInst.toString(), valorPesos: Math.round(ufInst * valorUFMes).toString()
+          valorUF: formatUF(ufInst), valorPesos: Math.round(ufInst * valorUFMes).toString()
         };
         setTrabajos(prev => [...prev, job1, job2]);
         await syncTable('trabajos', [job1, job2]);

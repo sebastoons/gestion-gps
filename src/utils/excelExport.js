@@ -117,6 +117,11 @@ export const exportTrabajosToExcel = async (trabajos, filename, { empresa, mes, 
         cell.border = bordeFino();
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
       });
+      // km/UF quedaban como números "pelados" (formato General de Excel) al
+      // lado de una columna de pesos bien formateada — sin separador de
+      // miles ni decimales consistentes.
+      fila.getCell('km').numFmt = '#,##0';
+      fila.getCell('valorUF').numFmt = '#,##0.00';
       fila.getCell('valorPesos').numFmt = '"$"#,##0';
       fila.getCell('valorPesos').alignment = { horizontal: 'right', vertical: 'middle' };
       if (i % 2 === 1) {
@@ -141,9 +146,9 @@ export const exportTrabajosToExcel = async (trabajos, filename, { empresa, mes, 
     // con apariencia de número.
     const filasResumen = [
       ['Total UF', Number(totales.totalUF.toFixed(2)), '#,##0.00'],
-      ['Total Pesos', `$${Math.round(totales.totalPesos).toLocaleString('es-CL')}`, null],
+      ['Total Pesos', Math.round(totales.totalPesos), '"$"#,##0'],
       ['Total KM', Number(totales.totalKm), '#,##0'],
-      ['Valor KM', `$${Math.round(totales.totalValorKm).toLocaleString('es-CL')}`, null],
+      ['Valor KM', Math.round(totales.totalValorKm), '"$"#,##0'],
     ];
     filasResumen.forEach(([label, val, numFmt]) => {
       ws.getCell(r, 1).value = label;
@@ -162,7 +167,8 @@ export const exportTrabajosToExcel = async (trabajos, filename, { empresa, mes, 
     filasFinales.forEach(([label, val], i) => {
       const destacado = i === 2;
       ws.getCell(r, 1).value = label;
-      ws.getCell(r, 2).value = `$${Math.round(val).toLocaleString('es-CL')}`;
+      ws.getCell(r, 2).value = Math.round(val);
+      ws.getCell(r, 2).numFmt = '"$"#,##0';
       [1, 2].forEach(c => {
         const cell = ws.getCell(r, c);
         cell.font = { bold: true, size: destacado ? 13 : 11, color: { argb: destacado ? 'FFFFFFFF' : 'FF1F2937' } };

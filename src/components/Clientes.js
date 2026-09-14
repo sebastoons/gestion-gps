@@ -18,6 +18,7 @@ const Clientes = ({
     id: '',
     nombreCliente: '',
     empresa: empresaSeleccionada || empresas?.[0] || '',
+    rut: '',
     nombreContacto1: '',
     telefono1: '',
     nombreContacto2: '',
@@ -117,7 +118,7 @@ const Clientes = ({
     }
     setShowForm(false);
     setFormData({
-      id: '', nombreCliente: '', empresa: empresaSeleccionada || empresas?.[0] || '',
+      id: '', nombreCliente: '', empresa: empresaSeleccionada || empresas?.[0] || '', rut: '',
       nombreContacto1: '', telefono1: '', nombreContacto2: '', telefono2: '',
       region: '', ciudad: '', comuna: '', direccion: '', tipoVehiculo: ''
     });
@@ -125,7 +126,10 @@ const Clientes = ({
 
   const handleEdit = (cliente) => {
     setEditingItem(cliente);
-    setFormData(cliente);
+    // "rut" (y cualquier campo nuevo futuro) puede faltar en un registro
+    // creado antes de que existiera — sin el default, el input arranca "no
+    // controlado" y React tira el warning de siempre hasta escribir algo.
+    setFormData({ rut: '', ...cliente });
     setShowForm(true);
   };
 
@@ -193,7 +197,7 @@ const Clientes = ({
                 setShowForm(true);
                 setEditingItem(null);
                 setFormData({
-                  id: '', nombreCliente: '', empresa: empresaSeleccionada || empresas?.[0] || '',
+                  id: '', nombreCliente: '', empresa: empresaSeleccionada || empresas?.[0] || '', rut: '',
                   nombreContacto1: '', telefono1: '', nombreContacto2: '', telefono2: '',
                   region: '', ciudad: '', comuna: '', direccion: '', tipoVehiculo: ''
                 });
@@ -230,6 +234,13 @@ const Clientes = ({
                 >
                   {empresas.map(emp => <option key={emp} value={emp}>{emp}</option>)}
                 </select>
+                <input
+                  type="text"
+                  placeholder="RUT"
+                  value={formData.rut}
+                  onChange={(e) => setFormData({...formData, rut: e.target.value})}
+                  className="form-input"
+                />
                 <input
                   type="text"
                   placeholder="Nombre Contacto 1"
@@ -331,6 +342,7 @@ const Clientes = ({
                   <th>ID</th>
                   <th>Cliente</th>
                   <th>Empresa</th>
+                  <th>RUT</th>
                   <th>Contacto 1</th>
                   <th>Teléfono 1</th>
                   <th>Contacto 2</th>
@@ -346,7 +358,7 @@ const Clientes = ({
               <tbody>
                 {clientesFiltrados.length === 0 ? (
                   <tr>
-                    <td colSpan="13" className="empty-state">
+                    <td colSpan="14" className="empty-state">
                       {searchTerm ? 'No se encontraron clientes con ese criterio de búsqueda' : 'No hay clientes registrados'}
                     </td>
                   </tr>
@@ -356,6 +368,7 @@ const Clientes = ({
                       <td>{cliente.id}</td>
                       <td className="text-bold">{cliente.nombreCliente}</td>
                       <td>{cliente.empresa}</td>
+                      <td>{cliente.rut || '-'}</td>
                       <td>{cliente.nombreContacto1 || '-'}</td>
                       <td>{cliente.telefono1 || '-'}</td>
                       <td>{cliente.nombreContacto2 || '-'}</td>

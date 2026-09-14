@@ -19,7 +19,11 @@ const CARDS = [
   ...TIPOS_MATERIAL.map(t => ({ key:t, label:t, color:'#0d9488', bg:'#ccfbf1', cat:'material' })),
 ];
 
-const TODAY = new Date().toISOString().split('T')[0];
+// Función, no constante fija: antes hoy() se calculaba una sola vez al
+// cargar el bundle de JS — en una PWA dejada abierta de un día para otro,
+// cualquier ficha nueva agregada después de medianoche sin corregir la
+// fecha a mano quedaba con la fecha de AYER como default.
+const hoy = () => new Date().toISOString().split('T')[0];
 
 const Materiales = ({
   setCurrentView,
@@ -42,10 +46,10 @@ const Materiales = ({
   const [saving, setSaving]   = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const [formN,   setFormN]   = useState({ fechaRecepcion:TODAY, imei:'', estado:'disponible', nombreCliente:'' });
-  const [formR,   setFormR]   = useState({ fecha:TODAY, cliente:'', imei:'' });
+  const [formN,   setFormN]   = useState({ fechaRecepcion:hoy(), imei:'', estado:'disponible', nombreCliente:'' });
+  const [formR,   setFormR]   = useState({ fecha:hoy(), cliente:'', imei:'' });
   const [formMl,  setFormMl]  = useState({ imei:'', asignado:false, nombreCliente:'' });
-  const [formMat, setFormMat] = useState({ tipo:TIPOS_MATERIAL[0], serial:'', cantidad:1, fecha:TODAY });
+  const [formMat, setFormMat] = useState({ tipo:TIPOS_MATERIAL[0], serial:'', cantidad:1, fecha:hoy() });
 
   // Limpiar selección al cambiar de tipo
   useEffect(() => { setSelectedRows(new Set()); }, [selectedType]);
@@ -94,10 +98,10 @@ const Materiales = ({
   };
 
   const resetForms = () => {
-    setFormN({ fechaRecepcion:TODAY, imei:'', estado:'disponible', nombreCliente:'' });
-    setFormR({ fecha:TODAY, cliente:'', imei:'' });
+    setFormN({ fechaRecepcion:hoy(), imei:'', estado:'disponible', nombreCliente:'' });
+    setFormR({ fecha:hoy(), cliente:'', imei:'' });
     setFormMl({ imei:'', asignado:false, nombreCliente:'' });
-    setFormMat({ tipo: CARDS.find(c=>c.key===selectedType)?.cat==='material' ? selectedType : TIPOS_MATERIAL[0], serial:'', cantidad:1, fecha:TODAY });
+    setFormMat({ tipo: CARDS.find(c=>c.key===selectedType)?.cat==='material' ? selectedType : TIPOS_MATERIAL[0], serial:'', cantidad:1, fecha:hoy() });
   };
 
   const openAdd = () => {
@@ -129,7 +133,7 @@ const Materiales = ({
 
   const saveNuevo = async () => {
     if (!formN.imei || !formN.fechaRecepcion) { alert('IMEI y Fecha requeridos'); return; }
-    if (!editingId && imeiYaExiste(formN.imei)
+    if (imeiYaExiste(formN.imei, editingId)
       && !window.confirm(`El IMEI ${formN.imei} ya está en el inventario de ${emp}. ¿Agregar de todas formas?`)) return;
     if (editingId) {
       setEquiposNuevos(prev => prev.map(e => e.id===editingId ? {...formN,id:editingId,empresa:emp} : e));
@@ -142,7 +146,7 @@ const Materiales = ({
 
   const saveRetirado = async () => {
     if (!formR.imei || !formR.fecha || !formR.cliente) { alert('Completa todos los campos'); return; }
-    if (!editingId && imeiYaExiste(formR.imei)
+    if (imeiYaExiste(formR.imei, editingId)
       && !window.confirm(`El IMEI ${formR.imei} ya está en el inventario de ${emp}. ¿Agregar de todas formas?`)) return;
     if (editingId) {
       setEquiposRetirados(prev => prev.map(e => e.id===editingId ? {...formR,id:editingId,empresa:emp} : e));
@@ -155,7 +159,7 @@ const Materiales = ({
 
   const saveMalo = async () => {
     if (!formMl.imei) { alert('IMEI requerido'); return; }
-    if (!editingId && imeiYaExiste(formMl.imei)
+    if (imeiYaExiste(formMl.imei, editingId)
       && !window.confirm(`El IMEI ${formMl.imei} ya está en el inventario de ${emp}. ¿Agregar de todas formas?`)) return;
     if (editingId) {
       setEquiposMalos(prev => prev.map(e => e.id===editingId ? {...formMl,id:editingId,empresa:emp} : e));
