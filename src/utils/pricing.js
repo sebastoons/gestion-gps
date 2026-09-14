@@ -54,16 +54,32 @@ export const preciosDe = (empresa, preciosEmpresas) => {
   };
 };
 
-// "ON BATT" en una Instalación no es un accesorio que se SUMA al valor base:
-// es un tipo de instalación alternativo con su propio precio total (el que
-// tenga configurado "ON BATT" para esa empresa) — igual para Trabajos del
-// Mes y Validación WhatsApp, las dos pantallas que cobran un trabajo.
+// "ON BATT" en una Instalación (o una Reinstalación sin partir en dos — ver
+// abajo) no es un accesorio que se SUMA al valor base: es un tipo de
+// instalación alternativo con su propio precio total (el que tenga
+// configurado "ON BATT" para esa empresa) — igual para Trabajos del Mes y
+// Validación WhatsApp, las dos pantallas que cobran un trabajo. Se incluye
+// "Reinstalación" en la regla porque cuando NO se completan ambas PPU
+// (Trabajos.js no la separa en ese caso — ver el comentario en handleSubmit)
+// el trabajo queda con servicio "Reinstalación" tal cual, y antes esa rama
+// no aplicaba el reemplazo (sí lo hacía la mitad "Instalación" cuando el
+// trabajo SÍ se partía en dos), cobrando distinto para el mismo caso real
+// según si se completaron o no ambas PPU.
 export const calcularUF = (servicio, accesorios, precios) => {
   const tieneOnBatt = accesorios.includes('ON BATT');
-  const usaInstOnBatt = servicio === 'Instalación' && tieneOnBatt;
+  const usaInstOnBatt = (servicio === 'Instalación' || servicio === 'Reinstalación') && tieneOnBatt;
   const costoServicio = usaInstOnBatt ? (precios.accesorios['ON BATT'] || 0) : (precios.servicios[servicio] || 0);
   const costoAccesorios = accesorios
     .filter(acc => !(usaInstOnBatt && acc === 'ON BATT'))
     .reduce((sum, acc) => sum + (precios.accesorios[acc] || 0), 0);
   return costoServicio + costoAccesorios;
 };
+
+// Convierte un total de UF (posible con arrastre de coma flotante, ej.
+// 0.3+0.4 = 0.7000000000000001 en JS) al mismo formato de string que ya usan
+// el preview en vivo de Trabajos.js y el recálculo de App.js — antes
+// Validación WhatsApp y el split de Reinstalación en Trabajos.js guardaban
+// el número crudo con `.toString()`, así que un trabajo podía quedar con un
+// valorUF como "1.2999999999999998" hasta el próximo recálculo.
+export const formatUF = (totalUF) =>
+  totalUF % 1 === 0 ? totalUF.toString() : parseFloat(totalUF.toFixed(2)).toString();

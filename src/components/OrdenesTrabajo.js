@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Download, Search, ChevronLeft, X, Trash2, Check, Home as HomeIcon, ChevronDown, FileImage, Eye } from 'lucide-react';
-import { supabase, loadTable, syncTable, deleteFromTable, nextOtNumero } from '../lib/supabase';
+import { supabase, loadTable, syncTable, deleteFromTable, nextOtNumero, agregarOActualizarCliente } from '../lib/supabase';
 import { formatFecha } from '../utils/dateUtils';
 import '../styles/OrdenesTrabajo.css';
 
@@ -313,7 +313,7 @@ const downloadImage = async (elementId, filename) => {
 };
 
 // ── Componente principal ──────────────────────────────────────────────────────
-const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue, setOtQueue, pendingOT, setPendingOT }) => {
+const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue, setOtQueue, pendingOT, setPendingOT, clientes, setClientes }) => {
   const [step,setStep] = useState('list');
   const [otsList,setOtsList] = useState([]);
   const [sessionOTs,setSessionOTs] = useState([]);
@@ -376,21 +376,35 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
     setStep('form');
   };
 
+  const [finalizando, setFinalizando] = useState(false);
+
   const finalizeSession=async()=>{
     const emp=sessionEmpresa;
     const sid=Date.now().toString();
-    // Números atómicos (next_counter en Postgres) uno por uno, en vez del
-    // contador local + upsert simple de antes — evita que dos dispositivos
-    // creando OTs casi al mismo tiempo emitan el mismo número.
-    const numeros=[];
-    for (let i=0;i<sessionOTs.length;i++) numeros.push(await nextOtNumero(emp, otsList, empresas));
-    const newOTs=sessionOTs.map((ot,i)=>({...ot,id:`${sid}-${i}`,numero:numeros[i],
-      sessionId:sid,empresa:emp,cliente:clienteData.nombre,rutCliente:clienteData.rut,
-      firma,aceptacion,createdAt:new Date().toISOString(),emailEnviado:false}));
-    saveOTs([...otsList,...newOTs]);
-    setSessionOTs(newOTs);
-    setStep('preview');
-    setTimeout(()=>downloadPDF('ot-preview-wrap',`OT-${emp}-${new Date().toISOString().split('T')[0]}`),800);
+    setFinalizando(true);
+    try {
+      // Números atómicos (next_counter en Postgres) uno por uno, en vez del
+      // contador local + upsert simple de antes — evita que dos dispositivos
+      // creando OTs casi al mismo tiempo emitan el mismo número.
+      const numeros=[];
+      for (let i=0;i<sessionOTs.length;i++) numeros.push(await nextOtNumero(emp, otsList, empresas));
+      const newOTs=sessionOTs.map((ot,i)=>({...ot,id:`${sid}-${i}`,numero:numeros[i],
+        sessionId:sid,empresa:emp,cliente:clienteData.nombre,rutCliente:clienteData.rut,
+        firma,aceptacion,createdAt:new Date().toISOString(),emailEnviado:false}));
+      await saveOTs([...otsList,...newOTs]);
+      // El nombre oficial y el RUT recién tipeados acá son justo el dato de
+      // más calidad que existe sobre este cliente en toda la app — antes
+      // quedaba sólo en esta OT y nunca llegaba al directorio de Clientes.
+      await agregarOActualizarCliente({ nombreCliente: clienteData.nombre, empresa: emp, rut: clienteData.rut }, clientes || [], setClientes);
+      setSessionOTs(newOTs);
+      setStep('preview');
+      setTimeout(()=>downloadPDF('ot-preview-wrap',`OT-${emp}-${new Date().toISOString().split('T')[0]}`),800);
+    } catch (err) {
+      console.error('Error al finalizar la sesión de OT:', err);
+      alert('❌ No se pudo generar el número de OT (revisa tu conexión) — nada se guardó, puedes reintentar.');
+    } finally {
+      setFinalizando(false);
+    }
   };
 
   const downloadHistoryItem = async (ot, mode) => {
@@ -400,9 +414,10 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
     else await downloadPDF('ot-history-render',`OT-${ot.numero}`);
     setDownloading(false); setHistoryOT(null);
   };
-  const deleteOT = id => {
+  const deleteOT = async id => {
     if (!window.confirm('¿Eliminar esta OT?')) return;
-    deleteFromTable('ordenes_trabajo', id);
+    const err = await deleteFromTable('ordenes_trabajo', id);
+    if (err) { alert('No se pudo eliminar. Verifica tu conexión e intenta de nuevo.'); return; }
     setOtsList(prev => prev.filter(o => o.id !== id));
   };
   const setOTField=(f,v)=>setCurrentOT(p=>({...p,[f]:v}));
@@ -557,9 +572,14 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
           <div className="form-container blue">
             <div className="form-grid">
               <div><label className="filter-label">Empresa</label>
-                <select className="form-select" value={sessionEmpresa} onChange={e=>setSessionEmpresa(e.target.value)}>
+                <select className="form-select" value={sessionEmpresa} onChange={e=>setSessionEmpresa(e.target.value)} disabled={sessionOTs.length>0}>
                   {empresas.map(e=><option key={e}>{e}</option>)}
                 </select>
+                {sessionOTs.length>0 && (
+                  <p style={{fontFamily:'Quantico',fontSize:'0.55em',color:'#9ca3af',textTransform:'uppercase',marginTop:4}}>
+                    Ya hay OT guardadas en esta sesión — la empresa no se puede cambiar a mitad de camino
+                  </p>
+                )}
               </div>
               <div><label className="filter-label">Tipo de Servicio</label>
                 <select className="form-select" value={currentOT.tipoServicio} onChange={e=>setOTField('tipoServicio',e.target.value)}>
@@ -769,8 +789,8 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
 
           <div className="form-actions">
             <button className="btn btn-success" style={{fontSize:'0.85em',padding:'10px 24px'}}
-              onClick={finalizeSession} disabled={!clienteData.nombre||!aceptacion}>
-              <Check size={15}/> Finalizar y Descargar OT
+              onClick={finalizeSession} disabled={!clienteData.nombre||!aceptacion||finalizando}>
+              <Check size={15}/> {finalizando ? 'Generando...' : 'Finalizar y Descargar OT'}
             </button>
           </div>
           {(!clienteData.nombre||!aceptacion)&&(

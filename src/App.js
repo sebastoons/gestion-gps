@@ -10,7 +10,7 @@ import Dashboard from './components/Dashboard';
 import Clientes from './components/Clientes';
 import { Sun, Moon, X, Plus, Download, Upload } from 'lucide-react';
 import { supabase, loadTable, syncTable, deleteFromTable, exportBackup, importBackup } from './lib/supabase';
-import { preciosDe, calcularUF } from './utils/pricing';
+import { preciosDe, calcularUF, formatUF } from './utils/pricing';
 import './styles/Common.css';
 
 // ── Gestión de empresas ───────────────────────────────────────────────────────
@@ -139,6 +139,19 @@ const App = () => {
   // Precios (valor UF, valor km, tablas de servicios/accesorios) por
   // empresa — objeto {nombreEmpresa: {valorUF, valorKm, servicios, accesorios}}.
   const [preciosEmpresas, setPreciosEmpresas] = useState({});
+  // Qué empresas cambiaron desde el último sync — para reenviar sólo esas,
+  // no el mapa completo (ver setPreciosEmpresasTracked / el efecto de sync
+  // más abajo): reenviar TODO en cada cambio hacía que este dispositivo
+  // pudiera pisar, con su propia copia vieja en memoria, el precio de OTRA
+  // empresa que otro dispositivo acababa de guardar mientras tanto.
+  const preciosDirtyRef = useRef(new Set());
+  const setPreciosEmpresasTracked = (updater) => {
+    setPreciosEmpresas(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      Object.keys(next).forEach(k => { if (next[k] !== prev[k]) preciosDirtyRef.current.add(k); });
+      return next;
+    });
+  };
 
   const [empresas, setEmpresas] = useState(() => {
     try { const s = localStorage.getItem('empresas'); return s ? JSON.parse(s) : ['UGPS']; } catch { return ['UGPS']; }
@@ -264,13 +277,18 @@ const App = () => {
     return () => clearTimeout(t);
   }, [empresas, loaded]);
 
-  // Precios por empresa (valor UF, valor km, servicios, accesorios) — se
-  // sincroniza igual que empresas, reenviando el objeto completo cada vez
-  // (son pocas empresas con pocos campos cada una, el payload es chico).
+  // Precios por empresa (valor UF, valor km, servicios, accesorios) — sólo
+  // reenvía las empresas realmente tocadas (preciosDirtyRef), no el mapa
+  // completo: ver la nota en setPreciosEmpresasTracked.
   useEffect(() => {
     if (!loaded) return;
-    if (skipSync.current.preciosEmpresas) { skipSync.current.preciosEmpresas = false; return; }
-    const items = Object.entries(preciosEmpresas).map(([empresa, cfg]) => ({ id: empresa, empresa, ...cfg }));
+    if (skipSync.current.preciosEmpresas) { skipSync.current.preciosEmpresas = false; preciosDirtyRef.current.clear(); return; }
+    if (!preciosDirtyRef.current.size) return;
+    const empresasCambiadas = [...preciosDirtyRef.current];
+    preciosDirtyRef.current.clear();
+    const items = empresasCambiadas
+      .filter(empresa => preciosEmpresas[empresa])
+      .map(empresa => ({ id: empresa, empresa, ...preciosEmpresas[empresa] }));
     if (!items.length) return;
     const t = setTimeout(() => syncTable('precios_empresa', items), 300);
     return () => clearTimeout(t);
@@ -289,7 +307,7 @@ const App = () => {
     const actualizados = trabajos.map(t => {
       const precios = preciosDe(t.empresa, preciosEmpresas);
       const nuevoUF = calcularUF(t.servicio, t.accesorios || [], precios);
-      const nuevoUFStr = nuevoUF % 1 === 0 ? nuevoUF.toString() : parseFloat(nuevoUF.toFixed(2)).toString();
+      const nuevoUFStr = formatUF(nuevoUF);
       const nuevoPesos = Math.round(nuevoUF * precios.valorUF).toString();
       if (nuevoUFStr !== t.valorUF || nuevoPesos !== t.valorPesos) {
         const actualizado = { ...t, valorUF: nuevoUFStr, valorPesos: nuevoPesos };
@@ -426,13 +444,13 @@ const App = () => {
           equiposNuevos={equiposNuevos} setEquiposNuevos={setEquiposNuevos}
           equiposRetirados={equiposRetirados} setEquiposRetirados={setEquiposRetirados}
           clientes={clientes} setClientes={setClientes}
-          preciosEmpresas={preciosEmpresas} setPreciosEmpresas={setPreciosEmpresas} />
+          preciosEmpresas={preciosEmpresas} setPreciosEmpresas={setPreciosEmpresasTracked} />
       )}
 
       {currentView === 'valores' && (
         <ValoresTrabajos setCurrentView={setCurrentView} empresas={empresas}
           empresaSeleccionada={empresaSeleccionada} setEmpresaSeleccionada={setEmpresaSeleccionada}
-          preciosEmpresas={preciosEmpresas} setPreciosEmpresas={setPreciosEmpresas} />
+          preciosEmpresas={preciosEmpresas} setPreciosEmpresas={setPreciosEmpresasTracked} />
       )}
 
       {currentView === 'clientes' && (
@@ -449,7 +467,7 @@ const App = () => {
       {currentView === 'ordenes' && (
         <OrdenesTrabajo setCurrentView={setCurrentView} empresas={empresas}
           empresaSeleccionada={empresaSeleccionada} setEmpresaSeleccionada={setEmpresaSeleccionada}
-          clientes={clientes} otQueue={otQueue} setOtQueue={setOtQueue}
+          clientes={clientes} setClientes={setClientes} otQueue={otQueue} setOtQueue={setOtQueue}
           pendingOT={pendingOT} setPendingOT={setPendingOT} />
       )}
 

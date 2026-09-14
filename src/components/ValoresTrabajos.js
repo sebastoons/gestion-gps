@@ -80,8 +80,12 @@ const ValoresTrabajos = ({ setCurrentView, empresas, empresaSeleccionada, setEmp
     setIsEditing(false);
   };
 
-  const setValorUF = (valor) => setEditedPrecios(p => ({ ...p, valorUF: valor }));
-  const setValorKm = (valor) => setEditedPrecios(p => ({ ...p, valorKm: valor }));
+  // "|| 0" evita guardar NaN si el input queda momentáneamente vacío/inválido
+  // (pegar texto, teclados de algunos celulares) — sin esto, un NaN guardado
+  // acá se propaga al recálculo global de App.js y deja "NaN" en valorPesos
+  // de TODOS los trabajos de esa empresa.
+  const setValorUF = (valor) => setEditedPrecios(p => ({ ...p, valorUF: valor || 0 }));
+  const setValorKm = (valor) => setEditedPrecios(p => ({ ...p, valorKm: valor || 0 }));
   const setPrecioServicio = (servicio, valor) => setEditedPrecios(p => ({ ...p, servicios: { ...p.servicios, [servicio]: valor } }));
   const setPrecioAccesorio = (acc, valor) => setEditedPrecios(p => ({ ...p, accesorios: { ...p.accesorios, [acc]: valor } }));
 

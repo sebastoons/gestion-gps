@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Home } from 'lucide-react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import { deleteFromTable, syncTable, nextTrabajoId, nextEquipoId, nextClienteId } from '../lib/supabase';
+import { deleteFromTable, syncTable, nextTrabajoId, nextEquipoId, agregarOActualizarCliente } from '../lib/supabase';
 import { formatFecha } from '../utils/dateUtils';
-import { ACCESORIOS, preciosDe, calcularUF } from '../utils/pricing';
+import { ACCESORIOS, preciosDe, calcularUF, formatUF } from '../utils/pricing';
 
 // Mismo listado (y mismos nombres exactos) que usa Trabajos.js — antes cada
 // pantalla tenía su propia lista de periféricos con nombres distintos para
@@ -315,22 +315,8 @@ const ValidacionWhatsapp = ({
     }
   };
 
-  const agregarClienteSiNoExiste = async (nombre, empresa) => {
-    if (!nombre?.trim() || !clientes || !setClientes) return;
-    // Sin filtrar por empresa, un cliente con el mismo nombre en OTRA
-    // empresa hacía que este nunca se creara para la empresa actual.
-    const existe = clientes.some(c => c.empresa === empresa
-      && c.nombreCliente.trim().toLowerCase() === nombre.trim().toLowerCase());
-    if (!existe) {
-      const newId = await nextClienteId(clientes);
-      setClientes(prev => [...prev, {
-        id: newId,
-        nombreCliente: nombre.trim(), empresa,
-        nombreContacto1: '', telefono1: '', nombreContacto2: '', telefono2: '',
-        region: '', ciudad: '', comuna: '', direccion: '', tipoVehiculo: ''
-      }]);
-    }
-  };
+  const agregarClienteSiNoExiste = (nombre, empresa) =>
+    agregarOActualizarCliente({ nombreCliente: nombre, empresa }, clientes, setClientes);
 
   // Retorna el mes de facturación en el que quedó registrado el trabajo, para
   // poder avisarle al usuario dónde encontrarlo si no coincide con el mes
@@ -355,7 +341,7 @@ const ValidacionWhatsapp = ({
         servicio: 'Desinstalación', accesorios: [],
         ppuIn: '', ppuOut: showPpuOut ? form.ppuVinOut.toUpperCase() : '',
         imeiIn: '', imeiOut: showGpsOut ? form.gpsOut : '',
-        km: form.kms || '', valorUF: ufDes.toString(), valorPesos: Math.round(ufDes * valorUFMes).toString(),
+        km: form.kms || '', valorUF: formatUF(ufDes), valorPesos: Math.round(ufDes * valorUFMes).toString(),
         empresa: emp, mes
       };
       const job2 = {
@@ -363,7 +349,7 @@ const ValidacionWhatsapp = ({
         servicio: 'Instalación', accesorios: form.perifericos,
         ppuIn: form.ppuVinIn.toUpperCase(), ppuOut: '',
         imeiIn: form.gpsIn, imeiOut: '',
-        km: '', valorUF: ufInst.toString(), valorPesos: Math.round(ufInst * valorUFMes).toString(),
+        km: '', valorUF: formatUF(ufInst), valorPesos: Math.round(ufInst * valorUFMes).toString(),
         empresa: emp, mes
       };
       setTrabajos(prev => [...prev, job1, job2]);
@@ -381,7 +367,7 @@ const ValidacionWhatsapp = ({
         // ingresado, así que los km facturados en Trabajos del Mes/Dashboard
         // para cualquier trabajo cargado por Validación WhatsApp eran
         // siempre 0.
-        km: form.kms || '', valorUF: uf.toString(), valorPesos: Math.round(uf * valorUFMes).toString(),
+        km: form.kms || '', valorUF: formatUF(uf), valorPesos: Math.round(uf * valorUFMes).toString(),
         empresa: emp, mes
       };
       setTrabajos(prev => [...prev, newJob]);
