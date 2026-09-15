@@ -96,12 +96,6 @@ const makeOT = () => ({
   observaciones:'',
 });
 
-const formatRut = val => {
-  const c = val.replace(/[^0-9kK]/g,'').toUpperCase();
-  if (c.length<=1) return c;
-  return `${c.slice(0,-1)}-${c.slice(-1)}`;
-};
-
 const showImeiIn  = s => ['Instalación','Mantención','Reinstalación'].includes(s);
 const showImeiOut = s => ['Desinstalación','Mantención'].includes(s);
 
@@ -167,7 +161,7 @@ const OTField = ({ l, v, full }) => (
 );
 
 // ── OTDoc ─────────────────────────────────────────────────────────────────────
-const OTDoc = ({ ot, numero, empresa, cliente, rut, firma, aceptacion }) => {
+const OTDoc = ({ ot, numero, empresa, cliente, correo, firma, aceptacion }) => {
   const esVF = ot.tipoServicio==='Visita Fallida';
   const cl = ot.checklist||{};
   const clBg = {NA:'#d1d5db',OK:'#16a34a',DETALLE:'#dc2626'};
@@ -263,7 +257,7 @@ const OTDoc = ({ ot, numero, empresa, cliente, rut, firma, aceptacion }) => {
           <div className="otd-sec-ttl">RECEPCIÓN</div>
           <div className="otd-rows">
             <OTField l="NOMBRE" v={cliente} full/>
-            <OTField l="RUT" v={rut}/>
+            <OTField l="CORREO" v={correo}/>
           </div>
           <div className="otd-acept">
             <span className="otd-cl-box" style={{background:aceptacion?'#16a34a':'#d1d5db',flexShrink:0,marginTop:1}}>
@@ -319,7 +313,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
   const [sessionOTs,setSessionOTs] = useState([]);
   const [currentOT,setCurrentOT] = useState(makeOT());
   const [sessionEmpresa,setSessionEmpresa] = useState(empresaSeleccionada||'Entel');
-  const [clienteData,setClienteData] = useState({nombre:'',rut:''});
+  const [clienteData,setClienteData] = useState({nombre:'',correo:''});
   const [aceptacion,setAceptacion] = useState(false);
   const [firma,setFirma] = useState(null);
   const [search,setSearch] = useState('');
@@ -361,7 +355,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
   const endDraw=()=>{isDrawing.current=false;if(canvasRef.current)setFirma(canvasRef.current.toDataURL());};
   const clearFirma=()=>{const c=canvasRef.current;if(c)c.getContext('2d').clearRect(0,0,c.width,c.height);setFirma(null);};
 
-  const startSession=()=>{setSessionOTs([]);setCurrentOT(makeOT());setClienteData({nombre:'',rut:''});setAceptacion(false);setFirma(null);setStep('form');};
+  const startSession=()=>{setSessionOTs([]);setCurrentOT(makeOT());setClienteData({nombre:'',correo:''});setAceptacion(false);setFirma(null);setStep('form');};
 
   const saveCurrentOT=()=>{
     if (!isVF&&!currentOT.ppu){alert('Ingresa la PPU del vehículo.');return;}
@@ -389,13 +383,13 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
       const numeros=[];
       for (let i=0;i<sessionOTs.length;i++) numeros.push(await nextOtNumero(emp, otsList, empresas));
       const newOTs=sessionOTs.map((ot,i)=>({...ot,id:`${sid}-${i}`,numero:numeros[i],
-        sessionId:sid,empresa:emp,cliente:clienteData.nombre,rutCliente:clienteData.rut,
+        sessionId:sid,empresa:emp,cliente:clienteData.nombre,correoCliente:clienteData.correo,
         firma,aceptacion,createdAt:new Date().toISOString(),emailEnviado:false}));
       await saveOTs([...otsList,...newOTs]);
-      // El nombre oficial y el RUT recién tipeados acá son justo el dato de
-      // más calidad que existe sobre este cliente en toda la app — antes
+      // El nombre oficial y el correo recién tipeados acá son justo el dato
+      // de más calidad que existe sobre este cliente en toda la app — antes
       // quedaba sólo en esta OT y nunca llegaba al directorio de Clientes.
-      await agregarOActualizarCliente({ nombreCliente: clienteData.nombre, empresa: emp, rut: clienteData.rut }, clientes || [], setClientes);
+      await agregarOActualizarCliente({ nombreCliente: clienteData.nombre, empresa: emp, correo: clienteData.correo }, clientes || [], setClientes);
       setSessionOTs(newOTs);
       setStep('preview');
       setTimeout(()=>downloadPDF('ot-preview-wrap',`OT-${emp}-${new Date().toISOString().split('T')[0]}`),800);
@@ -445,7 +439,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
     setSessionEmpresa(_empresa || empresaSeleccionada);
     setSessionOTs([]);
     setCurrentOT(otData);
-    setClienteData({ nombre: '', rut: '' });
+    setClienteData({ nombre: '', correo: '' });
     setAceptacion(false);
     setFirma(null);
     setOtQueue(prev => prev.filter(q => q !== item));
@@ -539,7 +533,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
         <div style={{position:'absolute',left:'-9999px',top:0,width:'420px',background:'#f8fafc'}}>
           <div id="ot-history-render">
             <OTDoc ot={historyOT} numero={historyOT.numero} empresa={historyOT.empresa}
-              cliente={historyOT.cliente || historyOT.nombreCliente} rut={historyOT.rutCliente} firma={historyOT.firma} aceptacion={historyOT.aceptacion}/>
+              cliente={historyOT.cliente || historyOT.nombreCliente} correo={historyOT.correoCliente} firma={historyOT.firma} aceptacion={historyOT.aceptacion}/>
           </div>
         </div>
       )}
@@ -552,7 +546,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
               <button className="btn btn-secondary" style={{fontSize:'0.65em'}} onClick={()=>setPreviewOT(null)}><X size={12}/> Cerrar</button>
             </div>
             <OTDoc ot={previewOT} numero={previewOT.numero} empresa={previewOT.empresa}
-              cliente={previewOT.cliente || previewOT.nombreCliente} rut={previewOT.rutCliente} firma={previewOT.firma} aceptacion={previewOT.aceptacion}/>
+              cliente={previewOT.cliente || previewOT.nombreCliente} correo={previewOT.correoCliente} firma={previewOT.firma} aceptacion={previewOT.aceptacion}/>
           </div>
         </div>
       )}
@@ -754,10 +748,10 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
                 <input className="form-input" value={clienteData.nombre}
                   onChange={e=>setClienteData(p=>({...p,nombre:e.target.value}))} placeholder="Nombre o empresa"/>
               </div>
-              <div><label className="filter-label">RUT</label>
-                <input className="form-input" value={clienteData.rut}
-                  onChange={e=>setClienteData(p=>({...p,rut:formatRut(e.target.value)}))}
-                  placeholder="12345678-9" maxLength={10}/>
+              <div><label className="filter-label">Correo</label>
+                <input type="email" className="form-input" value={clienteData.correo}
+                  onChange={e=>setClienteData(p=>({...p,correo:e.target.value}))}
+                  placeholder="cliente@correo.com"/>
               </div>
             </div>
           </div>
@@ -805,7 +799,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
 
   // ── PREVIEW ───────────────────────────────────────────────────────────────
   const otDocProps = (ot) => ({ot, numero:ot.numero, empresa:sessionEmpresa,
-    cliente: ot.cliente || clienteData.nombre || ot.nombreCliente, rut:clienteData.rut, firma, aceptacion});
+    cliente: ot.cliente || clienteData.nombre || ot.nombreCliente, correo:clienteData.correo, firma, aceptacion});
 
   if(step==='preview') return (
     <div className="page-container">
