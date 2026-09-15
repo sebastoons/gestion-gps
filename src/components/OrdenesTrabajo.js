@@ -468,40 +468,36 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
             <h1 className="page-title">Órdenes de Trabajo</h1>
             <button className="btn btn-success" onClick={startSession}><Plus size={14}/> Nueva OT</button>
           </div>
-          {pendingOT && (
-            <div style={{background:'#fef3c7',border:'2px solid #f59e0b',borderRadius:8,padding:'10px 14px',marginBottom:8,display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
-              <span style={{fontFamily:'Quantico',fontSize:'0.7em',textTransform:'uppercase',color:'#78350f',flex:1}}>
-                🔔 OT PENDIENTE — {pendingOT.inst.tipoServicio} | {pendingOT.inst._empresa} | {pendingOT.inst.ppu||'Sin PPU'} | {pendingOT.inst.nombreCliente||''}
-              </span>
-              <button className="btn btn-primary" style={{fontSize:'0.7em',padding:'4px 12px'}}
-                onClick={()=>{
-                  const toAdd = [pendingOT.inst];
-                  if (pendingOT.desinst) toAdd.push(pendingOT.desinst);
-                  if (setOtQueue) setOtQueue(prev=>[...prev,...toAdd]);
-                  if (setPendingOT) setPendingOT(null);
-                  deleteFromTable('ot_pendiente', 'current');
-                }}>
-                Crear OT ✓
-              </button>
-              <button className="btn btn-secondary" style={{fontSize:'0.7em',padding:'4px 8px'}}
-                onClick={()=>{ if (setPendingOT) setPendingOT(null); deleteFromTable('ot_pendiente', 'current'); }}>
-                ✕
-              </button>
+          {(pendingOT || (otQueue && otQueue.length > 0)) && (
+            <div className="tickets-pendientes-wrap">
+              {pendingOT && (
+                <div className="ticket-pendiente">
+                  <span className="ticket-cliente">{pendingOT.inst.nombreCliente || 'Sin nombre'}</span>
+                  <span className="ticket-estado">Pendiente</span>
+                  <button className="ticket-btn"
+                    onClick={()=>{
+                      const toAdd = [pendingOT.inst];
+                      if (pendingOT.desinst) toAdd.push(pendingOT.desinst);
+                      if (setOtQueue) setOtQueue(prev=>[...prev,...toAdd]);
+                      if (setPendingOT) setPendingOT(null);
+                      deleteFromTable('ot_pendiente', 'current');
+                    }}>
+                    Ticket
+                  </button>
+                  <button className="ticket-btn-x" title="Descartar"
+                    onClick={()=>{ if (setPendingOT) setPendingOT(null); deleteFromTable('ot_pendiente', 'current'); }}><X size={10}/></button>
+                </div>
+              )}
+              {otQueue && otQueue.map((item) => (
+                <div key={item.id || item.ppu} className="ticket-pendiente">
+                  <span className="ticket-cliente">{item.nombreCliente || item.cliente || 'Sin nombre'}</span>
+                  <span className="ticket-estado">Pendiente</span>
+                  <button className="ticket-btn" onClick={()=>cargarDesdeQueue(item)}>Ticket</button>
+                  <button className="ticket-btn-x" title="Descartar" onClick={()=>quitarDeQueue(item)}><X size={10}/></button>
+                </div>
+              ))}
             </div>
           )}
-          {otQueue && otQueue.map((item) => (
-            <div key={item.id || item.ppu} className="ot-banner-warn" style={{background:'#fffbeb',border:'1px solid #fcd34d',borderRadius:8,padding:'10px 14px',marginBottom:6,display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
-              <span style={{fontFamily:'Quantico',fontSize:'0.7em',textTransform:'uppercase',color:'#92400e',flex:1}}>
-                📋 {item.tipoServicio} — {item._empresa} | {item.ppu||'Sin PPU'} | {item.nombreCliente||item.cliente||''}
-              </span>
-              <button className="btn btn-primary" style={{fontSize:'0.7em',padding:'4px 12px'}} onClick={()=>cargarDesdeQueue(item)}>
-                ✓
-              </button>
-              <button className="btn btn-secondary" style={{fontSize:'0.7em',padding:'4px 8px'}} onClick={()=>quitarDeQueue(item)}>
-                ✕
-              </button>
-            </div>
-          ))}
           <div className="ot-filter-bar">
             <div style={{position:'relative',flex:1}}>
               <Search size={13} style={{position:'absolute',left:8,top:'50%',transform:'translateY(-50%)',color:'#9ca3af'}}/>

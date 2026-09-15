@@ -197,15 +197,18 @@ const FotosTrabajo = ({ setCurrentView, registros, setRegistros, empresas, empre
             </button>
           </div>
 
-          {pendientes && pendientes.map(item => (
-            <div key={item.id} className="ft-banner-pendiente">
-              <span>
-                📷 ¿Llenar fotos de {item.servicio} — {item.empresa} | {item.ppu || 'Sin PPU'} | {item.cliente || ''}?
-              </span>
-              <button className="btn btn-purple" onClick={() => llenarPendiente(item)}>Llenar ✓</button>
-              <button className="btn btn-secondary" onClick={() => descartarPendiente(item)}>✕</button>
+          {pendientes && pendientes.length > 0 && (
+            <div className="tickets-pendientes-wrap">
+              {pendientes.map(item => (
+                <div key={item.id} className="ticket-pendiente">
+                  <span className="ticket-cliente">{item.cliente || 'Sin nombre'}</span>
+                  <span className="ticket-estado">Pendiente</span>
+                  <button className="ticket-btn" onClick={() => llenarPendiente(item)}>Ticket</button>
+                  <button className="ticket-btn-x" title="Descartar" onClick={() => descartarPendiente(item)}><X size={10}/></button>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
 
           <div className="filter-container">
             <div>
