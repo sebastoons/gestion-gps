@@ -410,7 +410,14 @@ const ValidacionWhatsapp = ({
     const { mes, empresa } = await agregarATrabajos();
     await agregarClienteSiNoExiste(form.cliente, empresa);
     setUltimoRegistro({ mes, empresa });
-    if (setPendingOT) setPendingOT({ inst: crearDraftOT(), desinst: esReinst ? crearDraftOTDesinst() : null });
+    // Los "id" acá son sólo para la persistencia del pendiente/la cola (ver
+    // App.js) — se pisan cuando la OT se guarda de verdad en finalizeSession.
+    if (setPendingOT) {
+      setPendingOT({
+        inst: { ...crearDraftOT(), id: `OTQ${Date.now()}${Math.random().toString(36).slice(2, 6)}` },
+        desinst: esReinst ? { ...crearDraftOTDesinst(), id: `OTQ${Date.now()}${Math.random().toString(36).slice(2, 6)}` } : null,
+      });
+    }
     // A diferencia de pendingOT (que se pisa), acá se acumula: si se valida
     // más de un vehículo seguido, Registro Fotográfico debe preguntar por
     // todos, uno por uno, cuando el usuario finalmente entre a esa sección.
@@ -731,12 +738,13 @@ const ValidacionWhatsapp = ({
                       if (pendingOT.desinst) toAdd.push(pendingOT.desinst);
                       if (setOtQueue) setOtQueue(prev => [...prev, ...toAdd]);
                       if (setPendingOT) setPendingOT(null);
+                      deleteFromTable('ot_pendiente', 'current');
                       setCurrentView('ordenes');
                     }}>
                     Sí →
                   </button>
                   <button className="btn btn-secondary" style={{ fontSize:'0.7em', padding:'4px 8px' }}
-                    onClick={() => { if (setPendingOT) setPendingOT(null); }}>✕</button>
+                    onClick={() => { if (setPendingOT) setPendingOT(null); deleteFromTable('ot_pendiente', 'current'); }}>✕</button>
                 </div>
               </div>
             )}
