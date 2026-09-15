@@ -135,7 +135,7 @@ const App = () => {
   const [fotosTrabajo, setFotosTrabajo] = useState([]);
   const [materiales, setMateriales] = useState([]);
   const [loaded, setLoaded] = useState(false);
-  const skipSync = useRef({ trabajos: true, equiposNuevos: true, equiposRetirados: true, equiposMalos: true, clientes: true, materiales: true, empresas: true, preciosEmpresas: true, fotosTrabajo: true, fotosPendientes: true });
+  const skipSync = useRef({ trabajos: true, equiposNuevos: true, equiposRetirados: true, equiposMalos: true, clientes: true, materiales: true, empresas: true, preciosEmpresas: true, fotosTrabajo: true, fotosPendientes: true, otQueue: true, pendingOT: true });
   const [escanerReturn, setEscanerReturn] = useState('home');
   const [materError, setMaterError] = useState(null);
   // Precios (valor UF, valor km, tablas de servicios/accesorios) por
@@ -205,7 +205,7 @@ const App = () => {
   // Cargar desde Supabase al iniciar — única fuente de verdad
   useEffect(() => {
     const loadData = async () => {
-      const [t, en, er, em, cl, mat, emp, prec, fotos, fotosPend] = await Promise.all([
+      const [t, en, er, em, cl, mat, emp, prec, fotos, fotosPend, otQ, otPend] = await Promise.all([
         loadTable('trabajos'),
         loadTable('equipos_nuevos'),
         loadTable('equipos_retirados'),
@@ -216,6 +216,8 @@ const App = () => {
         loadTable('precios_empresa'),
         loadTable('fotos_trabajo'),
         loadTable('fotos_pendientes'),
+        loadTable('ot_queue'),
+        loadTable('ot_pendiente'),
       ]);
       // Si Supabase ya tiene empresas guardadas, esas mandan (skip del eco de
       // sincronización). Si la tabla está vacía (proyecto recién conectado),
@@ -224,7 +226,7 @@ const App = () => {
       skipSync.current = {
         trabajos: true, equiposNuevos: true, equiposRetirados: true, equiposMalos: true,
         clientes: true, materiales: true, empresas: emp.length > 0, preciosEmpresas: true, fotosTrabajo: true,
-        fotosPendientes: true,
+        fotosPendientes: true, otQueue: true, pendingOT: true,
       };
       setTrabajos(t.map(norm));
       setEquiposNuevos(en.map(norm));
@@ -240,6 +242,10 @@ const App = () => {
       setPreciosEmpresas(Object.fromEntries((prec || []).map(p => [p.empresa, p])));
       setFotosTrabajo((fotos || []).map(norm));
       setFotosPendientes((fotosPend || []).map(norm));
+      // otQueue/pendingOT usan "_empresa" (no "empresa"), así que no pasan
+      // por norm() — se dejan tal cual se guardaron.
+      setOtQueue(otQ || []);
+      setPendingOT((otPend && otPend[0]) || null);
       setLoaded(true);
     };
     loadData();
@@ -297,6 +303,31 @@ const App = () => {
     const t = setTimeout(() => syncTable('fotos_pendientes', fotosPendientes), 300);
     return () => clearTimeout(t);
   }, [fotosPendientes, loaded]);
+
+  // Tickets de OT pendientes (ver ValidacionWhatsapp.js/OrdenesTrabajo.js):
+  // antes vivían sólo en memoria y se perdían con cualquier recarga o
+  // actualización de la app — igual que fotosPendientes, ahora se persisten
+  // para que sobrevivan a cerrar/actualizar la app y se sincronicen entre
+  // dispositivos. Este efecto sólo hace upsert; las bajas van con
+  // deleteFromTable en el punto donde se resuelve/descarta cada ticket.
+  useEffect(() => {
+    if (!loaded) return;
+    if (skipSync.current.otQueue) { skipSync.current.otQueue = false; return; }
+    const t = setTimeout(() => syncTable('ot_queue', otQueue), 300);
+    return () => clearTimeout(t);
+  }, [otQueue, loaded]);
+
+  // pendingOT es un único objeto (o null), no un array — se guarda como una
+  // sola fila de id fijo "current" en vez de una tabla-lista como las demás.
+  useEffect(() => {
+    if (!loaded) return;
+    if (skipSync.current.pendingOT) { skipSync.current.pendingOT = false; return; }
+    const t = setTimeout(() => {
+      if (pendingOT) syncTable('ot_pendiente', [{ ...pendingOT, id: 'current' }]);
+      else deleteFromTable('ot_pendiente', 'current');
+    }, 300);
+    return () => clearTimeout(t);
+  }, [pendingOT, loaded]);
 
   // Empresas: agregar sincroniza (upsert); quitar es explícito, ver onRemoveEmpresa.
   useEffect(() => {
@@ -384,6 +415,10 @@ const App = () => {
         async () => { const d = await loadTable('fotos_trabajo'); skipSync.current.fotosTrabajo = true; setFotosTrabajo(d.map(norm)); })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'fotos_pendientes' },
         async () => { const d = await loadTable('fotos_pendientes'); skipSync.current.fotosPendientes = true; setFotosPendientes(d.map(norm)); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ot_queue' },
+        async () => { const d = await loadTable('ot_queue'); skipSync.current.otQueue = true; setOtQueue(d || []); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ot_pendiente' },
+        async () => { const d = await loadTable('ot_pendiente'); skipSync.current.pendingOT = true; setPendingOT((d && d[0]) || null); })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'materiales' },
         // Sin el guard "d.length > 0" que tenía antes: si otro dispositivo
         // borra el último material/empresa, este también debe reflejar la

@@ -443,10 +443,17 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
     setAceptacion(false);
     setFirma(null);
     setOtQueue(prev => prev.filter(q => q !== item));
+    // El efecto de sync de App.js sólo hace upsert de lo que queda en el
+    // array — sin este borrado explícito, el pendiente resuelto seguiría
+    // en la tabla remota y reaparecería en otro dispositivo o al recargar.
+    if (item.id) deleteFromTable('ot_queue', item.id);
     setStep('form');
   };
 
-  const quitarDeQueue = (item) => setOtQueue(prev => prev.filter(q => q !== item));
+  const quitarDeQueue = (item) => {
+    setOtQueue(prev => prev.filter(q => q !== item));
+    if (item.id) deleteFromTable('ot_queue', item.id);
+  };
 
   // ── LIST ──────────────────────────────────────────────────────────────────
   if(step==='list') return (
@@ -472,17 +479,18 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
                   if (pendingOT.desinst) toAdd.push(pendingOT.desinst);
                   if (setOtQueue) setOtQueue(prev=>[...prev,...toAdd]);
                   if (setPendingOT) setPendingOT(null);
+                  deleteFromTable('ot_pendiente', 'current');
                 }}>
                 Crear OT ✓
               </button>
               <button className="btn btn-secondary" style={{fontSize:'0.7em',padding:'4px 8px'}}
-                onClick={()=>{ if (setPendingOT) setPendingOT(null); }}>
+                onClick={()=>{ if (setPendingOT) setPendingOT(null); deleteFromTable('ot_pendiente', 'current'); }}>
                 ✕
               </button>
             </div>
           )}
-          {otQueue && otQueue.map((item, i) => (
-            <div key={i} className="ot-banner-warn" style={{background:'#fffbeb',border:'1px solid #fcd34d',borderRadius:8,padding:'10px 14px',marginBottom:6,display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+          {otQueue && otQueue.map((item) => (
+            <div key={item.id || item.ppu} className="ot-banner-warn" style={{background:'#fffbeb',border:'1px solid #fcd34d',borderRadius:8,padding:'10px 14px',marginBottom:6,display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
               <span style={{fontFamily:'Quantico',fontSize:'0.7em',textTransform:'uppercase',color:'#92400e',flex:1}}>
                 📋 {item.tipoServicio} — {item._empresa} | {item.ppu||'Sin PPU'} | {item.nombreCliente||item.cliente||''}
               </span>
