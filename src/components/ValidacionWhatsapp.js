@@ -23,10 +23,14 @@ const MARCAS_VAL = [
 
 const AÑOS_VAL = Array.from({ length: 37 }, (_, i) => String(2026 - i));
 
+// Mismo listado que usa OrdenesTrabajo.js — el color elegido acá se traspasa
+// tal cual al crear la OT (ver crearDraftOT), así que deben coincidir.
+const COLORES_VAL = ['Blanco','Negro','Gris','Plata','Rojo','Azul','Verde','Amarillo','Naranja','Café/Marrón','Beige','Celeste','Morado','Otro'];
+
 const VACIO = {
   cliente: '', fecha: '', servicio: 'Instalación', empresa: 'Entel',
-  ppuVinIn: '', ppuVinOut: '', marca: '', modelo: '', anio: '',
-  gpsIn: '', gpsOut: '', kms: '',
+  ppuVinIn: '', ppuVinOut: '', marca: '', modelo: '', anio: '', color: '',
+  gpsIn: '', gpsOut: '', entradaDigital: '', kms: '',
   ubicacion: '', perifericos: [], detalles: '', trabajo: '',
   destinoDesinstalacion: 'Retirado',
   compania: '', idProveedor: ''
@@ -38,8 +42,8 @@ const VACIO = {
 // piden algunas empresas GPS, ej. Mavi GPS) parten arriba de todo por defecto.
 const ORDEN_CAMPOS_DEFAULT = [
   'compania', 'idProveedor', 'empresa', 'cliente', 'fecha', 'servicio',
-  'ppuVinIn', 'ppuVinOut', 'marca', 'modelo', 'anio', 'gpsIn', 'gpsOut',
-  'kms', 'ubicacion', 'perifericos', 'detalles', 'trabajo', 'destino',
+  'ppuVinIn', 'ppuVinOut', 'marca', 'modelo', 'anio', 'color', 'gpsIn', 'gpsOut',
+  'entradaDigital', 'kms', 'ubicacion', 'perifericos', 'detalles', 'trabajo', 'destino',
 ];
 const ORDEN_CAMPOS_KEY = 'ordenCamposValidacion';
 const cargarOrdenCampos = () => {
@@ -57,8 +61,8 @@ const cargarOrdenCampos = () => {
 const SEGMENTO_DE_CAMPO = {
   empresa: 'empresa', cliente: 'cliente', fecha: 'fecha', servicio: 'servicio',
   ppuVinIn: 'ppu', ppuVinOut: 'ppu',
-  marca: 'vehiculo', modelo: 'vehiculo', anio: 'vehiculo',
-  gpsIn: 'gps', gpsOut: 'gps',
+  marca: 'vehiculo', modelo: 'vehiculo', anio: 'vehiculo', color: 'color',
+  gpsIn: 'gps', gpsOut: 'gps', entradaDigital: 'entradaDigital',
   kms: 'kms', ubicacion: 'ubicacion', perifericos: 'perifericos',
   detalles: 'detalles', trabajo: 'trabajo',
   compania: 'compania', idProveedor: 'idProveedor',
@@ -172,7 +176,7 @@ const ValidacionWhatsapp = ({
       tecnico: 'Sebastian Parra', empresaInstaladora: 'Sebastian Parra',
       ppu: (form.ppuVinIn || '').toUpperCase(),
       marca: form.marca, modelo: form.modelo, anio: form.anio,
-      color: '', kilometraje: form.kms || '',
+      color: form.color || '', kilometraje: form.kms || '',
       imeiIn: form.gpsIn || '',
       imeiOut: esReinst ? '' : (showGpsOut ? (form.gpsOut || '') : ''),
       accesoriosGPS: [],
@@ -198,7 +202,7 @@ const ValidacionWhatsapp = ({
     // nuevo a mano pese a que ya se habían ingresado una vez.
     ppu: (showPpuOut && form.ppuVinOut ? form.ppuVinOut : form.ppuVinIn).toUpperCase(),
     marca: form.marca, modelo: form.modelo, anio: form.anio,
-    color: '', kilometraje: '',
+    color: form.color || '', kilometraje: '',
     imeiIn: '',
     imeiOut: showGpsOut ? (form.gpsOut || '') : '',
     accesoriosGPS: [],
@@ -250,6 +254,7 @@ const ValidacionWhatsapp = ({
         const vm = [form.marca, form.modelo, form.anio].filter(Boolean).join(' ');
         return vm ? `*MARCA/MODELO*: ${vm}` : null;
       }
+      case 'color': return form.color ? `*COLOR*: ${form.color}` : null;
       case 'gps': {
         if (!form.gpsIn && !(showGpsOut && form.gpsOut)) return null;
         const p = [];
@@ -257,6 +262,7 @@ const ValidacionWhatsapp = ({
         if (showGpsOut && form.gpsOut) p.push(`*GPS OUT*: ${form.gpsOut}`);
         return p.join(' | ');
       }
+      case 'entradaDigital': return form.entradaDigital ? `*E.D.*: ${form.entradaDigital}` : null;
       case 'kms': return form.kms ? `*KMS ODOMETRO*: ${form.kms}` : null;
       case 'ubicacion': return form.ubicacion ? `*UBICACION*: ${cap(form.ubicacion)}` : null;
       case 'perifericos': return form.perifericos.length ? `*PERIFERICOS*: ${form.perifericos.join(', ')}` : null;
@@ -419,6 +425,7 @@ const ValidacionWhatsapp = ({
       marca: prev.marca,
       modelo: prev.modelo,
       anio: prev.anio,
+      color: prev.color,
     }));
     setShowPpuOut(false);
     setShowGpsOut(false);
@@ -540,6 +547,15 @@ const ValidacionWhatsapp = ({
         </select>
       </>
     ),
+    color: (
+      <>
+        <label style={lbl}>COLOR</label>
+        <select className="form-select" value={form.color} onChange={e => set('color', e.target.value)}>
+          <option value="">Seleccionar...</option>
+          {COLORES_VAL.map(c => <option key={c}>{c}</option>)}
+        </select>
+      </>
+    ),
     gpsIn: (
       <>
         <label style={lbl}>GPS IN (IMEI)</label>
@@ -566,6 +582,12 @@ const ValidacionWhatsapp = ({
             {gpsOutEstado && <span style={badge(gpsOutEstado)}>{gpsOutEstado}</span>}
           </div>
         )}
+      </>
+    ),
+    entradaDigital: (
+      <>
+        <label style={lbl}>ENTRADA DIGITAL (E.D.)</label>
+        <input className="form-input" value={form.entradaDigital} onChange={e => set('entradaDigital', e.target.value)} placeholder="Ej: 1, Ignición, Puerta..." />
       </>
     ),
     kms: (
