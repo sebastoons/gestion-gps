@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Home } from 'lucide-react';
+import { Home, X } from 'lucide-react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { deleteFromTable, syncTable, nextTrabajoId, nextEquipoId, agregarOActualizarCliente } from '../lib/supabase';
 import { formatFecha } from '../utils/dateUtils';
@@ -727,12 +727,11 @@ const ValidacionWhatsapp = ({
             )}
 
             {pendingOT && (
-              <div style={{ marginTop:12, display:'flex', flexDirection:'column', gap:8 }}>
-                <div className="val-banner" style={{ padding:'10px 14px', background:'#fffbeb', border:'1px solid #fcd34d', borderRadius:8, display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
-                  <span style={{ fontFamily:'Quantico', fontSize:'0.7em', color:'#92400e', flex:1 }}>
-                    📋 ¿Crear OT de {pendingOT.inst.tipoServicio}?
-                  </span>
-                  <button className="btn btn-primary" style={{ fontSize:'0.7em', padding:'4px 10px' }}
+              <div className="tickets-pendientes-wrap" style={{ marginTop:12 }}>
+                <div className="ticket-pendiente">
+                  <span className="ticket-cliente">{pendingOT.inst.nombreCliente || 'Sin nombre'}</span>
+                  <span className="ticket-estado">Pendiente</span>
+                  <button className="ticket-btn"
                     onClick={() => {
                       const toAdd = [pendingOT.inst];
                       if (pendingOT.desinst) toAdd.push(pendingOT.desinst);
@@ -741,10 +740,10 @@ const ValidacionWhatsapp = ({
                       deleteFromTable('ot_pendiente', 'current');
                       setCurrentView('ordenes');
                     }}>
-                    Sí →
+                    Ticket
                   </button>
-                  <button className="btn btn-secondary" style={{ fontSize:'0.7em', padding:'4px 8px' }}
-                    onClick={() => { if (setPendingOT) setPendingOT(null); deleteFromTable('ot_pendiente', 'current'); }}>✕</button>
+                  <button className="ticket-btn-x" title="Descartar"
+                    onClick={() => { if (setPendingOT) setPendingOT(null); deleteFromTable('ot_pendiente', 'current'); }}><X size={10}/></button>
                 </div>
               </div>
             )}

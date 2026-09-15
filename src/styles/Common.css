@@ -1074,15 +1074,6 @@ body.dark select option { background: #0f172a; color: #e2e8f0; }
 .dark .perifedrop-menu    { background: #1a2744 !important; border-color: #334155 !important; box-shadow: 0 4px 16px rgba(0,0,0,0.4) !important; }
 .dark .perifedrop-menu label { color: #cbd5e1; }
 
-/* ── Dark mode: banners amarillos ── */
-.dark .val-banner,
-.dark .ot-banner-warn {
-  background: rgba(120,80,0,0.18) !important;
-  border-color: #a16207 !important;
-}
-.dark .val-banner span,
-.dark .ot-banner-warn span { color: #fde68a !important; }
-
 /* ── Dark mode: preview mensaje WhatsApp ── */
 .dark .val-preview {
   background: rgba(22,163,74,0.1) !important;
@@ -1108,3 +1099,43 @@ body.dark select option { background: #0f172a; color: #e2e8f0; }
 /* ── Dark mode: date input ── */
 .dark .form-input[type="date"] { color-scheme: dark; }
 .dark .form-input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.6; }
+
+/* ── Tickets pendientes (Validación WhatsApp / OT / Registro Fotográfico) ──
+   Compactos a propósito: con el uso normal de la app se pueden acumular
+   varios (uno por cada vehículo validado sin resolver todavía), así que se
+   diseñaron como chips angostos que se envuelven en fila en vez de banners
+   de ancho completo apilados uno debajo del otro. */
+.tickets-pendientes-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.ticket-pendiente {
+  display: flex; align-items: center; gap: 6px; max-width: 100%;
+  padding: 4px 6px 4px 10px; border-radius: 14px;
+  background: #fef3c7; border: 1px solid #f59e0b;
+}
+.ticket-cliente {
+  font-family: 'Changa'; font-weight: bold; font-size: 0.62em; text-transform: uppercase;
+  color: #78350f; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ticket-estado {
+  font-family: 'Quantico'; font-size: 0.5em; text-transform: uppercase;
+  color: #b45309; opacity: 0.85; white-space: nowrap;
+}
+.ticket-btn {
+  font-family: 'Quantico'; font-size: 0.55em; font-weight: bold; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 10px; border: none; cursor: pointer;
+  background: #f59e0b; color: #fff; white-space: nowrap;
+}
+.ticket-btn:hover { background: #d97706; }
+.ticket-btn-x {
+  width: 18px; height: 18px; border-radius: 50%; border: none; cursor: pointer; flex-shrink: 0;
+  background: rgba(120,53,15,0.15); color: #78350f;
+  display: flex; align-items: center; justify-content: center;
+}
+.ticket-btn-x:hover { background: rgba(120,53,15,0.28); }
+
+.dark .ticket-pendiente { background: rgba(120,80,0,0.18); border-color: #a16207; }
+.dark .ticket-cliente { color: #fde68a; }
+.dark .ticket-estado { color: #fcd34d; }
+.dark .ticket-btn { background: #b45309; color: #fff8e1; }
+.dark .ticket-btn:hover { background: #92400e; }
+.dark .ticket-btn-x { background: rgba(253,230,138,0.12); color: #fde68a; }
+.dark .ticket-btn-x:hover { background: rgba(253,230,138,0.22); }
