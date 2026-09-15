@@ -36,6 +36,25 @@
 .dark .ft-foto-slot, .dark .ft-foto-uploading { background:#0f172a; border-color:#334155; color:#94a3b8; }
 .dark .ft-foto-add { border-color:#a855f7; }
 
+/* Elegir origen de la foto (cámara o galería) — reemplaza al botón
+   "Agregar foto" en el mismo espacio de la grilla hasta que se elige uno. */
+.ft-foto-origen {
+  position:relative; aspect-ratio:1/1; width:100%; display:flex; flex-direction:column;
+  gap:4px; justify-content:center; padding:4px; border:1px dashed #a855f7; border-radius:8px;
+}
+.ft-foto-origen-btn {
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+  background:rgba(168,85,247,0.08); border:none; border-radius:6px; cursor:pointer;
+  color:#a855f7; font-family:'Quantico'; font-size:0.5em; text-transform:uppercase;
+}
+.ft-foto-origen-cancel {
+  position:absolute; top:3px; right:3px; width:16px; height:16px; border-radius:50%;
+  background:rgba(15,23,42,0.55); color:#fff; border:none; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; z-index:1;
+}
+.dark .ft-foto-origen { border-color:#a855f7; }
+.dark .ft-foto-origen-btn { background:rgba(168,85,247,0.18); }
+
 /* ── Modal "Ver" (detalle + galería) ── */
 .ft-detalle-modal {
   background:#f8fafc; border-radius:12px; padding:16px; width:100%; max-width:480px;

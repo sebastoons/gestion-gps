@@ -144,7 +144,7 @@ export const agregarOActualizarCliente = async (datos, clientesActuales, setClie
   const clave = nombreClienteClave(nombreCliente);
   const existente = clientesActuales.find(c => c.empresa === empresa && nombreClienteClave(c.nombreCliente) === clave);
   if (existente) {
-    const CAMPOS_RELLENABLES = ['rut', 'nombreContacto1', 'telefono1', 'nombreContacto2', 'telefono2', 'region', 'ciudad', 'comuna', 'direccion', 'tipoVehiculo'];
+    const CAMPOS_RELLENABLES = ['rut', 'correo', 'nombreContacto1', 'telefono1', 'nombreContacto2', 'telefono2', 'region', 'ciudad', 'comuna', 'direccion', 'tipoVehiculo'];
     const relleno = {};
     let hayRelleno = false;
     CAMPOS_RELLENABLES.forEach(campo => {
@@ -157,7 +157,7 @@ export const agregarOActualizarCliente = async (datos, clientesActuales, setClie
   setClientes(prev => [...prev, {
     id: newId,
     nombreCliente, empresa,
-    rut: datos.rut || '',
+    rut: datos.rut || '', correo: datos.correo || '',
     nombreContacto1: '', telefono1: '', nombreContacto2: '', telefono2: '',
     region: '', ciudad: '', comuna: '', direccion: '', tipoVehiculo: ''
   }]);

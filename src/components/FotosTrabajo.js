@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Home, Plus, Trash2, Search, Camera, X, Eye } from 'lucide-react';
+import { Home, Plus, Trash2, Search, Camera, X, Eye, Image as ImageIcon } from 'lucide-react';
 import { deleteFromTable, nextFotoTrabajoId, subirFotoTrabajo, eliminarFotoTrabajo, MAX_FOTO_BYTES } from '../lib/supabase';
 import { formatFecha } from '../utils/dateUtils';
 import '../styles/FotosTrabajo.css';
@@ -13,9 +13,14 @@ const VACIO = {
 };
 
 // ── Carga de fotos: hasta 4 por sección, 5MB c/u, sube a Supabase Storage ────
+// "Agregar foto" pregunta primero si es con la cámara o desde la galería —
+// dos inputs ocultos separados, uno con capture (abre la cámara directo en
+// el celular) y otro sin capture (abre el selector de archivos/galería).
 const FotosUpload = ({ fotos, onChange, onUploadingChange, carpeta }) => {
   const [subiendo, setSubiendo] = useState(false);
-  const inputRef = useRef(null);
+  const [eligiendoOrigen, setEligiendoOrigen] = useState(false);
+  const inputCamaraRef = useRef(null);
+  const inputGaleriaRef = useRef(null);
 
   const marcarSubiendo = (v) => { setSubiendo(v); if (onUploadingChange) onUploadingChange(v); };
 
@@ -62,12 +67,25 @@ const FotosUpload = ({ fotos, onChange, onUploadingChange, carpeta }) => {
         </div>
       ))}
       {subiendo && <div className="ft-foto-uploading">Subiendo...</div>}
-      {fotos.length < MAX_FOTOS && !subiendo && (
-        <button type="button" className="ft-foto-add" onClick={() => inputRef.current?.click()}>
+      {fotos.length < MAX_FOTOS && !subiendo && !eligiendoOrigen && (
+        <button type="button" className="ft-foto-add" onClick={() => setEligiendoOrigen(true)}>
           <Camera size={18}/> Agregar foto
         </button>
       )}
-      <input ref={inputRef} type="file" accept="image/*" capture="environment" multiple
+      {fotos.length < MAX_FOTOS && !subiendo && eligiendoOrigen && (
+        <div className="ft-foto-origen">
+          <button type="button" className="ft-foto-origen-cancel" onClick={() => setEligiendoOrigen(false)} title="Cancelar"><X size={12}/></button>
+          <button type="button" className="ft-foto-origen-btn" onClick={() => { setEligiendoOrigen(false); inputCamaraRef.current?.click(); }}>
+            <Camera size={16}/> Cámara
+          </button>
+          <button type="button" className="ft-foto-origen-btn" onClick={() => { setEligiendoOrigen(false); inputGaleriaRef.current?.click(); }}>
+            <ImageIcon size={16}/> Galería
+          </button>
+        </div>
+      )}
+      <input ref={inputCamaraRef} type="file" accept="image/*" capture="environment" multiple
+        style={{display:'none'}} onChange={handleFiles}/>
+      <input ref={inputGaleriaRef} type="file" accept="image/*" multiple
         style={{display:'none'}} onChange={handleFiles}/>
     </div>
   );
