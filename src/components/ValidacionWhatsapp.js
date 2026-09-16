@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Home, X } from 'lucide-react';
+import { Home } from 'lucide-react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { deleteFromTable, syncTable, nextTrabajoId, nextEquipoId, agregarOActualizarCliente } from '../lib/supabase';
 import { formatFecha } from '../utils/dateUtils';
@@ -137,7 +137,6 @@ const ValidacionWhatsapp = ({
   materiales, setMateriales,
   mesSeleccionado, setMesSeleccionado, setOtQueue,
   empresaSeleccionada, setEmpresaSeleccionada,
-  pendingOT, setPendingOT,
   setFotosPendientes,
   preciosEmpresas,
 }) => {
@@ -410,17 +409,17 @@ const ValidacionWhatsapp = ({
     const { mes, empresa } = await agregarATrabajos();
     await agregarClienteSiNoExiste(form.cliente, empresa);
     setUltimoRegistro({ mes, empresa });
-    // Los "id" acá son sólo para la persistencia del pendiente/la cola (ver
-    // App.js) — se pisan cuando la OT se guarda de verdad en finalizeSession.
-    if (setPendingOT) {
-      setPendingOT({
-        inst: { ...crearDraftOT(), id: `OTQ${Date.now()}${Math.random().toString(36).slice(2, 6)}` },
-        desinst: esReinst ? { ...crearDraftOTDesinst(), id: `OTQ${Date.now()}${Math.random().toString(36).slice(2, 6)}` } : null,
-      });
+    // Se agrega directo a la cola (otQueue), igual que fotosPendientes —
+    // antes pasaba primero por un "pendingOT" de un solo puesto que se pisaba
+    // con la siguiente validación: si se validaban dos vehículos seguidos sin
+    // aceptar el primero, ese ticket se perdía en silencio. Los "id" acá son
+    // sólo para la persistencia de la cola (ver App.js) — se pisan cuando la
+    // OT se guarda de verdad en finalizeSession.
+    if (setOtQueue) {
+      const nuevosOT = [{ ...crearDraftOT(), id: `OTQ${Date.now()}${Math.random().toString(36).slice(2, 6)}` }];
+      if (esReinst) nuevosOT.push({ ...crearDraftOTDesinst(), id: `OTQ${Date.now()}${Math.random().toString(36).slice(2, 6)}_d` });
+      setOtQueue(prev => [...prev, ...nuevosOT]);
     }
-    // A diferencia de pendingOT (que se pisa), acá se acumula: si se valida
-    // más de un vehículo seguido, Registro Fotográfico debe preguntar por
-    // todos, uno por uno, cuando el usuario finalmente entre a esa sección.
     if (setFotosPendientes) {
       setFotosPendientes(prev => [...prev, { ...crearDraftFoto(), id: `FP${Date.now()}${Math.random().toString(36).slice(2, 6)}` }]);
     }
@@ -723,28 +722,6 @@ const ValidacionWhatsapp = ({
                     Ver en Trabajos →
                   </button>
                 )}
-              </div>
-            )}
-
-            {pendingOT && (
-              <div className="tickets-pendientes-wrap" style={{ marginTop:12 }}>
-                <div className="ticket-pendiente">
-                  <span className="ticket-cliente">{pendingOT.inst.nombreCliente || 'Sin nombre'}</span>
-                  <span className="ticket-estado">Pendiente</span>
-                  <button className="ticket-btn"
-                    onClick={() => {
-                      const toAdd = [pendingOT.inst];
-                      if (pendingOT.desinst) toAdd.push(pendingOT.desinst);
-                      if (setOtQueue) setOtQueue(prev => [...prev, ...toAdd]);
-                      if (setPendingOT) setPendingOT(null);
-                      deleteFromTable('ot_pendiente', 'current');
-                      setCurrentView('ordenes');
-                    }}>
-                    Ticket
-                  </button>
-                  <button className="ticket-btn-x" title="Descartar"
-                    onClick={() => { if (setPendingOT) setPendingOT(null); deleteFromTable('ot_pendiente', 'current'); }}><X size={10}/></button>
-                </div>
               </div>
             )}
           </div>
