@@ -307,7 +307,7 @@ const downloadImage = async (elementId, filename) => {
 };
 
 // ── Componente principal ──────────────────────────────────────────────────────
-const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue, setOtQueue, pendingOT, setPendingOT, clientes, setClientes }) => {
+const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue, setOtQueue, clientes, setClientes }) => {
   const [step,setStep] = useState('list');
   const [otsList,setOtsList] = useState([]);
   const [sessionOTs,setSessionOTs] = useState([]);
@@ -468,27 +468,9 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
             <h1 className="page-title">Órdenes de Trabajo</h1>
             <button className="btn btn-success" onClick={startSession}><Plus size={14}/> Nueva OT</button>
           </div>
-          {(pendingOT || (otQueue && otQueue.length > 0)) && (
+          {otQueue && otQueue.length > 0 && (
             <div className="tickets-pendientes-wrap">
-              {pendingOT && (
-                <div className="ticket-pendiente">
-                  <span className="ticket-cliente">{pendingOT.inst.nombreCliente || 'Sin nombre'}</span>
-                  <span className="ticket-estado">Pendiente</span>
-                  <button className="ticket-btn"
-                    onClick={()=>{
-                      const toAdd = [pendingOT.inst];
-                      if (pendingOT.desinst) toAdd.push(pendingOT.desinst);
-                      if (setOtQueue) setOtQueue(prev=>[...prev,...toAdd]);
-                      if (setPendingOT) setPendingOT(null);
-                      deleteFromTable('ot_pendiente', 'current');
-                    }}>
-                    Ticket
-                  </button>
-                  <button className="ticket-btn-x" title="Descartar"
-                    onClick={()=>{ if (setPendingOT) setPendingOT(null); deleteFromTable('ot_pendiente', 'current'); }}><X size={10}/></button>
-                </div>
-              )}
-              {otQueue && otQueue.map((item) => (
+              {otQueue.map((item) => (
                 <div key={item.id || item.ppu} className="ticket-pendiente">
                   <span className="ticket-cliente">{item.nombreCliente || item.cliente || 'Sin nombre'}</span>
                   <span className="ticket-estado">Pendiente</span>
