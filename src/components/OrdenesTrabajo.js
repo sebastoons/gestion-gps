@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Download, Search, ChevronLeft, X, Trash2, Check, Home as HomeIcon, ChevronDown, FileImage, Eye } from 'lucide-react';
+import { Plus, Download, Search, ChevronLeft, X, Trash2, Check, Home as HomeIcon, ChevronDown, ChevronUp, FileImage, Eye } from 'lucide-react';
 import { supabase, loadTable, syncTable, deleteFromTable, nextOtNumero, agregarOActualizarCliente } from '../lib/supabase';
 import { formatFecha } from '../utils/dateUtils';
 import '../styles/OrdenesTrabajo.css';
@@ -88,6 +88,7 @@ const CHECKLIST_ITEMS = ['Batería','Check Engine','Error tablero inst.','A/C','
 
 const makeOT = () => ({
   fecha: new Date().toISOString().split('T')[0],
+  nombreCliente: '',
   tipoServicio:'Instalación', region:'', ciudad:'', comuna:'',
   tecnico:'Sebastian Parra', empresaInstaladora:'Sebastian Parra',
   ppu:'', marca:'', modelo:'', anio:'', color:'', kilometraje:'',
@@ -161,7 +162,12 @@ const OTField = ({ l, v, full }) => (
 );
 
 // ── OTDoc ─────────────────────────────────────────────────────────────────────
-const OTDoc = ({ ot, numero, empresa, cliente, correo, firma, aceptacion }) => {
+// "nombreCliente" es la empresa/cliente para la que se hizo el trabajo (ej.
+// "Sociedad Terra Verde") — dato del propio trabajo, va en el encabezado y en
+// la sección CLIENTE. "receptor" es quién físicamente recibe y firma la OT
+// (puede ser cualquiera presente en terreno, no necesariamente alguien de esa
+// empresa) — va sólo en RECEPCIÓN, junto a su correo y firma.
+const OTDoc = ({ ot, numero, empresa, nombreCliente, receptor, correo, firma, aceptacion }) => {
   const esVF = ot.tipoServicio==='Visita Fallida';
   const cl = ot.checklist||{};
   const clBg = {NA:'#d1d5db',OK:'#16a34a',DETALLE:'#dc2626'};
@@ -172,7 +178,7 @@ const OTDoc = ({ ot, numero, empresa, cliente, correo, firma, aceptacion }) => {
         <EmpresaLogos empresa={empresa}/>
         <div className="otd-hdr-mid">
           <span className="otd-title">ORDEN DE TRABAJO</span>
-          <span className="otd-sub">{cliente}</span>
+          <span className="otd-sub">{nombreCliente}</span>
         </div>
         <div className="otd-num-wrap">
           <span className="otd-num-lbl">N°</span>
@@ -201,7 +207,7 @@ const OTDoc = ({ ot, numero, empresa, cliente, correo, firma, aceptacion }) => {
         <div className="otd-sec">
           <div className="otd-sec-ttl">CLIENTE</div>
           <div className="otd-rows">
-            <OTField l="NOMBRE" v={cliente} full/>
+            <OTField l="NOMBRE" v={nombreCliente} full/>
             <OTField l="REGIÓN" v={ot.region}/>
             <OTField l="CIUDAD" v={ot.ciudad}/>
             <OTField l="COMUNA" v={ot.comuna}/>
@@ -256,7 +262,7 @@ const OTDoc = ({ ot, numero, empresa, cliente, correo, firma, aceptacion }) => {
         <div className="otd-sec">
           <div className="otd-sec-ttl">RECEPCIÓN</div>
           <div className="otd-rows">
-            <OTField l="NOMBRE" v={cliente} full/>
+            <OTField l="NOMBRE" v={receptor} full/>
             <OTField l="CORREO" v={correo}/>
           </div>
           <div className="otd-acept">
@@ -273,7 +279,7 @@ const OTDoc = ({ ot, numero, empresa, cliente, correo, firma, aceptacion }) => {
       </div>
 
       <div className="otd-footer">
-        <span>{cliente} · {formatFecha(ot.fecha)} · La firma acredita autorización y conformidad.</span>
+        <span>{receptor} · {formatFecha(ot.fecha)} · La firma acredita autorización y conformidad.</span>
         <img src="/logo.svg" alt="ServITrak" className="otd-footer-logo"/>
       </div>
     </div>
@@ -315,6 +321,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
   const [sessionEmpresa,setSessionEmpresa] = useState(empresaSeleccionada||'Entel');
   const [clienteData,setClienteData] = useState({nombre:'',correo:''});
   const [aceptacion,setAceptacion] = useState(false);
+  const [mostrarDeclaracion,setMostrarDeclaracion] = useState(false);
   const [firma,setFirma] = useState(null);
   const [search,setSearch] = useState('');
   const [filterMes,setFilterMes] = useState('');
@@ -355,7 +362,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
   const endDraw=()=>{isDrawing.current=false;if(canvasRef.current)setFirma(canvasRef.current.toDataURL());};
   const clearFirma=()=>{const c=canvasRef.current;if(c)c.getContext('2d').clearRect(0,0,c.width,c.height);setFirma(null);};
 
-  const startSession=()=>{setSessionOTs([]);setCurrentOT(makeOT());setClienteData({nombre:'',correo:''});setAceptacion(false);setFirma(null);setStep('form');};
+  const startSession=()=>{setSessionOTs([]);setCurrentOT(makeOT());setClienteData({nombre:'',correo:''});setAceptacion(false);setMostrarDeclaracion(false);setFirma(null);setStep('form');};
 
   const saveCurrentOT=()=>{
     if (!isVF&&!currentOT.ppu){alert('Ingresa la PPU del vehículo.');return;}
@@ -364,7 +371,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
   };
 
   const addAnotherOT=()=>{
-    setCurrentOT({...makeOT(),fecha:currentOT.fecha,tipoServicio:currentOT.tipoServicio,
+    setCurrentOT({...makeOT(),fecha:currentOT.fecha,nombreCliente:currentOT.nombreCliente,tipoServicio:currentOT.tipoServicio,
       region:currentOT.region,ciudad:currentOT.ciudad,comuna:currentOT.comuna,
       tecnico:currentOT.tecnico,empresaInstaladora:currentOT.empresaInstaladora});
     setStep('form');
@@ -429,18 +436,19 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
   const isVF=currentOT.tipoServicio==='Visita Fallida';
 
   const cargarDesdeQueue = (item) => {
-    // nombreCliente es sólo el nombre escrito rápido en Validación WhatsApp
-    // (ej. "Juan"), no el nombre oficial que se pide a continuación en el
-    // paso "Datos del Cliente" (ej. "Juan Pérez Soto", el que va en la OT
-    // firmada). Si se deja en currentOT, sobrevive sin cambios hasta la OT
-    // final y el documento impreso/guardado terminaba mostrando el nombre
-    // viejo en vez del que el técnico realmente tipeó en este paso.
-    const { _empresa, nombreCliente, ...otData } = item;
+    // nombreCliente acá es la empresa/cliente tipeada en el campo "Cliente"
+    // de Validación WhatsApp (ej. "Sociedad Terra Verde") — se mantiene tal
+    // cual porque es justo el dato que va en el encabezado de la OT y en la
+    // sección CLIENTE. Es distinto del nombre de quien firma la recepción
+    // (clienteData.nombre), que se pide aparte en el paso "Datos del Cliente
+    // y Firma" y nunca se precarga con esto.
+    const { _empresa, ...otData } = item;
     setSessionEmpresa(_empresa || empresaSeleccionada);
     setSessionOTs([]);
     setCurrentOT(otData);
     setClienteData({ nombre: '', correo: '' });
     setAceptacion(false);
+    setMostrarDeclaracion(false);
     setFirma(null);
     setOtQueue(prev => prev.filter(q => q !== item));
     // El efecto de sync de App.js sólo hace upsert de lo que queda en el
@@ -519,7 +527,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
         <div style={{position:'absolute',left:'-9999px',top:0,width:'420px',background:'#f8fafc'}}>
           <div id="ot-history-render">
             <OTDoc ot={historyOT} numero={historyOT.numero} empresa={historyOT.empresa}
-              cliente={historyOT.cliente || historyOT.nombreCliente} correo={historyOT.correoCliente} firma={historyOT.firma} aceptacion={historyOT.aceptacion}/>
+              nombreCliente={historyOT.nombreCliente} receptor={historyOT.cliente} correo={historyOT.correoCliente} firma={historyOT.firma} aceptacion={historyOT.aceptacion}/>
           </div>
         </div>
       )}
@@ -532,7 +540,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
               <button className="btn btn-secondary" style={{fontSize:'0.65em'}} onClick={()=>setPreviewOT(null)}><X size={12}/> Cerrar</button>
             </div>
             <OTDoc ot={previewOT} numero={previewOT.numero} empresa={previewOT.empresa}
-              cliente={previewOT.cliente || previewOT.nombreCliente} correo={previewOT.correoCliente} firma={previewOT.firma} aceptacion={previewOT.aceptacion}/>
+              nombreCliente={previewOT.nombreCliente} receptor={previewOT.cliente} correo={previewOT.correoCliente} firma={previewOT.firma} aceptacion={previewOT.aceptacion}/>
           </div>
         </div>
       )}
@@ -572,6 +580,10 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
           <div className="form-container blue">
             <div className="form-title">Datos del Servicio</div>
             <div className="form-grid three-cols">
+              <div style={{gridColumn:'span 2'}}><label className="filter-label">Cliente</label>
+                <input className="form-input" value={currentOT.nombreCliente}
+                  onChange={e=>setOTField('nombreCliente',e.target.value)} placeholder="Empresa/cliente para el que se hace el trabajo"/>
+              </div>
               <div><label className="filter-label">Fecha</label>
                 <input type="date" className="form-input" value={currentOT.fecha} onChange={e=>setOTField('fecha',e.target.value)}/>
               </div>
@@ -728,28 +740,17 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
           </div>
 
           <div className="form-container blue">
-            <div className="form-title">Información del Cliente</div>
+            <div className="form-title">Datos de Recepción</div>
             <div className="form-grid">
               <div><label className="filter-label">Nombre *</label>
-                <input className="form-input" value={clienteData.nombre}
-                  onChange={e=>setClienteData(p=>({...p,nombre:e.target.value}))} placeholder="Nombre o empresa"/>
+                <input className="form-input ot-input-compact" value={clienteData.nombre}
+                  onChange={e=>setClienteData(p=>({...p,nombre:e.target.value}))} placeholder="Nombre de quien recibe"/>
               </div>
               <div><label className="filter-label">Correo</label>
-                <input type="email" className="form-input" value={clienteData.correo}
+                <input type="email" className="form-input ot-input-compact" value={clienteData.correo}
                   onChange={e=>setClienteData(p=>({...p,correo:e.target.value}))}
-                  placeholder="cliente@correo.com"/>
+                  placeholder="correo@ejemplo.com"/>
               </div>
-            </div>
-          </div>
-
-          <div className="form-container form-container-acept" style={{borderColor:'#f59e0b',background:'#fffbeb'}}>
-            <div style={{display:'flex',alignItems:'flex-start',gap:12,padding:'4px 0'}}>
-              <button type="button" className={`acept-btn${aceptacion?' acept-btn--on':''}`} style={{background:aceptacion?'#16a34a':undefined,borderColor:aceptacion?'#16a34a':'#d97706'}} onClick={()=>setAceptacion(!aceptacion)}>
-                {aceptacion&&<Check size={14} color="white"/>}
-              </button>
-              <p style={{fontFamily:'quantico',fontSize:'0.7em',color:'#374151',lineHeight:1.6,margin:0}}>
-                Declaro haber recibido el vehículo en las condiciones técnicas descritas en la presente orden, conforme a las actividades realizadas, sin observaciones ni reclamos respecto a la intervención efectuada.
-              </p>
             </div>
           </div>
 
@@ -757,7 +758,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
             <div className="form-title">Firma del Cliente</div>
             <div style={{display:'flex',justifyContent:'center'}}>
               <div className="ot-canvas-wrapper">
-                <canvas ref={canvasRef} width={400} height={130} className="ot-canvas"
+                <canvas ref={canvasRef} width={400} height={220} className="ot-canvas"
                   onMouseDown={startDraw} onMouseMove={draw} onMouseUp={endDraw} onMouseLeave={endDraw}
                   onTouchStart={startDraw} onTouchMove={draw} onTouchEnd={endDraw}/>
               </div>
@@ -765,6 +766,23 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
             <div style={{display:'flex',justifyContent:'center',marginTop:8}}>
               <button className="btn btn-secondary" onClick={clearFirma}><X size={12}/> Limpiar</button>
             </div>
+          </div>
+
+          <div className="form-container form-container-acept" style={{borderColor:'#f59e0b',background:'#fffbeb'}}>
+            <div style={{display:'flex',alignItems:'center',gap:10}}>
+              <button type="button" className={`acept-btn${aceptacion?' acept-btn--on':''}`} style={{background:aceptacion?'#16a34a':undefined,borderColor:aceptacion?'#16a34a':'#d97706'}} onClick={()=>setAceptacion(!aceptacion)}>
+                {aceptacion&&<Check size={14} color="white"/>}
+              </button>
+              <button type="button" onClick={()=>setMostrarDeclaracion(v=>!v)}
+                style={{background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',gap:4,padding:0,fontFamily:'quantico',fontSize:'0.7em',textTransform:'uppercase',color:'#92400e'}}>
+                Declaración {mostrarDeclaracion?<ChevronUp size={13}/>:<ChevronDown size={13}/>}
+              </button>
+            </div>
+            {mostrarDeclaracion&&(
+              <p style={{fontFamily:'quantico',fontSize:'0.7em',color:'#374151',lineHeight:1.6,margin:'8px 0 0'}}>
+                Declaro haber recibido el vehículo en las condiciones técnicas descritas en la presente orden, conforme a las actividades realizadas, sin observaciones ni reclamos respecto a la intervención efectuada.
+              </p>
+            )}
           </div>
 
           <div className="form-actions">
@@ -785,7 +803,7 @@ const OrdenesTrabajo = ({ setCurrentView, empresas, empresaSeleccionada, otQueue
 
   // ── PREVIEW ───────────────────────────────────────────────────────────────
   const otDocProps = (ot) => ({ot, numero:ot.numero, empresa:sessionEmpresa,
-    cliente: ot.cliente || clienteData.nombre || ot.nombreCliente, correo:clienteData.correo, firma, aceptacion});
+    nombreCliente: ot.nombreCliente || '', receptor: clienteData.nombre, correo: clienteData.correo, firma, aceptacion});
 
   if(step==='preview') return (
     <div className="page-container">

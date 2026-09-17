@@ -1,6 +1,9 @@
 /* ── Filtros ── */
 .ot-filter-bar { display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center; }
 
+/* ── Datos de Recepción: campos más chicos que el resto del formulario ── */
+.ot-input-compact { padding:5px 8px !important; font-size:0.65em !important; }
+
 /* ── Dark mode — elementos interactivos (no el documento OT) ── */
 .dark .acc-trigger           { background:#0f172a; border-color:#334155; color:#e2e8f0; }
 .dark .acc-menu              { background:#1a2744; border-color:#334155; box-shadow:0 4px 16px rgba(0,0,0,0.4); }
