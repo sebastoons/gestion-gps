@@ -12,6 +12,36 @@ const VACIO = {
   cliente: '', ubicacion: '', observaciones: '', fotosVehiculo: [], fotosGps: [],
 };
 
+// Las fotos de celular suelen pesar varios MB a resolución completa — subirlas
+// así tal cual es lento en terreno con datos móviles y ocupa espacio de sobra
+// en Storage sin necesitarlo (para ver un detalle de instalación no hace
+// falta más de ~1600px). Se reescala/recomprime en el navegador antes de
+// subir; si algo falla (formato raro, etc.) sube el archivo original tal
+// cual — nunca bloquea la carga por esto.
+const comprimirImagen = (file, maxDim = 1600, calidad = 0.8) => new Promise((resolve) => {
+  if (!file.type?.startsWith('image/') || file.type === 'image/svg+xml') { resolve(file); return; }
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  img.onload = () => {
+    URL.revokeObjectURL(url);
+    let { width, height } = img;
+    if (!width || !height || (width <= maxDim && height <= maxDim)) { resolve(file); return; }
+    const escala = maxDim / Math.max(width, height);
+    width = Math.round(width * escala);
+    height = Math.round(height * escala);
+    const canvas = document.createElement('canvas');
+    canvas.width = width; canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, width, height);
+    canvas.toBlob(blob => {
+      if (!blob || blob.size >= file.size) { resolve(file); return; }
+      resolve(new File([blob], file.name.replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' }));
+    }, 'image/jpeg', calidad);
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+  img.src = url;
+});
+
 // ── Carga de fotos: hasta 4 por sección, 5MB c/u, sube a Supabase Storage ────
 // "Agregar foto" pregunta primero si es con la cámara o desde la galería —
 // dos inputs ocultos separados, uno con capture (abre la cámara directo en
@@ -36,12 +66,15 @@ const FotosUpload = ({ fotos, onChange, onUploadingChange, carpeta }) => {
     marcarSubiendo(true);
     try {
       for (const file of aSubir) {
-        if (file.size > MAX_FOTO_BYTES) {
-          alert(`"${file.name}" pesa más de 5MB — elige una foto más liviana.`);
+        // El límite de 5MB se evalúa después de comprimir — una foto de
+        // cámara de 8-10MB normalmente baja de sobra una vez reescalada.
+        const comprimida = await comprimirImagen(file);
+        if (comprimida.size > MAX_FOTO_BYTES) {
+          alert(`"${file.name}" pesa más de 5MB incluso comprimida — elige una foto más liviana.`);
           continue;
         }
         try {
-          const url = await subirFotoTrabajo(file, carpeta);
+          const url = await subirFotoTrabajo(comprimida, carpeta);
           onChange(prev => [...prev, url]);
         } catch (err) {
           console.error('subir foto trabajo:', err);

@@ -160,8 +160,20 @@ const App = () => {
   });
   const [showEmpresasModal, setShowEmpresasModal] = useState(false);
   const [showRespaldoModal, setShowRespaldoModal] = useState(false);
+  // Antes esto siempre volvía a la primera empresa de la lista en cada
+  // recarga (recargar la página, cerrar/abrir la app, o la actualización
+  // automática) — si el usuario tenía otra empresa seleccionada, la vista se
+  // cambiaba en silencio y todo lo cargado bajo esa otra empresa (trabajos,
+  // fotos, OT...) parecía haber desaparecido, aunque seguía intacto en
+  // Supabase. Ahora se recuerda la última empresa que el usuario eligió.
   const [empresaSeleccionada, setEmpresaSeleccionada] = useState(() => {
-    try { const s = localStorage.getItem('empresas'); const list = s ? JSON.parse(s) : ['UGPS']; return list[0] || 'UGPS'; } catch { return 'UGPS'; }
+    try {
+      const s = localStorage.getItem('empresas');
+      const list = s ? JSON.parse(s) : ['UGPS'];
+      const guardada = localStorage.getItem('empresaSeleccionada');
+      if (guardada && list.includes(guardada)) return guardada;
+      return list[0] || 'UGPS';
+    } catch { return 'UGPS'; }
   });
   const [mesSeleccionado, setMesSeleccionado] = useState(() => {
     const n = new Date();
@@ -192,6 +204,10 @@ const App = () => {
       setEmpresaSeleccionada(empresas[0]);
     }
   }, [empresas, empresaSeleccionada]);
+
+  useEffect(() => {
+    if (empresaSeleccionada) localStorage.setItem('empresaSeleccionada', empresaSeleccionada);
+  }, [empresaSeleccionada]);
 
   const onRemoveEmpresa = async (nombre) => {
     setEmpresas(prev => prev.filter(x => x !== nombre));
